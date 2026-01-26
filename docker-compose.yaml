@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    container_name: manga-day-v1
+    volumes:
+      - manga-day:/app/var
+
+volumes:
+  manga-day:

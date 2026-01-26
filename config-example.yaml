@@ -1,0 +1,17 @@
+logging: # Логирование
+  level: "INFO" # Логирование в консоль
+  file_level: "INFO" # Логирование в файл
+  file: "var/log.txt" # Файл логирования
+
+  format: "<green>{time:YYYY-MM-DD HH:mm}</green> | <level>{level}</level> | <level>{message}</level>" # Формат логирования
+  rotation: "10 MB" # Ротация логов
+
+update:
+  start_time: "7:00 AM" # Время запуска бота
+  zone: "Asia/Yakutsk" # Часовой пояс
+
+bot:
+  api_key: "ABCDEFG:1234567890" # Токен бота
+
+database:
+  db: "sqlite+aiosqlite:///var/database.db" # Строка подключения к базе данных
