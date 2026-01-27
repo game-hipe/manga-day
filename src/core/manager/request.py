@@ -3,8 +3,8 @@ import random
 from typing import Unpack, Literal, TypeAlias, overload
 
 from aiohttp import ClientSession
+from aiohttp import ClientResponseError, ServerDisconnectedError
 from aiohttp.client import _RequestOptions
-from aiohttp import ClientResponseError
 
 from cachetools import TTLCache
 from loguru import logger
@@ -12,6 +12,7 @@ from loguru import logger
 from ..entites.schemas import ProxySchema
 
 ReturnType: TypeAlias = Literal["text", "read"]
+
 
 class RequestManager:
     """Менеджер для запросов."""
@@ -191,10 +192,6 @@ class RequestManager:
                         logger.info(
                             f"Удалось получить страницу (url={url}, method={method}, result_len={len(result)})"
                         )
-                        await asyncio.sleep(
-                            self.sleep_time
-                            * (random.uniform(0, 1) if self.use_random else 1)
-                        )
                         self.cache[f"{method}{url}"] = result
                         return result
 
@@ -213,6 +210,15 @@ class RequestManager:
 
                     logger.error(
                         f"Не удалось получить страницу (url={url}, method={method}, message={error.message})"
+                    )
+
+                except ServerDisconnectedError:
+                    logger.error("Сервер принудительно отключил нас от сервера.")
+
+                finally:
+                    await asyncio.sleep(
+                        self.sleep_time
+                        * (random.uniform(0, 1) if self.use_random else 1)
                     )
 
             logger.error(f"Не удалось получить страницу за {self.max_retries} попыток")

@@ -9,6 +9,7 @@ from ..manager.manga import MangaManager
 from ..manager.request import RequestManager
 from ..entites.schemas import ProxySchema, MangaSchema, BaseManga
 
+
 class BaseSpider(ABC):
     """
     Базовый класс для создания спайдеров, предназначенных для парсинга информации о манге с веб-сайтов.
@@ -16,30 +17,41 @@ class BaseSpider(ABC):
     Атрибуты:
         BASE_URL (str): Базовый URL-адрес сайта, с которого будет выполняться парсинг. Должен быть переопределён в подклассах.
     """
-    
+
     BASE_URL = "https://example-manga.com"
     """Базовый класс для спайдера"""
-    
-    BASE_FEATURES = 'html.parser'
+
+    BASE_FEATURES = "html.parser"
     """Базовый движок для парсера"""
-    
+
+    BASE_BATCH = 10
+    """Базовый размер пачки для парсинга"""
+
     @overload
-    def __init__(self, session: RequestManager, manager: MangaManager, features: str = None) -> None:
+    def __init__(
+        self,
+        session: RequestManager,
+        manager: MangaManager,
+        features: str = None,
+        batch: int = None,
+    ) -> None:
         """
         Инициализация спайдера с использованием существующего менеджера запросов.
 
-        Аргументы:
+        Args:
             session (RequestManager): Управляемая сессия для выполнения HTTP-запросов.
             manager (MangaManager): Менеджер для обработки и хранения данных о манге.
             features (str): Парсер, используемый для разбора HTML (по умолчанию 'html.parser').
+            batch (int): Размер пачки для парсинга (по умолчанию 10).
         """
-    
+
     @overload
     def __init__(
         self,
         session: aiohttp.ClientSession,
         manager: MangaManager,
         features: str = None,
+        batch: int = None,
         *,
         max_concurrents: int = None,
         max_retries: int = None,
@@ -52,10 +64,11 @@ class BaseSpider(ABC):
         """
         Инициализация спайдера с использованием aiohttp.ClientSession.
 
-        Аргументы:
+        Args:
             session (aiohttp.ClientSession): Сессия для асинхронных HTTP-запросов.
             manager (MangaManager): Менеджер для обработки и хранения данных о манге.
             features (str): Парсер, используемый для разбора HTML (по умолчанию 'html.parser').
+            batch (int): Размер пачки для парсинга (по умолчанию 10).
             max_concurrents (int, опционально): Максимальное количество одновременных запросов.
             max_retries (int, опционально): Максимальное количество попыток повтора запроса.
             sleep_time (int, опционально): Время задержки между запросами.
@@ -64,15 +77,23 @@ class BaseSpider(ABC):
             ttl (float, опционально): Время жизни кешированных запросов.
             proxy (list[ProxySchema], опционально): Список прокси для использования.
         """
-    
-    def __init__(self, session: aiohttp.ClientSession | RequestManager, manager: MangaManager, features: str = None, **kwargs) -> None:
+
+    def __init__(
+        self,
+        session: aiohttp.ClientSession | RequestManager,
+        manager: MangaManager,
+        features: str = None,
+        batch: int = None,
+        **kwargs,
+    ) -> None:
         """
         Инициализация базового спайдера.
 
-        Аргументы:
+        Args:
             session (aiohttp.ClientSession | RequestManager): Сессия или менеджер запросов.
             manager (MangaManager): Менеджер для управления данными о манге.
             features (str): Парсер HTML (по умолчанию 'html.parser').
+            batch (int): Размер пачки для парсинга (по умолчанию 10).
             **kwargs: Дополнительные параметры, передаваемые в RequestManager при необходимости.
 
         Исключения:
@@ -80,35 +101,44 @@ class BaseSpider(ABC):
         """
         if isinstance(session, RequestManager):
             self.http = session
-            
+
         elif isinstance(session, aiohttp.ClientSession):
             self.http = RequestManager(session, **kwargs)
-            
+
         else:
-            raise TypeError("Сессия должна быть aiohttp.ClientSession либо RequestManager")
-        
+            raise TypeError(
+                "Сессия должна быть aiohttp.ClientSession либо RequestManager"
+            )
+
+        self.batch = batch or self.BASE_BATCH
         self.features = features or self.BASE_FEATURES
         self.manager = manager
-        
+
         self._args_test()
-        
-    async def run(self) -> None:
+
+    async def run(self, start_page: int | None = None) -> None:
         """
         Запускает процесс парсинга манги.
 
         Метод последовательно получает пакеты страниц, извлекает информацию о манге
         и добавляет её в менеджер. Пропускает пустые результаты.
+
+        Args:
+            start_page (int | None): Стартовая страница для парсинга.
         """
-        async for page_batch in self.pages():
+        async for page_batch in self.pages(start_page):
             tasks: list[Awaitable[Optional[MangaSchema]]] = []
             for page in page_batch:
+                if await self.manager.in_database(page):
+                    continue
+
                 tasks.append(asyncio.create_task(self.get(str(page.url))))
 
             async for manga in asyncio.as_completed(tasks):
                 result = await manga
                 if result is None:
                     continue
-                
+
                 await self.manager.add_manga(result)
 
     @abstractmethod
@@ -116,19 +146,24 @@ class BaseSpider(ABC):
         """
         Абстрактный метод для получения данных о манге по URL.
 
-        Аргументы:
+        Args:
             url (str): Ссылка на страницу манги.
 
-        Возвращает:
+        Returns:
             MangaSchema | None: Объект с данными о манге или None, если не удалось получить данные.
         """
 
     @abstractmethod
-    async def pages(self) -> AsyncGenerator[list[BaseManga], Any]:
+    async def pages(
+        self, start_page: int | None = None
+    ) -> AsyncGenerator[list[BaseManga], Any]:
         """
         Абстрактный метод для генерации пакетов URL-адресов страниц с мангой.
 
-        Возвращает:
+        Args:
+            start_page (int): Стартовая страница для парсинга.
+
+        Returns:
             Асинхронный генератор, выдающий списки базовйх манг (BaseManga).
         """
         yield []
@@ -147,6 +182,4 @@ class BaseSpider(ABC):
             )
 
         if not isinstance(self.manager, MangaManager):
-            raise TypeError(
-                "manager должен быть MangaManager"
-            )
+            raise TypeError("manager должен быть MangaManager")
