@@ -8,7 +8,7 @@ VOLUME [ "/app/var" ]
 
 COPY requirements.txt .
 
-RUN pip isntall -r requirements.txt --no-cache-dir
+RUN pip install -r requirements.txt --no-cache-dir
 
 COPY . .
 
