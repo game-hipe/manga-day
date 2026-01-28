@@ -35,5 +35,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info("Программа прервана пользователем.")
 
-    # except Exception as e:
-    #    logger.critical(f"Произошла ошибка: {e}")
+    except Exception as e:
+        logger.critical(f"Произошла ошибка: {e}")
