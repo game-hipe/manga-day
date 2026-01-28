@@ -1,6 +1,6 @@
 import asyncio
 import random
-from typing import Unpack, Literal, TypeAlias, overload
+from typing import Unpack, Literal, TypeAlias, TypedDict, overload
 
 from aiohttp import ClientSession
 from aiohttp import ClientResponseError, ServerDisconnectedError
@@ -12,6 +12,16 @@ from loguru import logger
 from ..entites.schemas import ProxySchema
 
 ReturnType: TypeAlias = Literal["text", "read"]
+
+
+class RequestItem(TypedDict):
+    max_concurrents: int | None = (None,)
+    max_retries: int | None = (None,)
+    sleep_time: int | None = (None,)
+    use_random: bool | None = (None,)
+    proxy: list[ProxySchema] | None = (None,)
+    maxsize: int | None = (None,)
+    ttl: float | None = None
 
 
 class RequestManager:
@@ -35,18 +45,7 @@ class RequestManager:
     TTL: float = 300
     """Базовое значение, время жизни кэша."""
 
-    def __init__(
-        self,
-        session: ClientSession,
-        *,
-        max_concurrents: int | None = MAX_CONCURRENTS,
-        max_retries: int | None = MAX_RETRIES,
-        sleep_time: int | None = SLEEP_TIME,
-        use_random: bool | None = USE_RANDOM,
-        proxy: list[ProxySchema] = [],
-        maxsize: int | None = MAXSIZE,
-        ttl: float | None = TTL,
-    ):
+    def __init__(self, session: ClientSession, **kw: Unpack[RequestItem]):
         """Ицилизация RequestManager
 
         Args:
@@ -58,16 +57,17 @@ class RequestManager:
             proxy (list[ProxySchema], optional): Прокси. Обычное значение [].
         """
         self.session = session
-
-        self.max_concurrents = max_concurrents or self.MAX_CONCURRENTS
-        self.max_retries = max_retries or self.MAX_RETRIES
-        self.sleep_time = sleep_time or self.SLEEP_TIME
-        self.use_random = use_random or self.USE_RANDOM
+        self.max_concurrents = kw.get("max_concurrents") or self.MAX_CONCURRENTS
+        self.max_retries = kw.get("max_retries") or self.MAX_RETRIES
+        self.sleep_time = kw.get("sleep_time") or self.SLEEP_TIME
+        self.use_random = kw.get("use_random") or self.USE_RANDOM
 
         self.semaphore = asyncio.Semaphore(self.max_concurrents)
-        self.proxy = proxy
+        self.proxy = [] or kw.get("proxy")
 
-        self.cache = TTLCache(maxsize=maxsize or self.MAXSIZE, ttl=ttl or self.TTL)
+        self.cache = TTLCache(
+            maxsize=kw.get("maxsize") or self.MAXSIZE, ttl=kw.get("ttl") or self.TTL
+        )
 
     @overload
     async def request(

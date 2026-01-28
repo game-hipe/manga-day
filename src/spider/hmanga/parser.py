@@ -83,7 +83,7 @@ class PageParser(BasePageParser):
                 exc += 1
                 logger.warning("Не удалось получить обязательный атрибут")
 
-        logger.debug(f"Удачно удалось получит {total - exc} из {total}")
+        logger.debug(f"Удачно удалось получить обьектов {total - exc} из {total}")
         return items
 
     def _parse_json(self, data):

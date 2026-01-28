@@ -1,13 +1,15 @@
 import asyncio
 
 from abc import ABC, abstractmethod
-from typing import overload, AsyncGenerator, Awaitable, Optional, Any
+from typing import overload, AsyncGenerator, Awaitable, Optional, Any, Unpack
 
 import aiohttp
 
+from loguru import logger
+
 from ..manager.manga import MangaManager
-from ..manager.request import RequestManager
-from ..entites.schemas import ProxySchema, MangaSchema, BaseManga
+from ..manager.request import RequestManager, RequestItem
+from ..entites.schemas import MangaSchema, BaseManga
 
 
 class BaseSpider(ABC):
@@ -52,14 +54,7 @@ class BaseSpider(ABC):
         manager: MangaManager,
         features: str = None,
         batch: int = None,
-        *,
-        max_concurrents: int = None,
-        max_retries: int = None,
-        sleep_time: int = None,
-        use_random: bool = None,
-        maxsize: int = None,
-        ttl: float = None,
-        proxy: list[ProxySchema] = [],
+        **kwargs: Unpack[RequestItem],
     ) -> None:
         """
         Инициализация спайдера с использованием aiohttp.ClientSession.
@@ -115,6 +110,7 @@ class BaseSpider(ABC):
         self.manager = manager
 
         self._args_test()
+        logger.debug(f"Инцилизирован класс {self.__class__.__name__}")
 
     async def run(self, start_page: int | None = None) -> None:
         """
