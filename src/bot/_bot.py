@@ -1,12 +1,16 @@
 from typing import TypedDict, Unpack
+from contextlib import asynccontextmanager
 
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
 from aiogram.fsm.storage.memory import MemoryStorage
+from loguru import logger
 
 from ..core import config
 from ..core.manager.spider import SpiderManager
 from ._alert import BotAlert
+from .handlers.commands import CommandsHandler
 
 
 class BotConfig(TypedDict):
@@ -20,12 +24,14 @@ async def set_command(bot: Bot):
             BotCommand(command="start", description="Запустить бота"),
             BotCommand(command="help", description="Помощь"),
             BotCommand(command="startparsing", description="Запустить парсинг"),
+            BotCommand(command="stopparsing", description="Остановить парсинг"),
             BotCommand(command="status", description="Статус парсинга"),
         ]
     )
 
 
-async def setup_bot(**kwargs: Unpack[BotConfig]) -> tuple[Bot, Dispatcher]:
+@asynccontextmanager
+async def setup_bot(**kwargs: Unpack[BotConfig]):
     spider = kwargs.get("spider")
     token = kwargs.get("token") or config.bot.api_key
 
@@ -34,18 +40,34 @@ async def setup_bot(**kwargs: Unpack[BotConfig]) -> tuple[Bot, Dispatcher]:
     elif not isinstance(spider, SpiderManager):
         raise TypeError("SpiderManager должен быть экземпляром SpiderManager")
 
-    bot = Bot(token=token)
-    storage = MemoryStorage()
+    dp = None
+    try:
+        storage = MemoryStorage()
+        dp = Dispatcher(storage=storage)
 
-    spider.add_alert(BotAlert(bot))
+        async with Bot(
+            token=token, default=DefaultBotProperties(parse_mode="HTML")
+        ) as bot:
+            logger.info("Инцилизация бота...")
+            await set_command(bot)
 
-    await set_command(bot)
-    dp = Dispatcher(storage=storage)
+            spider.add_alert(BotAlert(bot))
+            handler = CommandsHandler(spider_manager=spider)
 
-    return bot, dp
+            dp.include_routers(handler.router)
+            logger.info("Бот ицилизирован")
+            yield bot, dp
+    finally:
+        if dp is not None:
+            try:
+                await dp.stop_polling()
+            except RuntimeError:
+                ...
+        await spider.alert("<b>Бот прекратил свою работу</b>")
+        logger.info("Бот остановлен")
 
 
 async def start_bot(**kwargs: Unpack[BotConfig]):
-    bot, dp = await setup_bot(**kwargs)
-
-    await dp.start_polling(bot)
+    async with setup_bot(**kwargs) as (bot, dp):
+        logger.success("Бот запущен")
+        await dp.start_polling(bot)

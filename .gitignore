@@ -7,3 +7,5 @@ venv
 config.yaml
 
 backups
+
+test.py

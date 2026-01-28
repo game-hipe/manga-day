@@ -47,6 +47,8 @@ class SpiderManager:
     ):
         self._alerts: list[HasAlert] = []
         self.tasks: list[asyncio.Task[None]] = []
+        self.spider_tasks: dict[asyncio.Task, BaseSpider] = {}
+
         self.spiders: list[BaseSpider] = []
         spider_module = importlib.import_module("...spider", package=__package__)
 
@@ -91,14 +93,17 @@ class SpiderManager:
         await self.alert("Начало парсинга")
 
         for spider in self.spiders:
-            self.tasks.append(asyncio.create_task(self._run_parser(spider)))
+            task = asyncio.create_task(self._run_parser(spider))
+            self.spider_tasks[task] = spider
+            self.tasks.append(task)
 
         try:
             await asyncio.shield(asyncio.gather(*self.tasks, return_exceptions=True))
             await self.alert("Все парсеры завершили работу.")
 
-        except asyncio.CancelledError:
+        except (asyncio.CancelledError, asyncio.CancelledError):
             await self.alert("Принудительное завершение работы...")
+
             await asyncio.sleep(1)
 
             for task in self.tasks:
@@ -107,7 +112,9 @@ class SpiderManager:
 
             await asyncio.gather(*self.tasks, return_exceptions=True)
             await self.alert("Парсинг прерван.")
-            raise
+
+            self.tasks.clear()
+            self.spider_tasks.clear()
 
     async def stop_parsing(self, timeout: float = 10.0):
         """Остановка с таймаутом"""
@@ -115,6 +122,7 @@ class SpiderManager:
         await self.alert("Остановка парсинга...")
 
         if not self.tasks:
+            await self.alert("Нет активных задач")
             logger.info("Нет активных задач")
             return
 
@@ -122,7 +130,10 @@ class SpiderManager:
 
         if not tasks_to_cancel:
             logger.info("Все задачи уже завершены")
+
             self.tasks.clear()
+            self.spider_tasks.clear()
+
             await self.alert("Парсинг уже завершен")
             return
 
@@ -146,6 +157,7 @@ class SpiderManager:
             logger.error(f"Ошибка при остановке: {e}")
         finally:
             self.tasks.clear()
+            self.spider_tasks.clear()
 
         logger.info("Парсинг остановлен")
         await self.alert("Парсинг остановлен")
@@ -187,3 +199,27 @@ class SpiderManager:
             logger.debug(
                 f"Обработчик уведомлений {alert.__class__.__name__} уже существует"
             )
+
+    @property
+    def status(self) -> str:
+        result = []
+        if not self.tasks:
+            return "Парсинг не запущен"
+
+        for task in self.tasks:
+            spider = self.spider_tasks.get(task)
+            spider_name = spider.__class__.__name__ if spider else "Unknown"
+
+            coro_status = "В работе"
+
+            if task.cancelled():
+                coro_status = "Отменён"
+            elif task.done():
+                if task.exception():
+                    coro_status = "Ошибка"
+                else:
+                    coro_status = "Завершён"
+
+            result.append(f"<b>{spider_name}</b> Статус: <b>{coro_status}</b>")
+
+        return "\n".join(result)

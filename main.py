@@ -2,7 +2,6 @@ import asyncio
 
 import aiohttp
 
-from aiogram import Bot
 from sqlalchemy.ext.asyncio import create_async_engine
 from loguru import logger
 
@@ -10,7 +9,8 @@ from src.core import config
 from src.core.entites.models import Base
 from src.core.manager.manga import MangaManager
 from src.core.manager.spider import SpiderManager
-from src.bot._alert import BotAlert
+from src.bot import start_bot
+from src.core import SpiderScheduler
 
 
 async def main():
@@ -21,13 +21,10 @@ async def main():
             await conn.run_sync(Base.metadata.create_all)
 
         api = MangaManager(engine)
+        spider = SpiderManager(session, api, "lxml")
+        scheduler = SpiderScheduler(spider)
 
-        async with Bot(config.bot.api_key) as bot:
-            spider = SpiderManager(session, api, "lxml")
-            spider.add_alert(BotAlert(bot))
-
-            await spider.start_parsing()
-
+        await asyncio.gather(start_bot(spider=spider), scheduler.start())
         await engine.dispose()
 
 
