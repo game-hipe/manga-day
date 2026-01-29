@@ -1,7 +1,7 @@
 logging: # Логирование
   level: "INFO" # Логирование в консоль
   file_level: "INFO" # Логирование в файл
-  file: "var/log.txt" # Файл логирования
+  file: "var/log.logs" # Файл логирования
 
   format: "<green>{time:YYYY-MM-DD HH:mm}</green> | <level>{level}</level> | <level>{message}</level>" # Формат логирования
   rotation: "10 MB" # Ротация логов

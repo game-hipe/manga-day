@@ -10,6 +10,7 @@ from src.core.entites.models import Base
 from src.core.manager.manga import MangaManager
 from src.core.manager.spider import SpiderManager
 from src.bot import start_bot
+from src.api import start_api
 from src.core import SpiderScheduler
 
 
@@ -24,7 +25,12 @@ async def main():
         spider = SpiderManager(session, api, "lxml")
         scheduler = SpiderScheduler(spider)
 
-        await asyncio.gather(start_bot(spider=spider), scheduler.start())
+        await asyncio.gather(
+            start_bot(spider=spider),
+            start_api(manga_manager = api),
+            scheduler.start(),
+        )
+        
         await engine.dispose()
 
 

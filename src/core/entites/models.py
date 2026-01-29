@@ -106,5 +106,5 @@ class Manga(Base):
     def generate_sku(self):
         """Генерирует и устанавливает sku"""
         if self.title and self.url:
-            data = f"{self.title}{self.url}".encode("utf-8")
+            data = self.title.encode("utf-8")
             self.sku = hashlib.sha256(data).hexdigest()[:32]

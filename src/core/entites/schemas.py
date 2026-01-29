@@ -22,7 +22,7 @@ class BaseManga(BaseModel):
     def sku(self) -> str:
         """Генерирует sku"""
         if self.title and self.url:
-            data = f"{self.title}{self.url.encoded_string()}".encode("utf-8")
+            data = self.title.encode("utf-8")
             return hashlib.sha256(data).hexdigest()[:32]
 
 
