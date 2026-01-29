@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from ...core.manager.manga import MangaManager
 from ...core.entities.schemas import BaseManga
-from .._response import BaseResponse
+from .._response import BaseResponse, CountResponse
 
 
 class Endpoints:
@@ -22,13 +22,14 @@ class Endpoints:
             tags=["manga"],
         )
 
-    async def get_pages(self, page: int) -> BaseResponse[list[BaseManga] | None]:
-        result = await self.manga_manager.get_manga_pages(page)
+    async def get_pages(self, page: int) -> CountResponse[list[BaseManga] | None]:
+        total, result = await self.manga_manager.get_manga_pages(page)
         try:
-            return BaseResponse(
-                status=True,
-                message=f"Удалось достать {len(result)} манги",
-                result=result,
+            return CountResponse(
+                status = True,
+                message = f"Удалось достать {len(result)} манги",
+                result = result,
+                count = total
             )
 
         except Exception as e:

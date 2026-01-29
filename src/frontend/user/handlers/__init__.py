@@ -58,20 +58,33 @@ class UserRouter:
         )
 
     async def get_pages(self, *, page: int = 1, request: Request) -> None:
-        result = await self.manga_manager.get_manga_pages(page)
+        pages, result = await self.manga_manager.get_manga_pages(page)
         if not result:
-            return HTMLResponse(content="No pages found", status_code=404)
+            return self.templates.TemplateResponse(
+                "404.html",
+                status_code=404,
+                context={"request": request}
+            )
 
         return self.templates.TemplateResponse(
             "index.html",
-            context={"request": request, "mangas": [x.as_dict() for x in result]},
+            context={
+                "request": request,
+                "mangas": [x.as_dict() for x in result],
+                "total": pages,
+                "page_now": page,
+            },
         )
 
     async def get_manga(self, *, manga_sku: str, request: Request) -> None:
         manga = await self.manga_manager.get_manga_by_sku(sku=manga_sku)
 
         if manga is None:
-            raise HTTPException(status_code=404, message="Manga not found")
+            return self.templates.TemplateResponse(
+                "404.html",
+                status_code=404,
+                context={"request": request}
+            )
 
         return self.templates.TemplateResponse(
             "manga.html", context={"request": request, "manga": manga.as_dict()}

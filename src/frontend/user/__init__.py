@@ -13,9 +13,8 @@ TEMPLATES = USER_FILES / "templates"
 STATIC = USER_FILES / "static"
 
 
-def setup_user(manager: MangaManager) -> APIRouter:
+def setup_user(manager: MangaManager, templates: Jinja2Templates) -> APIRouter:
     router = APIRouter()
-    templates = Jinja2Templates(TEMPLATES)
     user_router = UserRouter(manga_manager=manager, templates=templates, static=STATIC)
 
     router.include_router(user_router.router)

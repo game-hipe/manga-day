@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main>
+    <link rel="stylesheet" href="/static/css/404.css">
+    <div class="error-message">
+        <img src="/static/images/404.png" alt="404 Изображение - Потерявшийся человек с фонариком в тёмной пещере">
+        <h1>Похоже, вы потерялись в тёмных глубинах сайта!</h1>
+        <h2>404</h2>
+        <button onclick="window.location.assign('/');">Вернуться на главную</button>
+    </div> 
+</main>
+{% endblock %}

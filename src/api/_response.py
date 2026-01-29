@@ -10,3 +10,10 @@ class BaseResponse(BaseModel, Generic[_T]):
     message: str
 
     result: _T | None = Field(default=None)
+
+class CountResponse(BaseModel, Generic[_T]):
+    status: bool
+    message: str
+
+    result: _T | None = Field(default=None)
+    count: int
