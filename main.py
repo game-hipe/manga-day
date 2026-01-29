@@ -11,6 +11,7 @@ from src.core.manager.manga import MangaManager
 from src.core.manager.spider import SpiderManager
 from src.bot import start_bot
 from src.api import start_api
+from src.frontend import start_frontend
 from src.core import SpiderScheduler
 
 
@@ -26,9 +27,10 @@ async def main():
         scheduler = SpiderScheduler(spider)
 
         await asyncio.gather(
-            start_bot(spider=spider),
-            start_api(manga_manager = api),
-            scheduler.start(),
+            #start_bot(spider=spider),
+            #start_api(manager = api),
+            start_frontend(manager = api)
+            #scheduler.start(),
         )
         
         await engine.dispose()
@@ -41,5 +43,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info("Программа прервана пользователем.")
 
-    except Exception as e:
-        logger.critical(f"Произошла ошибка: {e}")
+    #except Exception as e:
+    #    logger.critical(f"Произошла ошибка: {e}")
+#

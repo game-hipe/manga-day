@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main>
+    <link rel="stylesheet" href="/static/gallery.css">
+    <div class="container index-container">
+        <h2>Новинки</h2>
+        <div id="dle-content">
+            {% for manga in mangas %}
+                <div class="gallery">
+                    <a href="/manga/{{ manga.sku }}">
+                        <img src={{ manga.poster }} alt={{ manga.title }}>
+                        <div class="caption">
+                            {{ manga.title }}
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</main>
+{% endblock %}

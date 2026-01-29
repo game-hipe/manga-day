@@ -4,21 +4,21 @@ from fastapi import FastAPI
 
 from .handlers.endpoints import Endpoints
 from ..core.manager.manga import MangaManager
+from ..core import config
 
-
-def setup_api(manga_manager: MangaManager) -> FastAPI:
+def setup_api(manager: MangaManager) -> FastAPI:
     app = FastAPI(title = "Manga-Day API")
     
-    endpoint = Endpoints(manga_manager)
+    endpoint = Endpoints(manager)
     app.include_router(endpoint.router)
     
     return app
 
-async def start_api(manga_manager: MangaManager) -> None:
-    app = setup_api(manga_manager)
+async def start_api(manager: MangaManager) -> None:
+    app = setup_api(manager)
     
     _config = uvicorn.Config(
-        app, host = "127.0.0.1", port = 8000
+        app, host = "127.0.0.1", port=config.api.backend_port
     )
     
     server = uvicorn.Server(_config)

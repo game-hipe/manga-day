@@ -10,6 +10,11 @@ __all__ = ["config"]
 CONFIG_FILE = "config.yaml"
 
 
+class ApiConfig(BaseModel):
+    frontend_port: int = Field(8000)
+    backend_port: int = Field(8080)
+
+
 class LoggingConfig(BaseModel):
     level: str = Field("INFO")
     file_level: str = Field("INFO")
@@ -38,6 +43,7 @@ class Config(BaseModel):
     update: UpdateConfig
     bot: BotConfig
     database: DataBaseConfig
+    api: ApiConfig
 
 
 def load_config():

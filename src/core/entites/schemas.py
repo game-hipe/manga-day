@@ -24,6 +24,14 @@ class BaseManga(BaseModel):
         if self.title and self.url:
             data = self.title.encode("utf-8")
             return hashlib.sha256(data).hexdigest()[:32]
+        
+    def as_dict(self) -> dict:
+        return {
+            "title": self.title,
+            "url": self.url,
+            "poster": self.poster,
+            "sku": self.sku
+        }
 
 
 class MangaSchema(BaseManga):

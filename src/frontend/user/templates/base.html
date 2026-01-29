@@ -4,8 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manga-Day интересная манга на сегодня</title>
+    <link rel="stylesheet" href="/static/base.css">
 </head>
 <body>
-    
+    <header>
+        <nav role="navigation">
+            <a class="logo" href="/">
+                <img src="/static/logo.png" alt="Manga-Day">
+            </a>
+        </nav>
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <footer>
+        <div class="footer-container">
+            <p>© 2026 Manga-Day</p>
+        </div>
+    </footer>
+
 </body>
 </html>
