@@ -11,6 +11,7 @@ class BaseResponse(BaseModel, Generic[_T]):
 
     result: _T | None = Field(default=None)
 
+
 class CountResponse(BaseModel, Generic[_T]):
     status: bool
     message: str

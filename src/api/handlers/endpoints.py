@@ -26,10 +26,10 @@ class Endpoints:
         total, result = await self.manga_manager.get_manga_pages(page)
         try:
             return CountResponse(
-                status = True,
-                message = f"Удалось достать {len(result)} манги",
-                result = result,
-                count = total
+                status=True,
+                message=f"Удалось достать {len(result)} манги",
+                result=result,
+                count=total,
             )
 
         except Exception as e:

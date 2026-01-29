@@ -105,8 +105,12 @@ class MangaManager:
                     poster=manga.poster,
                     url=manga.url,
                     genres=genres,
-                    author=ObjectWithId(name=manga.author, id=author.id),
-                    language=ObjectWithId(name=manga.language, id=language.id),
+                    author=ObjectWithId(name=manga.author, id=author.id)
+                    if author
+                    else None,
+                    language=ObjectWithId(name=manga.language, id=language.id)
+                    if language
+                    else None,
                     gallery=manga.gallery,
                     id=result.id,
                 )
@@ -219,7 +223,7 @@ class MangaManager:
             list[BaseManga]: Список манги без детальной информации.
         """
         per_page = per_page or self.BASE_PER_PAGE
-        
+
         if page < 1:
             logger.error(f"Неверный номер страницы (page={page})")
             raise ValueError("Неверный номер страницы")
@@ -229,25 +233,24 @@ class MangaManager:
             raise ValueError("Неверное количество манги на странице")
 
         async with self.Session() as session:
+
             async def get_page():
                 if result := await session.scalars(
-                    select(Manga)
-                    .offset((page - 1) * (per_page))
-                    .limit(per_page)
+                    select(Manga).offset((page - 1) * (per_page)).limit(per_page)
                 ):
                     return [
                         BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
                         for manga in result
                     ]
-            
+
                 logger.warning(f"Манга не найдена (page={page})")
                 return []
-            
+
             total, r = await asyncio.gather(
                 session.scalar(select(func.count()).select_from(Manga)),
                 get_page(),
             )
-            
+
             return math.ceil(total / per_page), r
 
     async def get_manga_by_filter(
@@ -325,8 +328,7 @@ class MangaManager:
             query = query.offset((page - 1) * (per_page or self.BASE_PER_PAGE)).limit(
                 per_page or self.BASE_PER_PAGE
             )
-            
-            
+
             mangas = await session.scalars(query)
             results = list(mangas)
 

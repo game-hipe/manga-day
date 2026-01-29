@@ -20,23 +20,21 @@ def build_base_response(app: FastAPI, templates: Jinja2Templates):
     @app.exception_handler(404)
     async def not_found(request, exc):
         return templates.TemplateResponse(
-            "404.html",
-            status_code=404,
-            context={"request": request}
+            "404.html", status_code=404, context={"request": request}
         )
 
 
 def setup_frontend(manager: MangaManager) -> FastAPI:
     app = FastAPI(title="Manga Day", description="Сайт для просмотра мангиг")
     templates = Jinja2Templates(USER_TEMPLATES)
-    
-    #app.include_router(
+
+    # app.include_router(
     #    setup_admin()
-    #)
-    
+    # )
+
     app.include_router(setup_user(manager, templates))
     build_base_response(app, templates)
-        
+
     return app
 
 

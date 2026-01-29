@@ -20,7 +20,9 @@ class LoggingConfig(BaseModel):
     file_level: str = Field("INFO")
     file: str = Field("var/logs.log")
 
-    format: str = Field("{time:YYYY-MM-DD HH:mm} | {level} | {message}")
+    format: str = Field(
+        "<green>{time:YYYY-MM-DD HH:mm}</green> | <level>{level}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+    )
     rotation: str = Field("10 MB")
 
 

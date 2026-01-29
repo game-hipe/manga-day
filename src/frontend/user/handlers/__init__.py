@@ -61,9 +61,7 @@ class UserRouter:
         pages, result = await self.manga_manager.get_manga_pages(page)
         if not result:
             return self.templates.TemplateResponse(
-                "404.html",
-                status_code=404,
-                context={"request": request}
+                "404.html", status_code=404, context={"request": request}
             )
 
         return self.templates.TemplateResponse(
@@ -81,9 +79,7 @@ class UserRouter:
 
         if manga is None:
             return self.templates.TemplateResponse(
-                "404.html",
-                status_code=404,
-                context={"request": request}
+                "404.html", status_code=404, context={"request": request}
             )
 
         return self.templates.TemplateResponse(
