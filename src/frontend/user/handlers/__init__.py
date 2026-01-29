@@ -48,6 +48,14 @@ class UserRouter:
             tags=["frontend"],
             response_class=HTMLResponse
         )
+        
+        self.router.add_api_route(
+            "/manga/{manga_sku}",
+            self.get_manga,
+            tags=["frontend"],
+            response_class=HTMLResponse,
+            methods=["GET"]
+        )
 
     async def get_pages(self, *, page: int = 1, request: Request) -> None:
         result = await self.manga_manager.get_manga_pages(page)
@@ -66,7 +74,26 @@ class UserRouter:
                 ]
             }
         )
+    
+    async def get_manga(self, *, manga_sku: str, request: Request) -> None:
+        manga = await self.manga_manager.get_manga_by_sku(
+            sku = manga_sku
+        )
         
+        if manga is None:
+            raise HTTPException(
+                status_code=404,
+                message="Manga not found"
+            )
+            
+        return self.templates.TemplateResponse(
+            "manga.html",
+            context = {
+                "request": request,
+                "manga": manga.as_dict()
+            }
+        )
+    
     async def get_static(self, path: str) -> FileResponse:
         static_file = self.static / path
         if static_file.exists():

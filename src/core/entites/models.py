@@ -83,8 +83,8 @@ class Manga(Base):
     gallery: Mapped[Gallery] = relationship("Gallery", back_populates="manga")
 
     @property
-    def genres(self) -> list[str]:
-        return [genre.genre.name for genre in self.genres_connection]
+    def genres(self) -> list[Genre]:
+        return [genre.genre for genre in self.genres_connection]
 
     def to_dict(self) -> dict:
         return {

@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, AsyncEngine
 from loguru import logger
 
-from ..entites.schemas import MangaSchema, OutputMangaSchema, BaseManga, FiltersSchema
+from ..entites.schemas import MangaSchema, OutputMangaSchema, BaseManga, FiltersSchema, ObjectWithId
 from ..entites.models import Manga, Gallery, Language, Author, GenreManga, Genre
 
 
@@ -147,6 +147,36 @@ class MangaManager:
             )
             if manga is None:
                 logger.warning(f"Манга не найдена (url={url})")
+                return None
+
+            return self._build_manga(manga, id=manga.id)
+
+    async def get_manga_by_sku(self, sku: str) -> OutputMangaSchema | None:
+        """
+        Получает мангу по её SKU.
+
+        Загружает все связанные данные: автора, язык, жанры, галерею.
+
+        Args:
+            sku (str): sku манги.
+
+        Returns:
+            OutputMangaSchema | None: Данные манги или None, если не найдена.
+        """
+        async with self.Session() as session:
+            manga = await session.scalar(
+                select(Manga)
+                .where(Manga.sku == sku)
+                .options(
+                    joinedload(Manga.author),
+                    joinedload(Manga.language),
+                    selectinload(Manga.genres_connection).joinedload(GenreManga.genre),
+                    joinedload(Manga.gallery),
+                )
+                .execution_options(populate_existing=True)
+            )
+            if manga is None:
+                logger.warning(f"Манга не найдена (sku={sku})")
                 return None
 
             return self._build_manga(manga, id=manga.id)
@@ -380,9 +410,9 @@ class MangaManager:
                 title=manga.title,
                 poster=manga.poster,
                 url=manga.url,
-                genres=manga.genres,
-                author=manga.author.name,
-                language=manga.language.name,
+                genres=[ObjectWithId(name=genre.name, id=genre.id) for genre in manga.genres],
+                author=ObjectWithId(name=manga.author.name, id=manga.author_id),
+                language=ObjectWithId(name=manga.language.name, id=manga.language_id),
                 gallery=manga.gallery.urls,
                 **kw,
             )

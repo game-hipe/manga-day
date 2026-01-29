@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main>
+    <link rel="stylesheet" href="/static/manga.css">
+    <div id="info">
+        <div id="cover">
+            <img src="{{ manga.poster }}" alt="{{ manga.title }}">
+        </div>
+        <h1>{{ manga.title }}</h1>
+        <a href="{{ manga.url }}">Оригинал</a>
+    </div>
+    <div id="info-manga">
+        <div class="tags">
+            {% if manga.genres %}
+            <div class="tag">
+                <h2>Жанры</h2>
+                {% for genre in manga.genres %}
+                    <a href="/manga/tags/{{ genre.id }}">{{ genre.name }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if manga.author %}
+            <div class="tag">
+                <h2>Автор</h2>
+                <a href="/manga/author/{{ manga.author.id }}">{{ manga.author.name }}</a>
+            </div>
+            {% endif %}
+
+            {% if manga.language %}
+            <div class="tag">
+                <h2>Язык</h2>
+                <a href="/manga/author/{{ manga.language.id }}">{{ manga.language.name }}</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div id="gallery">
+        <h2>Галлерея</h2>
+        {% for image in manga.gallery %}
+        <div class="container-gallery">
+            <img src="{{ image }}" alt="{{ manga.title }}">
+        </div>
+        {% endfor %}
+    </div>
+</main>
+
+<script>
+// Модальное окно для галереи
+document.addEventListener('DOMContentLoaded', function() {
+    const galleryImages = document.querySelectorAll('.container-gallery img');
+    const modal = document.createElement('div');
+    const modalContent = document.createElement('img');
+    const closeBtn = document.createElement('button');
+    const prevBtn = document.createElement('button');
+    const nextBtn = document.createElement('button');
+    const counter = document.createElement('div');
+    
+    let currentImageIndex = 0;
+    
+    // Создаем модальное окно
+    modal.className = 'modal';
+    modalContent.className = 'modal-content';
+    closeBtn.className = 'close-modal';
+    closeBtn.innerHTML = '&times;';
+    prevBtn.className = 'nav-btn prev-btn';
+    prevBtn.innerHTML = '&#10094;';
+    nextBtn.className = 'nav-btn next-btn';
+    nextBtn.innerHTML = '&#10095;';
+    counter.className = 'modal-counter';
+    
+    // Добавляем элементы в модальное окно
+    const controls = document.createElement('div');
+    controls.className = 'modal-controls';
+    controls.appendChild(closeBtn);
+    modal.appendChild(modalContent);
+    modal.appendChild(controls);
+    modal.appendChild(prevBtn);
+    modal.appendChild(nextBtn);
+    modal.appendChild(counter);
+    document.body.appendChild(modal);
+    
+    // Функция для открытия модального окна
+    function openModal(index) {
+        currentImageIndex = index;
+        updateModalImage();
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    // Функция для обновления изображения в модальном окне
+    function updateModalImage() {
+        const imageSrc = galleryImages[currentImageIndex].src;
+        modalContent.src = imageSrc;
+        modalContent.alt = galleryImages[currentImageIndex].alt;
+        counter.textContent = `${currentImageIndex + 1} / ${galleryImages.length}`;
+    }
+    
+    // Закрытие модального окна
+    function closeModal() {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+    
+    // Переключение между изображениями
+    function prevImage() {
+        currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
+        updateModalImage();
+    }
+    
+    function nextImage() {
+        currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
+        updateModalImage();
+    }
+    
+    // Добавляем обработчики событий для каждого изображения
+    galleryImages.forEach((img, index) => {
+        img.style.cursor = 'pointer';
+        img.addEventListener('click', () => openModal(index));
+    });
+    
+    // Обработчики событий для элементов управления
+    closeBtn.addEventListener('click', closeModal);
+    prevBtn.addEventListener('click', prevImage);
+    nextBtn.addEventListener('click', nextImage);
+    
+    // Закрытие по клику на фон
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+    
+    // Закрытие по клавише ESC
+    document.addEventListener('keydown', function(e) {
+        if (modal.style.display === 'flex') {
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'ArrowLeft') prevImage();
+            if (e.key === 'ArrowRight') nextImage();
+        }
+    });
+});
+</script>
+
+{% endblock %}
