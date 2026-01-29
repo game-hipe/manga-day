@@ -1,6 +1,6 @@
 from typing import overload
 
-from sqlalchemy import select
+from sqlalchemy import select, bindparam
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, AsyncEngine
 from loguru import logger
@@ -191,9 +191,21 @@ class MangaManager:
             page (int): Номер страницы (начинается с 1).
             per_page (int | None): Количество манги на странице. По умолчанию — BASE_PER_PAGE.
 
+        Raises:
+            ValueError: Если номер страницы меньше 1.
+            ValueError: Если количество манги на странице меньше 1.
+
         Returns:
             list[BaseManga]: Список манги без детальной информации.
         """
+        if page < 1:
+            logger.error(f"Неверный номер страницы (page={page})")
+            raise ValueError("Неверный номер страницы")
+
+        elif per_page < 1:
+            logger.error(f"Неверное количество манги на странице (per_page={per_page})")
+            raise ValueError("Неверное количество манги на странице")
+
         async with self.Session() as session:
             if result := await session.scalars(
                 select(Manga)
@@ -224,6 +236,14 @@ class MangaManager:
         Returns:
             list[BaseManga]: Список подходящих манги.
         """
+        if page < 1:
+            logger.error(f"Неверный номер страницы (page={page})")
+            raise ValueError("Неверный номер страницы")
+
+        elif per_page < 1:
+            logger.error(f"Неверное количество манги на странице (per_page={per_page})")
+            raise ValueError("Неверное количество манги на странице")
+
         async with self.Session() as session:
             language = None
             author = None
@@ -264,7 +284,7 @@ class MangaManager:
 
             query = select(Manga)
             if filter.title is not None:
-                query = query.where(Manga.title.ilike(f"%{filter.title}%"))
+                query = query.where(Manga.title.ilike(bindparam(filter.title)))
             if language is not None:
                 query = query.where(Manga.language_id == language.id)
             if author is not None:
