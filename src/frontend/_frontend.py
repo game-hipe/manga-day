@@ -42,7 +42,7 @@ async def start_frontend(manager: MangaManager) -> None:
     app = setup_frontend(manager)
 
     _config = uvicorn.Config(
-        app, host="0.0.0.0", port=config.api.frontend_port, reload=True
+        app, host="0.0.0.0", port=config.api.frontend_port
     )
     server = uvicorn.Server(_config)
 
