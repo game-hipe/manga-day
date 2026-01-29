@@ -108,9 +108,9 @@ class Manga(Base):
         if self.title and self.url:
             data = self.title.encode("utf-8")
             self.sku = hashlib.sha256(data).hexdigest()[:32]
-    
+
     __table_args__ = (
-        Index('idx_sku', 'sku'),
-        Index('idx_title', 'title'),
-        Index('idx_url', 'url'),
+        Index("idx_sku", "sku"),
+        Index("idx_title", "title"),
+        Index("idx_url", "url"),
     )

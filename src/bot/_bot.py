@@ -13,6 +13,7 @@ from .handlers.commands import CommandsHandler
 from .middleware.admins import AdminMiddleware
 from ._alert import BotAlert
 
+
 class BotConfig(TypedDict):
     spider: SpiderManager
     token: str | None = None
@@ -56,7 +57,7 @@ async def setup_bot(**kwargs: Unpack[BotConfig]):
 
             dp.include_routers(handler.router)
             dp.message.middleware(AdminMiddleware(config.bot.admins))
-            
+
             logger.info("Бот ицилизирован")
             yield bot, dp
     finally:

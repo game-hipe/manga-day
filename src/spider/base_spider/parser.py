@@ -19,9 +19,11 @@ class GlobalMangaParser(BaseMangaParser):
             if tag.next_element is None:
                 continue
             tag_name = tag.next_element.get_text(strip=True).lower()
-            
+
             if tag_name in self.TAGS:
-                tags[self.TAGS[tag_name]] = [t.get_text(strip=True) for t in tag.select("a.tag")]
+                tags[self.TAGS[tag_name]] = [
+                    t.get_text(strip=True) for t in tag.select("a.tag")
+                ]
 
             if tag_name in self.TAGS:
                 tags[self.TAGS[tag_name]] = (
@@ -65,7 +67,7 @@ class GlobalMangaParser(BaseMangaParser):
 
 class GlobalPageParser(BasePageParser):
     SELECTOR = ""
-    
+
     def _parse_html(self, soup):
         exc = 0
         total = 0

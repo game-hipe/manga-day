@@ -8,5 +8,5 @@ _T = TypeVar("_T")
 class BaseResponse(BaseModel, Generic[_T]):
     status: bool
     message: str
-    
-    result: _T | None = Field(default = None)
+
+    result: _T | None = Field(default=None)

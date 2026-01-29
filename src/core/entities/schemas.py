@@ -4,6 +4,22 @@ from aiohttp import BasicAuth
 from pydantic import BaseModel, HttpUrl, Field
 
 
+class ObjectWithId(BaseModel):
+    """
+    Схема для хранения объекта с id
+
+    Args:
+        name (str): название объекта
+        id (int): id объекта
+    """
+
+    name: str
+    id: int
+
+    def as_dict(self):
+        return {"name": self.name, "id": self.id}
+
+
 class BaseManga(BaseModel):
     """
     Схема для хранение базовой версии манги
@@ -24,13 +40,13 @@ class BaseManga(BaseModel):
         if self.title and self.url:
             data = self.title.encode("utf-8")
             return hashlib.sha256(data).hexdigest()[:32]
-        
+
     def as_dict(self) -> dict:
         return {
             "title": self.title,
             "url": self.url,
             "poster": self.poster,
-            "sku": self.sku
+            "sku": self.sku,
         }
 
 
@@ -59,36 +75,20 @@ class OutputMangaSchema(MangaSchema):
     Args:
         id (int): Внутренний ID либо сайта, либо БД
     """
+
     genres: list[ObjectWithId] = Field(default_factory=list)
     author: ObjectWithId | None = Field(default=None)
     language: ObjectWithId | None = Field(default=None)
-    
+
     id: int
-    
+
     def as_dict(self):
         return super().as_dict() | {
             "id": self.id,
             "genres": [x.as_dict() for x in self.genres],
             "author": self.author.as_dict(),
             "language": self.language.as_dict(),
-            "gallery": [str(x) for x  in self.gallery]
-        }
-
-class ObjectWithId(BaseModel):
-    """
-    Схема для хранения объекта с id
-    
-    Args:
-        name (str): название объекта
-        id (int): id объекта
-    """
-    name: str
-    id: int
-    
-    def as_dict(self):
-        return {
-            "name": self.name,
-            "id": self.id
+            "gallery": [str(x) for x in self.gallery],
         }
 
 

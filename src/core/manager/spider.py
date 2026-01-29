@@ -113,6 +113,7 @@ class SpiderManager:
             await asyncio.gather(*self.tasks, return_exceptions=True)
             await self.alert("Парсинг прерван.")
 
+        finally:
             self.tasks.clear()
             self.spider_tasks.clear()
 
@@ -155,6 +156,7 @@ class SpiderManager:
                     logger.warning(f"Задача {task.get_name()} не завершилась")
         except Exception as e:
             logger.error(f"Ошибка при остановке: {e}")
+
         finally:
             self.tasks.clear()
             self.spider_tasks.clear()

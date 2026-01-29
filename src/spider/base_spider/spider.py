@@ -11,10 +11,10 @@ from .parser import GlobalMangaParser, GlobalPageParser
 
 class BaseMangaSpider(BaseSpider):
     PAGE_URL = "/page/{page}/"
-    
+
     MANGA_PARSER: type[GlobalMangaParser]
     PAGE_PARSER: type[GlobalPageParser]
-    
+
     async def get(self, url):
         parser = self.MANGA_PARSER(self.BASE_URL, self.features)
 

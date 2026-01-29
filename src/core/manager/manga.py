@@ -5,7 +5,13 @@ from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, AsyncEngine
 from loguru import logger
 
-from ..entities.schemas import MangaSchema, OutputMangaSchema, BaseManga, FiltersSchema, ObjectWithId
+from ..entities.schemas import (
+    MangaSchema,
+    OutputMangaSchema,
+    BaseManga,
+    FiltersSchema,
+    ObjectWithId,
+)
 from ..entities.models import Manga, Gallery, Language, Author, GenreManga, Genre
 
 
@@ -430,7 +436,9 @@ class MangaManager:
                 title=manga.title,
                 poster=manga.poster,
                 url=manga.url,
-                genres=[ObjectWithId(name=genre.name, id=genre.id) for genre in manga.genres],
+                genres=[
+                    ObjectWithId(name=genre.name, id=genre.id) for genre in manga.genres
+                ],
                 author=ObjectWithId(name=manga.author.name, id=manga.author_id),
                 language=ObjectWithId(name=manga.language.name, id=manga.language_id),
                 gallery=manga.gallery.urls,

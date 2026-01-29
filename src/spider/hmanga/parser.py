@@ -1,5 +1,6 @@
 from ..base_spider.parser import GlobalMangaParser, GlobalPageParser
 
+
 class MangaParser(GlobalMangaParser):
     TAGS = {"contents": "genres", "artist": "author", "language": "language"}
 
