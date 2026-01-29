@@ -21,36 +21,39 @@ class GlobalMangaParser(BaseMangaParser):
             tag_name = tag.next_element.get_text(strip=True).lower()
 
             if tag_name in self.TAGS:
-                tags[self.TAGS[tag_name]] = [
-                    t.get_text(strip=True) for t in tag.select("a.tag")
-                ]
+                if self.TAGS[tag_name] == 'genres':
+                    tags[self.TAGS[tag_name]] = [
+                        t.get_text(strip=True) for t in tag.select("a.tag")
+                    ]
 
-            if tag_name in self.TAGS:
-                tags[self.TAGS[tag_name]] = (
-                    tag.select_one("a.tag").get_text(strip=True)
-                    if tag.select_one("a.tag")
-                    else None
-                )
-
-            if tag_name in self.TAGS:
-                tags[self.TAGS[tag_name]] = (
-                    tag.select_one("a.tag").get_text(strip=True)
-                    if tag.select_one("a.tag")
-                    else None
-                )
+                else:
+                    tags[self.TAGS[tag_name]] = (
+                        tag.select_one("a.tag").get_text(strip=True)
+                        if tag.select_one("a.tag")
+                        else None
+                    )
 
         gallery = [
             self.urljoin(img.get("data-src"))
             for img in soup.select("div#thumbnail-container img")
             if img.get("data-src")
         ]
-
+        
+        logger.debug(f"Название: {title}")
+        logger.debug(f"Теги: {poster}")
+        logger.debug(f"URL: {url}")
+        
         if all([title, poster, url]):
             title = title.get_text(strip=True)
             poster = self.urljoin(poster.get("data-src"))
             url = url.get("href")
+        else:
+            raise ValueError(
+                "Не удалось извлечь данные из HTML. Пожалуйста, проверьте исходный код страницы."
+            )
 
         if all([title, poster, url]):
+            logger.debug(f"Теги: {tags}")
             return MangaSchema(
                 title=title, poster=poster, url=url, **tags, gallery=gallery
             )

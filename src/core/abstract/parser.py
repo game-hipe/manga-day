@@ -48,7 +48,7 @@ class BaseParser(Generic[_T], ABC):
 
     def parse(
         self,
-        markup: str | bytes | Any,
+        markup: _IncomingMarkup | Any,
         *,
         features: str | None = None,
         situation: SITUATION | None = None,
@@ -70,11 +70,6 @@ class BaseParser(Generic[_T], ABC):
         situation = situation or self.situation
 
         if situation == "html":
-            if not isinstance(markup, (str, bytes)):
-                raise TypeError(
-                    f"Для HTML парсинга markup должен быть str или bytes, "
-                    f"получено {type(markup).__name__}"
-                )
             return self._parse_html(self.build_soup(markup, features))
 
         elif situation == "json":

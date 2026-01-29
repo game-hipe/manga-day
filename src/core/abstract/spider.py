@@ -33,7 +33,7 @@ class BaseSpider(ABC):
     def __init__(
         self,
         session: RequestManager,
-        manager: MangaManager,
+        manager: MangaManager | None = None,
         features: str = None,
         batch: int = None,
     ) -> None:
@@ -42,7 +42,7 @@ class BaseSpider(ABC):
 
         Args:
             session (RequestManager): Управляемая сессия для выполнения HTTP-запросов.
-            manager (MangaManager): Менеджер для обработки и хранения данных о манге.
+            manager (MangaManager | None): Менеджер для обработки и хранения данных о манге. Если менеджер является None то функция "run" перестает работать. (по умолчанию None).
             features (str): Парсер, используемый для разбора HTML (по умолчанию 'html.parser').
             batch (int): Размер пачки для парсинга (по умолчанию 10).
         """
@@ -61,7 +61,7 @@ class BaseSpider(ABC):
 
         Args:
             session (aiohttp.ClientSession): Сессия для асинхронных HTTP-запросов.
-            manager (MangaManager): Менеджер для обработки и хранения данных о манге.
+            manager (MangaManager): Менеджер для обработки и хранения данных о манге. Если менеджер является None то функция "run" перестает работать. (по умолчанию None).
             features (str): Парсер, используемый для разбора HTML (по умолчанию 'html.parser').
             batch (int): Размер пачки для парсинга (по умолчанию 10).
             max_concurrents (int, опционально): Максимальное количество одновременных запросов.
@@ -76,7 +76,7 @@ class BaseSpider(ABC):
     def __init__(
         self,
         session: aiohttp.ClientSession | RequestManager,
-        manager: MangaManager,
+        manager: MangaManager | None = None,
         features: str = None,
         batch: int = None,
         **kwargs,
@@ -86,7 +86,7 @@ class BaseSpider(ABC):
 
         Args:
             session (aiohttp.ClientSession | RequestManager): Сессия или менеджер запросов.
-            manager (MangaManager): Менеджер для управления данными о манге.
+            manager (MangaManager): Менеджер для управления данными о манге. Если менеджер является None то функция "run" перестает работать. (по умолчанию None).
             features (str): Парсер HTML (по умолчанию 'html.parser').
             batch (int): Размер пачки для парсинга (по умолчанию 10).
             **kwargs: Дополнительные параметры, передаваемые в RequestManager при необходимости.
@@ -122,6 +122,11 @@ class BaseSpider(ABC):
         Args:
             start_page (int | None): Стартовая страница для парсинга.
         """
+        if self.manager is None:
+            raise AttributeError(
+                "Менеджер не был передан, функция 'run' не работает"
+            )
+            
         async for page_batch in self.pages(start_page):
             tasks: list[Awaitable[Optional[MangaSchema]]] = []
             for page in page_batch:
@@ -134,7 +139,7 @@ class BaseSpider(ABC):
                 result = await manga
                 if result is None:
                     continue
-
+                
                 await self.manager.add_manga(result)
 
     @abstractmethod
@@ -177,5 +182,10 @@ class BaseSpider(ABC):
                 "BASE_URL не должен быть https://example-manga.com"
             )
 
-        if not isinstance(self.manager, MangaManager):
+        if self.manager is None:
+            logger.warning(
+                "Менеджер не был передан, функция 'run' перестанет работать"
+            )
+            
+        elif not isinstance(self.manager, MangaManager):
             raise TypeError("manager должен быть MangaManager")

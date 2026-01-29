@@ -27,12 +27,13 @@ async def main():
         spider = SpiderManager(session, api, "lxml")
         scheduler = SpiderScheduler(spider)
 
-        await asyncio.gather(
-            start_bot(spider=spider),
-            start_api(manager=api),
-            start_frontend(manager=api),
-            scheduler.start(),
-        )
+        print(await spider.spiders[1].get("https://multi-manga.today/16126-moja-povsednevnaja-zhizn-s-sestroj-grjaznulej-kotoroj-nuzhen-tolko-seks-esli-pobedish-sestrenku-to-ja-razreshu-tebe-konchit-bez-rezinki-boku-to.html"))
+        #await asyncio.gather(
+        #    start_bot(spider=spider),
+        #    start_api(manager=api),
+        #    start_frontend(manager=api),
+        #    scheduler.start(),
+        #)
 
         await engine.dispose()
 
