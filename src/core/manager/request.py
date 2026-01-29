@@ -9,7 +9,7 @@ from aiohttp.client import _RequestOptions
 from cachetools import TTLCache
 from loguru import logger
 
-from ..entites.schemas import ProxySchema
+from ..entities.schemas import ProxySchema
 
 ReturnType: TypeAlias = Literal["text", "read"]
 

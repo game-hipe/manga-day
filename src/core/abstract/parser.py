@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, _IncomingMarkup
 
-from ..entites.schemas import MangaSchema, BaseManga
+from ..entities.schemas import MangaSchema, BaseManga
 
 SITUATION = Literal["html", "json"]
 _T = TypeVar("_T")

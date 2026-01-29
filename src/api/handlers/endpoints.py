@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from ...core.manager.manga import MangaManager
-from ...core.entites.schemas import BaseManga
+from ...core.entities.schemas import BaseManga
 from .._response import BaseResponse
 
 class Endpoints:

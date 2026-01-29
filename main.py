@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from loguru import logger
 
 from src.core import config
-from src.core.entites.models import Base
+from src.core.entities.models import Base
 from src.core.manager.manga import MangaManager
 from src.core.manager.spider import SpiderManager
 from src.bot import start_bot
@@ -27,9 +27,9 @@ async def main():
         scheduler = SpiderScheduler(spider)
 
         await asyncio.gather(
-            #start_bot(spider=spider),
+            start_bot(spider=spider),
             #start_api(manager = api),
-            start_frontend(manager = api)
+            #start_frontend(manager = api)
             #scheduler.start(),
         )
         

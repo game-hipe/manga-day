@@ -10,7 +10,7 @@ from loguru import logger
 from ..core import config
 from ..core.manager.spider import SpiderManager
 from .handlers.commands import CommandsHandler
-from .middlware.admins import AdminMiddleware
+from .middleware.admins import AdminMiddleware
 from ._alert import BotAlert
 
 class BotConfig(TypedDict):

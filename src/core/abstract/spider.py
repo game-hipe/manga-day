@@ -9,7 +9,7 @@ from loguru import logger
 
 from ..manager.manga import MangaManager
 from ..manager.request import RequestManager, RequestItem
-from ..entites.schemas import MangaSchema, BaseManga
+from ..entities.schemas import MangaSchema, BaseManga
 
 
 class BaseSpider(ABC):

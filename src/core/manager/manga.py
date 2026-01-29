@@ -5,8 +5,8 @@ from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, AsyncEngine
 from loguru import logger
 
-from ..entites.schemas import MangaSchema, OutputMangaSchema, BaseManga, FiltersSchema, ObjectWithId
-from ..entites.models import Manga, Gallery, Language, Author, GenreManga, Genre
+from ..entities.schemas import MangaSchema, OutputMangaSchema, BaseManga, FiltersSchema, ObjectWithId
+from ..entities.models import Manga, Gallery, Language, Author, GenreManga, Genre
 
 
 class MangaManager:
