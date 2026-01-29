@@ -123,10 +123,8 @@ class BaseSpider(ABC):
             start_page (int | None): Стартовая страница для парсинга.
         """
         if self.manager is None:
-            raise AttributeError(
-                "Менеджер не был передан, функция 'run' не работает"
-            )
-            
+            raise AttributeError("Менеджер не был передан, функция 'run' не работает")
+
         async for page_batch in self.pages(start_page):
             tasks: list[Awaitable[Optional[MangaSchema]]] = []
             for page in page_batch:
@@ -139,7 +137,7 @@ class BaseSpider(ABC):
                 result = await manga
                 if result is None:
                     continue
-                
+
                 await self.manager.add_manga(result)
 
     @abstractmethod
@@ -183,9 +181,7 @@ class BaseSpider(ABC):
             )
 
         if self.manager is None:
-            logger.warning(
-                "Менеджер не был передан, функция 'run' перестанет работать"
-            )
-            
+            logger.warning("Менеджер не был передан, функция 'run' перестанет работать")
+
         elif not isinstance(self.manager, MangaManager):
             raise TypeError("manager должен быть MangaManager")

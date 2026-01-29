@@ -39,7 +39,7 @@ class MangaManager:
         self._engine = engine
         self.Session: async_sessionmaker[AsyncSession] = async_sessionmaker(engine)
 
-    async def add_manga(self, manga: MangaSchema) -> OutputMangaSchema | None:
+    async def add_manga(self, manga: MangaSchema) -> OutputMangaSchema:
         """
         Добавляет новую мангу в базу данных.
 
@@ -50,16 +50,26 @@ class MangaManager:
             manga (MangaSchema): Схема данных новой манги.
 
         Returns:
-            OutputMangaSchema: Добавленная манга с заполненными ID и связями. None, если манга уже существует.
+            OutputMangaSchema: Добавленная манга с заполненными ID и связями. OutputMangaSchema, если манга уже существует.
         """
         async with self.Session() as session:
             async with session.begin():
                 find_manga = await session.scalar(
-                    select(Manga).where(Manga.sku == manga.sku)
+                    select(Manga)
+                    .where(Manga.sku == manga.sku)
+                    .options(
+                        joinedload(Manga.author),
+                        joinedload(Manga.language),
+                        selectinload(Manga.genres_connection).joinedload(
+                            GenreManga.genre
+                        ),
+                        joinedload(Manga.gallery),
+                    )
+                    .execution_options(populate_existing=True)
                 )
                 if find_manga is not None:
                     logger.warning(f"Манга уже существует (sku={find_manga.sku})")
-                    return None
+                    return self._build_manga(find_manga, id=find_manga.id)
 
                 title = manga.title
                 url = str(manga.url)
@@ -84,15 +94,15 @@ class MangaManager:
                 session.add(result)
                 await session.flush()
 
-                await self._connect(result, manga, session)
+                genres = await self._connect(result, manga, session)
 
                 return OutputMangaSchema(
                     title=manga.title,
                     poster=manga.poster,
                     url=manga.url,
-                    genres=manga.genres,
-                    author=manga.author,
-                    language=manga.language,
+                    genres=genres,
+                    author=ObjectWithId(name=manga.author, id=author.id),
+                    language=ObjectWithId(name=manga.language, id=language.id),
                     gallery=manga.gallery,
                     id=result.id,
                 )
@@ -323,7 +333,7 @@ class MangaManager:
 
     async def _connect(
         self, manga: Manga, manga_schema: MangaSchema, session: AsyncSession
-    ) -> None:
+    ) -> list[ObjectWithId]:
         """
         Связывает мангу с жанрами и галереей.
 
@@ -333,15 +343,22 @@ class MangaManager:
             manga (Manga): Объект манги из БД.
             manga_schema (MangaSchema): Входные данные манги.
             session (AsyncSession): Активная сессия БД.
+
+        Returns:
+            list[ObjectWithId]: Список связанных объектов.
+
         """
+        result: list[ObjectWithId] = []
         for genre_name in manga_schema.genres:
             genre = await self._add_genre(session, genre_name)
             session.add(GenreManga(genre_id=genre.id, manga_id=manga.id))
+            result.append(ObjectWithId(id=genre.id, name=genre.name))
 
         gallery = Gallery(
             urls=[str(x) for x in manga_schema.gallery], manga_id=manga.id
         )
         session.add(gallery)
+        return result
 
     async def _add_author(self, session: AsyncSession, author: str) -> Author:
         """

@@ -21,7 +21,7 @@ class GlobalMangaParser(BaseMangaParser):
             tag_name = tag.next_element.get_text(strip=True).lower()
 
             if tag_name in self.TAGS:
-                if self.TAGS[tag_name] == 'genres':
+                if self.TAGS[tag_name] == "genres":
                     tags[self.TAGS[tag_name]] = [
                         t.get_text(strip=True) for t in tag.select("a.tag")
                     ]
@@ -38,11 +38,11 @@ class GlobalMangaParser(BaseMangaParser):
             for img in soup.select("div#thumbnail-container img")
             if img.get("data-src")
         ]
-        
+
         logger.debug(f"Название: {title}")
         logger.debug(f"Теги: {poster}")
         logger.debug(f"URL: {url}")
-        
+
         if all([title, poster, url]):
             title = title.get_text(strip=True)
             poster = self.urljoin(poster.get("data-src"))
