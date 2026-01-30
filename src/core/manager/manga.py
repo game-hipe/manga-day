@@ -473,8 +473,8 @@ class MangaManager:
                 genres=[
                     ObjectWithId(name=genre.name, id=genre.id) for genre in manga.genres
                 ],
-                author=ObjectWithId(name=manga.author.name, id=manga.author_id),
-                language=ObjectWithId(name=manga.language.name, id=manga.language_id),
+                author=ObjectWithId(name=manga.author.name, id=manga.author_id) if manga.author else None,
+                language=ObjectWithId(name=manga.language.name, id=manga.language_id) if manga.language else None,
                 gallery=manga.gallery.urls,
                 **kw,
             )
