@@ -94,8 +94,8 @@ class OutputMangaSchema(MangaSchema):
         return super().as_dict() | {
             "id": self.id,
             "genres": [x.as_dict() for x in self.genres],
-            "author": self.author.as_dict(),
-            "language": self.language.as_dict(),
+            "author": self.author.as_dict() if self.author else None,
+            "language": self.language.as_dict() if self.language else None,
             "gallery": [str(x) for x in self.gallery],
         }
 
