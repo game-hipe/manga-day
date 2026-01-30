@@ -31,7 +31,7 @@ async def main():
         scheduler = SpiderScheduler(spider)
 
         find = FindService(api)
-        
+
         await asyncio.gather(
             start_bot(spider=spider),
             start_api(manager=api),

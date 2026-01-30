@@ -44,8 +44,8 @@ class BaseManga(BaseModel):
     def as_dict(self) -> dict:
         return {
             "title": self.title,
-            "url": self.url,
-            "poster": self.poster,
+            "url": str(self.url),
+            "poster": str(self.poster),
             "sku": self.sku,
         }
 
@@ -66,6 +66,14 @@ class MangaSchema(BaseManga):
     language: str | None = Field(default=None)
 
     gallery: list[HttpUrl] = Field(default_factory=list)
+
+    def as_dict(self) -> dict:
+        return super().as_dict() | {
+            "genres": self.genres,
+            "author": self.author,
+            "language": self.language,
+            "gallery": [str(x) for x in self.gallery],
+        }
 
 
 class OutputMangaSchema(MangaSchema):
@@ -90,6 +98,23 @@ class OutputMangaSchema(MangaSchema):
             "language": self.language.as_dict(),
             "gallery": [str(x) for x in self.gallery],
         }
+
+    def to_manga(self) -> MangaSchema:
+        """
+        Преобразует OutputMangaSchema в MangaSchema
+
+        Returns:
+            MangaSchema: экземпляр MangaSchema
+        """
+        return MangaSchema(
+            title=self.title,
+            url=self.url,
+            poster=self.poster,
+            genres=[x.name for x in self.genres],
+            author=self.author.name if self.author else None,
+            language=self.language.name if self.language else None,
+            gallery=self.gallery,
+        )
 
 
 class FiltersSchema(BaseModel):

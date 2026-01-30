@@ -219,3 +219,130 @@ footer {
         height: 30px;
     }
 }
+/* Добавьте в base.css после стилей для nav */
+
+/* Стили для поиска */
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    margin-right: 20px;
+    flex-grow: 1;
+    max-width: 500px;
+}
+
+#find-table {
+    flex-grow: 1;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 25px;
+    background-color: #444;
+    color: white;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+#find-table:focus {
+    outline: none;
+    background-color: #555;
+    box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.5);
+}
+
+#find-table::placeholder {
+    color: #aaa;
+}
+
+.adventure-find {
+    background-color: #4dabf7;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+    font-family: Arial, sans-serif;
+}
+
+.adventure-find:hover {
+    background-color: #3a8bc8;
+    text-decoration: none;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Форма поиска */
+.search-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+/* Для мобильных устройств */
+@media (max-width: 768px) {
+    nav {
+        flex-wrap: wrap;
+    }
+    
+    .search-container {
+        order: 3;
+        margin: 10px 0 0 0;
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .adventure-find {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    #find-table {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .adventure-find {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+}
+
+/* Стили для сообщения об ошибке */
+.error-message {
+    color: #ff6b6b;
+    font-size: 14px;
+    margin-top: 5px;
+    display: none;
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Стили для поля с ошибкой */
+#find-table.error {
+    border: 2px solid #ff6b6b;
+    background-color: #5a1a1a;
+}
+
+/* Позиционирование для контейнера с ошибкой */
+.search-container {
+    position: relative;
+}
+
+.error-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1001;
+}

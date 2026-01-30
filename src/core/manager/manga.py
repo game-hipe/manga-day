@@ -4,7 +4,7 @@ from typing import overload
 
 from sqlalchemy import func
 
-from sqlalchemy import select, bindparam
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, AsyncEngine
 from loguru import logger
@@ -13,7 +13,6 @@ from ..entities.schemas import (
     MangaSchema,
     OutputMangaSchema,
     BaseManga,
-    FiltersSchema,
     ObjectWithId,
 )
 from ..entities.models import Manga, Gallery, Language, Author, GenreManga, Genre

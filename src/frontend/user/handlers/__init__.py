@@ -59,7 +59,7 @@ class UserRouter:
             response_class=HTMLResponse,
             methods=["GET"],
         )
-        
+
         self.router.add_api_route(
             "/manga/tags/{genre_id}",
             self.get_genres_pages,
@@ -67,7 +67,7 @@ class UserRouter:
             response_class=HTMLResponse,
             tags=["frontend"],
         )
-        
+
         self.router.add_api_route(
             "/manga/author/{author_id}",
             self.get_author_pages,
@@ -75,7 +75,7 @@ class UserRouter:
             response_class=HTMLResponse,
             tags=["frontend"],
         )
-        
+
         self.router.add_api_route(
             "/manga/language/{language_id}",
             self.get_language_pages,
@@ -84,6 +84,13 @@ class UserRouter:
             tags=["frontend"],
         )
 
+        self.router.add_api_route(
+            "/manga/find/{query}",
+            self.get_query_pages,
+            methods=["GET"],
+            response_class=HTMLResponse,
+            tags=["frontend"],
+        )
 
     async def get_pages(self, *, page: int = 1, request: Request) -> None:
         pages, result = await self.manga_manager.get_manga_pages(page)
@@ -114,11 +121,13 @@ class UserRouter:
             "manga.html", context={"request": request, "manga": manga.as_dict()}
         )
 
-    async def get_genres_pages(self, *, genre_id: int, page: int = 1, request: Request) -> None:
+    async def get_genres_pages(
+        self, *, genre_id: int, page: int = 1, request: Request
+    ) -> None:
         pages, result = await self.find_engine.get_pages_by_genre(genre_id, page)
         if not result:
             return self.templates.TemplateResponse(
-                "404.html", status_code=404, context={"request": request}
+                "not_found.html", status_code=404, context={"request": request}
             )
 
         return self.templates.TemplateResponse(
@@ -131,11 +140,13 @@ class UserRouter:
             },
         )
 
-    async def get_author_pages(self, *, author_id: int, page: int = 1, request: Request) -> None:
+    async def get_author_pages(
+        self, *, author_id: int, page: int = 1, request: Request
+    ) -> None:
         pages, result = await self.find_engine.get_pages_by_author(author_id, page)
         if not result:
             return self.templates.TemplateResponse(
-                "404.html", status_code=404, context={"request": request}
+                "not_found.html", status_code=404, context={"request": request}
             )
 
         return self.templates.TemplateResponse(
@@ -147,12 +158,33 @@ class UserRouter:
                 "page_now": page,
             },
         )
-        
-    async def get_language_pages(self, *,language_id: int, page: int = 1, request: Request) -> None:
+
+    async def get_language_pages(
+        self, *, language_id: int, page: int = 1, request: Request
+    ) -> None:
         pages, result = await self.find_engine.get_pages_by_language(language_id, page)
         if not result:
             return self.templates.TemplateResponse(
-                "404.html", status_code=404, context={"request": request}
+                "not_found.html", status_code=404, context={"request": request}
+            )
+
+        return self.templates.TemplateResponse(
+            "index.html",
+            context={
+                "request": request,
+                "mangas": [x.as_dict() for x in result],
+                "total": pages,
+                "page_now": page,
+            },
+        )
+
+    async def get_query_pages(
+        self, *, query: str, page: int = 1, request: Request
+    ) -> None:
+        pages, result = await self.find_engine.get_pages_by_query(query, page)
+        if not result:
+            return self.templates.TemplateResponse(
+                "not_found.html", status_code=404, context={"request": request}
             )
 
         return self.templates.TemplateResponse(
