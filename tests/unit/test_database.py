@@ -58,7 +58,7 @@ class TestAddMangaTest:
                 "https://example.com/gallery/2.jpg",
             ],
         )
-        
+
     @pytest.fixture
     def manga_without_genres(self):
         return MangaSchema(
@@ -72,7 +72,7 @@ class TestAddMangaTest:
                 "https://example.com/gallery/2.jpg",
             ],
         )
-        
+
     @pytest.fixture
     def manga_without_author(self):
         return MangaSchema(
@@ -86,7 +86,7 @@ class TestAddMangaTest:
                 "https://example.com/gallery/2.jpg",
             ],
         )
-        
+
     @pytest.fixture
     def manga_without_lanugaue(self):
         return MangaSchema(
@@ -177,19 +177,22 @@ class TestAddMangaTest:
         assert len(result.gallery) == 2
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("manga_fixture_name", [
-        "manga",
-        "manga_without_genres", 
-        "manga_without_author",
-        "manga_without_lanugaue"
-    ])
+    @pytest.mark.parametrize(
+        "manga_fixture_name",
+        [
+            "manga",
+            "manga_without_genres",
+            "manga_without_author",
+            "manga_without_lanugaue",
+        ],
+    )
     async def test_add_different_mangas(self, database, request, manga_fixture_name):
         """Тестирование добавления манги с разными наборами данных"""
         manga_data = request.getfixturevalue(manga_fixture_name)
-        
+
         result = await database.add_manga(manga_data)
-        
+
         assert isinstance(result.id, int)
-        
+
         retrieved = await database.get_manga(result.id)
         assert "Test Manga" in retrieved.title

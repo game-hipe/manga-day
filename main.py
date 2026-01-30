@@ -27,6 +27,7 @@ async def main():
         api = MangaManager(engine)
         spider = SpiderManager(session, api, "lxml")
         scheduler = SpiderScheduler(spider)
+
         await asyncio.gather(
             start_bot(spider=spider),
             start_api(manager=api),
@@ -44,5 +45,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info("Программа прервана пользователем.")
 
-    # except Exception as e:
-    #    logger.critical(f"Произошла ошибка: {e}")
+    except Exception as e:
+        logger.critical(f"Произошла ошибка: {e}")
