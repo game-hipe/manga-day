@@ -7,6 +7,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 
 from ....core.manager.manga import MangaManager
+from ....core.service.manga import FindService
 
 USER_FILES = Path(os.path.abspath(__file__)).parent.parent
 
@@ -16,9 +17,11 @@ class UserRouter:
         self,
         manga_manager: MangaManager,
         templates: Jinja2Templates,
+        find: FindService,
         static: Path | str | None = None,
     ):
         self._router = APIRouter(tags=["user"])
+        self.find_engine = find
         self.manga_manager = manga_manager
         self.templates = templates
         self.static = Path(static) or USER_FILES / "static"
@@ -56,6 +59,31 @@ class UserRouter:
             response_class=HTMLResponse,
             methods=["GET"],
         )
+        
+        self.router.add_api_route(
+            "/manga/tags/{genre_id}",
+            self.get_genres_pages,
+            methods=["GET"],
+            response_class=HTMLResponse,
+            tags=["frontend"],
+        )
+        
+        self.router.add_api_route(
+            "/manga/author/{author_id}",
+            self.get_author_pages,
+            methods=["GET"],
+            response_class=HTMLResponse,
+            tags=["frontend"],
+        )
+        
+        self.router.add_api_route(
+            "/manga/language/{language_id}",
+            self.get_language_pages,
+            methods=["GET"],
+            response_class=HTMLResponse,
+            tags=["frontend"],
+        )
+
 
     async def get_pages(self, *, page: int = 1, request: Request) -> None:
         pages, result = await self.manga_manager.get_manga_pages(page)
@@ -84,6 +112,57 @@ class UserRouter:
 
         return self.templates.TemplateResponse(
             "manga.html", context={"request": request, "manga": manga.as_dict()}
+        )
+
+    async def get_genres_pages(self, *, genre_id: int, page: int = 1, request: Request) -> None:
+        pages, result = await self.find_engine.get_pages_by_genre(genre_id, page)
+        if not result:
+            return self.templates.TemplateResponse(
+                "404.html", status_code=404, context={"request": request}
+            )
+
+        return self.templates.TemplateResponse(
+            "index.html",
+            context={
+                "request": request,
+                "mangas": [x.as_dict() for x in result],
+                "total": pages,
+                "page_now": page,
+            },
+        )
+
+    async def get_author_pages(self, *, author_id: int, page: int = 1, request: Request) -> None:
+        pages, result = await self.find_engine.get_pages_by_author(author_id, page)
+        if not result:
+            return self.templates.TemplateResponse(
+                "404.html", status_code=404, context={"request": request}
+            )
+
+        return self.templates.TemplateResponse(
+            "index.html",
+            context={
+                "request": request,
+                "mangas": [x.as_dict() for x in result],
+                "total": pages,
+                "page_now": page,
+            },
+        )
+        
+    async def get_language_pages(self, *,language_id: int, page: int = 1, request: Request) -> None:
+        pages, result = await self.find_engine.get_pages_by_language(language_id, page)
+        if not result:
+            return self.templates.TemplateResponse(
+                "404.html", status_code=404, context={"request": request}
+            )
+
+        return self.templates.TemplateResponse(
+            "index.html",
+            context={
+                "request": request,
+                "mangas": [x.as_dict() for x in result],
+                "total": pages,
+                "page_now": page,
+            },
         )
 
     async def get_static(self, path: str) -> FileResponse:

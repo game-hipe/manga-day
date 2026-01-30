@@ -16,6 +16,8 @@ from src.bot import start_bot
 
 from src.core import SpiderScheduler
 
+from src.core.service.manga import FindService
+
 
 async def main():
     async with aiohttp.ClientSession() as session:
@@ -28,10 +30,12 @@ async def main():
         spider = SpiderManager(session, api, "lxml")
         scheduler = SpiderScheduler(spider)
 
+        find = FindService(api)
+        
         await asyncio.gather(
             start_bot(spider=spider),
             start_api(manager=api),
-            start_frontend(manager=api),
+            start_frontend(manager=api, find=find),
             scheduler.start(),
         )
 

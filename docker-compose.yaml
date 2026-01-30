@@ -5,5 +5,9 @@ services:
     volumes:
       - manga-day:/app/var
 
+    ports:
+      - 8080
+      - 8000
+
 volumes:
   manga-day:

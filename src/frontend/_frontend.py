@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 
 from .user import setup_user
 from ..core.manager.manga import MangaManager
+from ..core.service.manga import FindService
 from ..core import config
 
 
@@ -24,7 +25,7 @@ def build_base_response(app: FastAPI, templates: Jinja2Templates):
         )
 
 
-def setup_frontend(manager: MangaManager) -> FastAPI:
+def setup_frontend(manager: MangaManager, find: FindService) -> FastAPI:
     app = FastAPI(title="Manga Day", description="Сайт для просмотра мангиг")
     templates = Jinja2Templates(USER_TEMPLATES)
 
@@ -32,14 +33,14 @@ def setup_frontend(manager: MangaManager) -> FastAPI:
     #    setup_admin()
     # )
 
-    app.include_router(setup_user(manager, templates))
+    app.include_router(setup_user(manager, templates, find))
     build_base_response(app, templates)
 
     return app
 
 
-async def start_frontend(manager: MangaManager) -> None:
-    app = setup_frontend(manager)
+async def start_frontend(manager: MangaManager, find: FindService) -> None:
+    app = setup_frontend(manager, find)
 
     _config = uvicorn.Config(app, host="0.0.0.0", port=config.api.frontend_port)
     server = uvicorn.Server(_config)
