@@ -4,10 +4,11 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramNotFound
 from loguru import logger
 
+from ..core.abstract.alert import BaseAlert
 from ..core import config
 
 
-class BotAlert:
+class BotAlert(BaseAlert):
     """Логика уведомлений бота"""
 
     def __init__(self, bot: Bot):

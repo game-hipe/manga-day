@@ -1,20 +1,16 @@
 import asyncio
 import importlib
 
-from typing import Unpack, Protocol, overload
+from typing import Unpack, overload
 
 import aiohttp
 
 from loguru import logger
 
 from ..abstract.spider import BaseSpider
+from ..abstract.alert import BaseAlert
 from .request import RequestManager, RequestItem
 from .manga import MangaManager
-
-
-class HasAlert(Protocol):
-    async def alert(self, message: str) -> None:
-        """Отправка уведомления о событии."""
 
 
 class SpiderManager:
@@ -89,6 +85,9 @@ class SpiderManager:
         )
 
     async def start_parsing(self):
+        """
+        Функция что-бы начать парсинг у всех в пауков.
+        """
         logger.info("Начало парсинга")
         await self.alert("Начало парсинга")
 
@@ -165,6 +164,7 @@ class SpiderManager:
         await self.alert("Парсинг остановлен")
 
     async def _run_parser(self, spider: BaseSpider) -> None:
+        """Запуска парсера"""
         try:
             await spider.run()
 
@@ -181,7 +181,8 @@ class SpiderManager:
             await self.alert(f"Парсер завершил работу {spider.__class__.__name__}")
 
     async def alert(self, message: str) -> None:
-        async def _send(message: str, alert_engine: HasAlert) -> None:
+        """Уведомить всех о событии."""
+        async def _send(message: str, alert_engine: BaseAlert) -> None:
             try:
                 await alert_engine.alert(message)
             except Exception as e:
@@ -191,7 +192,16 @@ class SpiderManager:
 
         await asyncio.gather(*[_send(message, alert) for alert in self._alerts])
 
-    def add_alert(self, alert: HasAlert) -> None:
+    def add_alert(self, alert: BaseAlert) -> None:
+        """Добавить уведомление."""
+        if not isinstance(alert, BaseAlert):
+            logger.warning(
+                "Не удалось добавить обработчик так-как он не наследуется от BaseAlert"
+            )
+            raise TypeError(
+                "Обработчик уведомлений должен быть наследником BaseAlert"
+            )
+
         if alert not in self._alerts:
             self._alerts.append(alert)
             logger.debug(
@@ -204,6 +214,7 @@ class SpiderManager:
 
     @property
     def status(self) -> str:
+        """Статус парсеров"""
         result = []
         if not self.tasks:
             return "Парсинг не запущен"
