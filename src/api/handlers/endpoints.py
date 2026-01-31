@@ -7,6 +7,7 @@ from .._response import BaseResponse, CountResponse
 
 class Endpoints:
     """Эндпоинты для API манги."""
+
     def __init__(self, manga_manager: MangaManager):
         """Иницилизация Endpoints
 

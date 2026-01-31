@@ -8,10 +8,14 @@ from ..core import config
 
 
 class BotAlert:
+    """Логика уведомлений бота"""
+
     def __init__(self, bot: Bot):
         self.bot = bot
 
     async def alert(self, message: str):
+        """Отправляет сообщение в чаты администраторов бота"""
+
         async def send(chat_id: int):
             try:
                 await self.bot.send_message(

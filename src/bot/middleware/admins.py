@@ -4,6 +4,10 @@ from typing import Callable, Any, Awaitable
 
 
 class AdminMiddleware(BaseMiddleware):
+    """
+    Мидлварь для проверки прав администратора.
+    Проверяет, что пользователь является администратором.
+    """
     def __init__(self, admin_ids: list[int]):
         super().__init__()
         self.admin_ids = admin_ids
