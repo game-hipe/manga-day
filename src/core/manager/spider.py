@@ -41,11 +41,13 @@ class SpiderManager:
         batch: int = None,
         **kwargs,
     ):
+        self._total: int = 0
         self._start: bool = False
         self._alerts: list[BaseAlert] = []
+        self._manager = manager
         self.tasks: list[asyncio.Task[None]] = []
         self.spider_tasks: dict[asyncio.Task, BaseSpider] = {}
-
+        
         self.spiders: list[BaseSpider] = []
         spider_module = importlib.import_module("...spider", package=__package__)
 
@@ -94,6 +96,8 @@ class SpiderManager:
             await self.alert("Парсинг уже начат")
             return
 
+        self._total = await self._manager.get_total()
+
         logger.info("Начало парсинга")
         await self.alert("Начало парсинга")
 
@@ -120,6 +124,13 @@ class SpiderManager:
             await self.alert("Парсинг прерван.")
 
         finally:
+            result = await self._manager.get_total()
+            
+            if result != self._total:
+                await self.alert(
+                    f"Парсинг завершен. Найдено {result - self._total} манги. Парсинг завершен."
+                )
+                
             self.tasks.clear()
             self.spider_tasks.clear()
             self._start = False
@@ -166,6 +177,13 @@ class SpiderManager:
             logger.error(f"Ошибка при остановке: {e}")
 
         finally:
+            result = await self._manager.get_total()
+            
+            if result != self._total:
+                await self.alert(
+                    f"Парсинг завершен. Найдено {result - self._total} манги. Парсинг завершен."
+                )
+              
             self.tasks.clear()
             self.spider_tasks.clear()
 

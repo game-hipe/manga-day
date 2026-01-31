@@ -259,6 +259,11 @@ class MangaManager:
 
             return False
 
+    async def get_total(self) -> int:
+        async with self.Session() as session:
+            total = await session.scalar(select(func.count()).select_from(Manga))
+            return total or 0
+    
     async def _connect(
         self, manga: Manga, manga_schema: MangaSchema, session: AsyncSession
     ) -> list[ObjectWithId]:
