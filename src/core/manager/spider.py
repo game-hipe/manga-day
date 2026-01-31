@@ -41,7 +41,7 @@ class SpiderManager:
         batch: int = None,
         **kwargs,
     ):
-        self._alerts: list[HasAlert] = []
+        self._alerts: list[BaseAlert] = []
         self.tasks: list[asyncio.Task[None]] = []
         self.spider_tasks: dict[asyncio.Task, BaseSpider] = {}
 
