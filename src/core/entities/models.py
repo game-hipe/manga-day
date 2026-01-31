@@ -8,6 +8,13 @@ class Base(DeclarativeBase): ...
 
 
 class Genre(Base):
+    """
+    Модель жанра
+    
+    Args:
+        id (int): id жанра
+        name (str): название жанра
+    """
     __tablename__ = "genres"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -19,6 +26,15 @@ class Genre(Base):
 
 
 class Author(Base):
+    """
+    Модель автора
+    
+    Args:
+        id (int): id автора
+        name (str): имя автора
+        
+        mangas (list[Manga]): список манги
+    """
     __tablename__ = "author"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -30,6 +46,15 @@ class Author(Base):
 
 
 class Language(Base):
+    """
+    Модель языка
+    
+    Args:
+        id (int): id языка
+        name (str): название языка
+        
+        mangas (list[Manga]): список манги
+    """
     __tablename__ = "language"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -41,6 +66,17 @@ class Language(Base):
 
 
 class GenreManga(Base):
+    """
+    Модель связи манги с жанрами
+    
+    Args:
+        id (int): id связи
+        genre_id (int): id жанра
+        manga_id (int): id манги
+        
+        genre (Genre): жанр
+        manga (Manga): манга
+    """
     __tablename__ = "genre_manga"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -52,6 +88,14 @@ class GenreManga(Base):
 
 
 class Gallery(Base):
+    """
+    Модель галереи
+    
+    Args:
+        id (int): id галереи
+        urls (list[str]): список ссылок на изображения
+        manga_id (int): id манги
+    """
     __tablename__ = "gallery"
     id: Mapped[int] = mapped_column(primary_key=True)
     urls: Mapped[list[str]] = mapped_column(JSON())
@@ -61,6 +105,24 @@ class Gallery(Base):
 
 
 class Manga(Base):
+    """
+    Модель манги
+    
+    Args:
+        id (int): id манги
+        title (str): название манги
+        url (str): ссылка на мангу
+        poster (str): ссылка на постер манги
+        language_id (int): id языка
+        author_id (int): id автора
+        sku (str): уникальный идентификатор манги
+        genres_connection (list[GenreManga]): список связей с жанрами
+        author (Author): автор манги
+        language (Language): язык манги
+        gallery (list[Gallery]): список ссылок на изображения
+        genres (list[Genre]): список жанров манги
+    
+    """
     __tablename__ = "mangas"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -86,7 +148,7 @@ class Manga(Base):
     def genres(self) -> list[Genre]:
         return [genre.genre for genre in self.genres_connection]
 
-    def to_dict(self) -> dict:
+    def as_dict(self) -> dict:
         return {
             "id": self.id,
             "title": self.title,
@@ -94,17 +156,32 @@ class Manga(Base):
             "poster": self.poster,
             "genres": self.genres,
             "author": self.author.name,
-            "langauge": self.language.name,
+            "language": self.language.name,
             "gallery": self.gallery.urls,
         }
 
     def __init__(self, **kw):
+        """Инициализирует экземпляр модели.
+
+        Вызывает родительский конструктор и при необходимости генерирует SKU
+        на основе заголовка и URL, если SKU ещё не установлен.
+
+        Args:
+            **kw: Аргументы для инициализации полей модели.
+        """
         super().__init__(**kw)
         if self.title and self.url and not self.sku:
             self.generate_sku()
 
     def generate_sku(self):
-        """Генерирует и устанавливает sku"""
+        """Генерирует и устанавливает уникальный идентификатор (SKU) на основе заголовка.
+
+        Использует SHA-256 хэш от названия манги (в кодировке UTF-8),
+        обрезает до 32 символов и присваивает полю `sku`.
+
+        Raises:
+            AttributeError: Если `title` равен None.
+        """
         if self.title and self.url:
             data = self.title.encode("utf-8")
             self.sku = hashlib.sha256(data).hexdigest()[:32]
