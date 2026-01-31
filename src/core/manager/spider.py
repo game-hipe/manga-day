@@ -41,6 +41,7 @@ class SpiderManager:
         batch: int = None,
         **kwargs,
     ):
+        self._start: bool = False
         self._alerts: list[BaseAlert] = []
         self.tasks: list[asyncio.Task[None]] = []
         self.spider_tasks: dict[asyncio.Task, BaseSpider] = {}
@@ -88,6 +89,11 @@ class SpiderManager:
         """
         Функция что-бы начать парсинг у всех в пауков.
         """
+        if self._start:
+            logger.info("Парсинг уже начат")
+            await self.alert("Парсинг уже начат")
+            return
+
         logger.info("Начало парсинга")
         await self.alert("Начало парсинга")
 
@@ -97,6 +103,7 @@ class SpiderManager:
             self.tasks.append(task)
 
         try:
+            self._start = True
             await asyncio.shield(asyncio.gather(*self.tasks, return_exceptions=True))
             await self.alert("Все парсеры завершили работу.")
 
@@ -115,9 +122,11 @@ class SpiderManager:
         finally:
             self.tasks.clear()
             self.spider_tasks.clear()
+            self._start = False
 
     async def stop_parsing(self, timeout: float = 10.0):
         """Остановка с таймаутом"""
+        self._start = False
         logger.info("Остановка парсинга")
         await self.alert("Остановка парсинга...")
 
@@ -182,6 +191,7 @@ class SpiderManager:
 
     async def alert(self, message: str) -> None:
         """Уведомить всех о событии."""
+
         async def _send(message: str, alert_engine: BaseAlert) -> None:
             try:
                 await alert_engine.alert(message)
@@ -198,9 +208,7 @@ class SpiderManager:
             logger.warning(
                 "Не удалось добавить обработчик так-как он не наследуется от BaseAlert"
             )
-            raise TypeError(
-                "Обработчик уведомлений должен быть наследником BaseAlert"
-            )
+            raise TypeError("Обработчик уведомлений должен быть наследником BaseAlert")
 
         if alert not in self._alerts:
             self._alerts.append(alert)

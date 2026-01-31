@@ -37,7 +37,7 @@ class BaseParser(Generic[_T], ABC):
     @overload
     def parse(
         self,
-        markup: _IncomingMarkup,
+        markup: _IncomingMarkup | BeautifulSoup,
         *,
         features: str | None = None,
         situation: Literal["html"] = "html",
@@ -48,7 +48,7 @@ class BaseParser(Generic[_T], ABC):
 
     def parse(
         self,
-        markup: _IncomingMarkup | Any,
+        markup: _IncomingMarkup | BeautifulSoup | Any,
         *,
         features: str | None = None,
         situation: SITUATION | None = None,
@@ -57,7 +57,7 @@ class BaseParser(Generic[_T], ABC):
         Парсит разметку в зависимости от типа.
 
         Args:
-            markup: HTML/JSON разметка
+            markup: HTML/JSON/BS4 разметка
             features: Парсер для BeautifulSoup (используется только для HTML)
             situation: Тип разметки ('html' или 'json')
 
@@ -70,6 +70,9 @@ class BaseParser(Generic[_T], ABC):
         situation = situation or self.situation
 
         if situation == "html":
+            if isinstance(markup, BeautifulSoup):
+                return self._parse_html(markup)
+
             return self._parse_html(self.build_soup(markup, features))
 
         elif situation == "json":

@@ -10,11 +10,12 @@ class Base(DeclarativeBase): ...
 class Genre(Base):
     """
     Модель жанра
-    
+
     Args:
         id (int): id жанра
         name (str): название жанра
     """
+
     __tablename__ = "genres"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -28,13 +29,14 @@ class Genre(Base):
 class Author(Base):
     """
     Модель автора
-    
+
     Args:
         id (int): id автора
         name (str): имя автора
-        
+
         mangas (list[Manga]): список манги
     """
+
     __tablename__ = "author"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -48,13 +50,14 @@ class Author(Base):
 class Language(Base):
     """
     Модель языка
-    
+
     Args:
         id (int): id языка
         name (str): название языка
-        
+
         mangas (list[Manga]): список манги
     """
+
     __tablename__ = "language"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -68,15 +71,16 @@ class Language(Base):
 class GenreManga(Base):
     """
     Модель связи манги с жанрами
-    
+
     Args:
         id (int): id связи
         genre_id (int): id жанра
         manga_id (int): id манги
-        
+
         genre (Genre): жанр
         manga (Manga): манга
     """
+
     __tablename__ = "genre_manga"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -90,12 +94,13 @@ class GenreManga(Base):
 class Gallery(Base):
     """
     Модель галереи
-    
+
     Args:
         id (int): id галереи
         urls (list[str]): список ссылок на изображения
         manga_id (int): id манги
     """
+
     __tablename__ = "gallery"
     id: Mapped[int] = mapped_column(primary_key=True)
     urls: Mapped[list[str]] = mapped_column(JSON())
@@ -107,7 +112,7 @@ class Gallery(Base):
 class Manga(Base):
     """
     Модель манги
-    
+
     Args:
         id (int): id манги
         title (str): название манги
@@ -121,8 +126,9 @@ class Manga(Base):
         language (Language): язык манги
         gallery (list[Gallery]): список ссылок на изображения
         genres (list[Genre]): список жанров манги
-    
+
     """
+
     __tablename__ = "mangas"
 
     id: Mapped[int] = mapped_column(primary_key=True)
