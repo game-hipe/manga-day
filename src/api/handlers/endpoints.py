@@ -6,13 +6,22 @@ from .._response import BaseResponse, CountResponse
 
 
 class Endpoints:
+    """Эндпоинты для API манги."""
     def __init__(self, manga_manager: MangaManager):
+        """Иницилизация Endpoints
+
+        Args:
+            manga_manager (MangaManager): Менеджер манги.
+        """
         self.manga_manager = manga_manager
         self._router = APIRouter(prefix="/api/v1", tags=["api"])
 
         self._setup_routes()
 
     def _setup_routes(self):
+        """
+        Настройка роутера добавление новых поинтов
+        """
         self._router.add_api_route(
             "/pages/{page}",
             self.get_pages,
@@ -23,6 +32,14 @@ class Endpoints:
         )
 
     async def get_pages(self, page: int) -> CountResponse[list[BaseManga] | None]:
+        """Получить страницу.
+
+        Args:
+            page (int): Номер страницы
+
+        Returns:
+            CountResponse[list[BaseManga] | None]: Результат даннных, с количеством страниц
+        """
         total, result = await self.manga_manager.get_manga_pages(page)
         try:
             return CountResponse(
@@ -37,4 +54,5 @@ class Endpoints:
 
     @property
     def router(self) -> APIRouter:
+        """Получить роутер."""
         return self._router

@@ -8,6 +8,14 @@ from ..core import config
 
 
 def setup_api(manager: MangaManager) -> FastAPI:
+    """Инцилизация API
+
+    Args:
+        manager (MangaManager): Менеджер манги
+
+    Returns:
+        FastAPI: Обьект FastAPI
+    """
     app = FastAPI(title="Manga-Day API")
 
     endpoint = Endpoints(manager)
@@ -17,6 +25,11 @@ def setup_api(manager: MangaManager) -> FastAPI:
 
 
 async def start_api(manager: MangaManager) -> None:
+    """Запускает API.
+
+    Args:
+        manager (MangaManager): Менеджер манги
+    """
     app = setup_api(manager)
 
     _config = uvicorn.Config(app, host="0.0.0.0", port=config.api.backend_port)
