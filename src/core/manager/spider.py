@@ -241,6 +241,6 @@ class SpiderManager:
                 else:
                     coro_status = "Завершён"
 
-            result.append(f"<b>{spider_name}</b> Статус: <b>{coro_status}</b>")
+            result.append(f"<b>{spider_name}</b> Статус: <b>{coro_status}</b>{f' - {spider.status}' if hasattr(spider, 'status') else ""}")
 
         return "\n".join(result)
