@@ -221,13 +221,13 @@ class MangaManager:
         Returns:
             list[BaseManga]: Список манги без детальной информации.
         """
-        per_page = per_page or self.BASE_PER_PAGE
+        per_page = per_page if per_page is not None else self.BASE_PER_PAGE
 
         if page < 1:
             logger.error(f"Неверный номер страницы (page={page})")
             raise ValueError("Неверный номер страницы")
 
-        elif per_page < 1:
+        if per_page < 1:
             logger.error(f"Неверное количество манги на странице (per_page={per_page})")
             raise ValueError("Неверное количество манги на странице")
 

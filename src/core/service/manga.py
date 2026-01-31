@@ -38,7 +38,7 @@ class FindService:
             logger.error(f"Неверный номер страницы (page={page})")
             raise ValueError("Неверный номер страницы")
 
-        elif per_page < 1:
+        if per_page < 1:
             logger.error(f"Неверное количество манги на странице (per_page={per_page})")
             raise ValueError("Неверное количество манги на странице")
 
@@ -191,7 +191,7 @@ class FindService:
             logger.error(f"Неверный номер страницы (page={page})")
             raise ValueError("Неверный номер страницы")
 
-        elif per_page < 1:
+        if per_page < 1:
             logger.error(f"Неверное количество манги на странице (per_page={per_page})")
             raise ValueError("Неверное количество манги на странице")
 
