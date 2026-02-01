@@ -30,3 +30,5 @@ class BotAlert(BaseAlert):
             *[asyncio.create_task(send(chat_id)) for chat_id in config.bot.admins],
             return_exceptions=True,
         )
+
+        return True

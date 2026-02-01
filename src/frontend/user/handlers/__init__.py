@@ -12,7 +12,7 @@ from ....core.service.manga import FindService
 USER_FILES = Path(os.path.abspath(__file__)).parent.parent
 
 
-class UserRouter:
+class UserHandler:
     def __init__(
         self,
         manga_manager: MangaManager,
@@ -201,7 +201,7 @@ class UserRouter:
         static_file = self.static / path
         if static_file.exists():
             return FileResponse(static_file)
-        raise HTTPException(status_code=404, message="File not found")
+        raise HTTPException(status_code=404)
 
     @property
     def router(self) -> APIRouter:

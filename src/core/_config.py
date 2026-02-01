@@ -1,7 +1,7 @@
 import sys
 
 from loguru import logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from yaml import full_load
 
 

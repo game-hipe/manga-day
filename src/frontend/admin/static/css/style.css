@@ -1,0 +1,296 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #f0f0f0;
+    padding: 20px;
+}
+
+main {
+    background: rgba(255, 255, 255, 0.08);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%;
+    max-width: 800px; /* Увеличим максимальную ширину */
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 80px; /* Минимальная высота */
+    max-height: 400px; /* Максимальная высота для скролла */
+    overflow-y: auto; /* Вертикальный скролл при необходимости */
+}
+
+.status h1 {
+    font-size: 28px;
+    font-weight: 600;
+    background: linear-gradient(90deg, #00dbde, #fc00ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Стили для списка статусов */
+.status ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.status li {
+    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 10px;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border-left: 4px solid #00dbde;
+    transition: all 0.3s ease;
+    word-break: break-word; /* Перенос длинных слов */
+    overflow-wrap: break-word; /* Перенос длинных слов */
+}
+
+.status li:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+/* Для h1 внутри li - другие стили */
+.status li h1 {
+    font-size: 16px; /* Уменьшаем размер шрифта */
+    font-weight: normal;
+    background: none;
+    -webkit-text-fill-color: #f0f0f0;
+    color: #f0f0f0;
+    text-shadow: none;
+    margin: 0;
+    text-align: left;
+    line-height: 1.4;
+}
+
+/* Стили для жирного текста внутри статуса */
+.status li h1 b {
+    font-weight: 600;
+    color: #00dbde; /* Цвет для выделенных частей */
+}
+
+.parsing-management {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+button {
+    padding: 16px 32px;
+    font-size: 18px;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 180px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#StartParsingButton {
+    background: linear-gradient(90deg, #00b09b, #96c93d);
+    color: white;
+}
+
+#StartParsingButton:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 176, 155, 0.3);
+}
+
+#StartParsingButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: linear-gradient(90deg, #555, #777);
+}
+
+#StopParsingButton {
+    background: linear-gradient(90deg, #ff416c, #ff4b2b);
+    color: white;
+}
+
+#StopParsingButton:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(255, 65, 108, 0.3);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* Контейнер для сообщений */
+.messages {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+    width: 100%;
+    z-index: 1000;
+}
+
+/* Стили для отдельных сообщений */
+.message {
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.5s ease, fadeOut 0.5s ease 3.5s forwards;
+    border-left: 6px solid;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.message h1 {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Цвета статусов */
+.message.info {
+    background-color: #ffffff;
+    border-left-color: #2196f3;
+    color: #1a1a2e;
+}
+
+.message.warning {
+    background-color: #fff3cd;
+    border-left-color: #ffc107;
+    color: #856404;
+}
+
+.message.error {
+    background-color: #f8d7da;
+    border-left-color: #dc3545;
+    color: #721c24;
+}
+
+.message.success {
+    background-color: #d4edda;
+    border-left-color: #28a745;
+    color: #155724;
+}
+
+.hide {
+    display: none !important;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+/* Полоса прокрутки для контейнера статуса */
+.status::-webkit-scrollbar {
+    width: 8px;
+}
+
+.status::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.status::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #00dbde, #fc00ff);
+    border-radius: 4px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    main {
+        padding: 25px;
+        max-width: 95%;
+    }
+    
+    .status {
+        padding: 15px;
+        max-height: 300px;
+    }
+    
+    .status li h1 {
+        font-size: 14px;
+    }
+    
+    .parsing-management {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    button {
+        width: 100%;
+        padding: 14px 28px;
+        font-size: 16px;
+    }
+    
+    .messages {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 480px) {
+    .status li {
+        padding: 10px 12px;
+    }
+    
+    .status li h1 {
+        font-size: 13px;
+    }
+}
+
+main {
+    flex: 1 0 auto;
+    width: 100%;
+    height: 100%;
+    max-height: 1200px;
+    max-width: 1200px;
+    margin: 0 auto;
+    
+    padding: 20px;
+    
+    background-color: var(--background-color);
+    color: var(--text-color);
+
+    border: 2px solid var(--background-color);
+}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ панель сайта - Manga-Day</title>
+    <link rel="stylesheet" href="/admin/static/css/style.css">
+</head>
+<body>
+    <script src="/admin/static/js/script.js"></script>
+    <main>
+        <div class="status" id="status">
+            <ul><li><h1>Ожидания статуса...</h1></li></ul>
+        </div>
+
+        <div class="parsing-management">
+            <button onclick="StartParsing()" id="StartParsingButton">Начать парсинг</button>
+            <button onclick="StopParsing()" id="StopParsingButton">Остановить парсинг</button>
+        </div>
+
+    </main>
+    <div class="messages">
+        <div class="message hide" id="message" >
+            <h1>
+                <span id="text"></span>
+            </h1>
+        </div>
+    </div>
+
+</body>
+</html>

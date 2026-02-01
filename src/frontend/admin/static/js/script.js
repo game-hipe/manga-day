@@ -1,0 +1,181 @@
+const ws = new WebSocket("ws://localhost:8000/admin/ws");
+const stat_ws = new WebSocket("ws://localhost:8000/admin/ws/status")
+
+// Массив для хранения текущих сообщений (для управления)
+let activeMessages = [];
+
+function UpdateStatus(message) {
+    const statusDiv = document.getElementById("status");
+    
+    if (!statusDiv) {
+        console.error("Элемент с id='status' не найден");
+        return;
+    }
+    
+    // Очищаем содержимое
+    statusDiv.innerHTML = '';
+    
+    // Разделяем сообщение по строкам
+    const lines = message.split('\n').filter(line => line.trim() !== '');
+    
+    if (lines.length === 0) {
+        // Если нет строк, создаем пустое сообщение
+        const emptyMessage = document.createElement("div");
+        emptyMessage.textContent = "Нет активных процессов";
+        emptyMessage.style.textAlign = "center";
+        emptyMessage.style.padding = "20px";
+        emptyMessage.style.opacity = "0.7";
+        statusDiv.appendChild(emptyMessage);
+        return;
+    }
+    
+    // Создаем список
+    const ul = document.createElement("ul");
+    
+    // Добавляем каждый статус
+    lines.forEach((line, index) => {
+        const li = document.createElement("li");
+        const h1 = document.createElement("h1");
+        
+        // Устанавливаем содержимое с сохранением HTML тегов
+        h1.innerHTML = line.trim();
+        
+        // Добавляем класс в зависимости от процента (опционально)
+        if (line.includes("- 0%")) {
+            li.style.borderLeftColor = "#ff416c"; // Красный для 0%
+        } else if (line.includes("- 100%")) {
+            li.style.borderLeftColor = "#00b09b"; // Зеленый для 100%
+        }
+        
+        li.appendChild(h1);
+        ul.appendChild(li);
+    });
+    
+    statusDiv.appendChild(ul);
+}
+
+// Пример использования:
+// UpdateStatus("Все системы работают нормально");
+
+function ShowMessage(message, status) {
+    const messagesContainer = document.querySelector('.messages');
+    
+    if (!messagesContainer) {
+        console.error('Контейнер для сообщений не найден!');
+        return;
+    }
+    
+    // Проверяем допустимые статусы
+    const validStatuses = ['info', 'warning', 'error', 'success'];
+    if (!validStatuses.includes(status)) {
+        console.warn(`Неизвестный статус: ${status}. Используется 'info' по умолчанию.`);
+        status = 'info';
+    }
+    
+    // Создаем новый элемент сообщения
+    const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const messageElement = document.createElement('div');
+    messageElement.id = messageId;
+    messageElement.className = `message ${status}`;
+    messageElement.innerHTML = `<h1><span>${message}</span></h1>`;
+    
+    // Добавляем сообщение в контейнер
+    messagesContainer.appendChild(messageElement);
+    
+    // Добавляем в массив активных сообщений
+    activeMessages.push({
+        id: messageId,
+        element: messageElement
+    });
+    
+    // Удаляем сообщение через 4 секунды (0.5s анимация + 3.5s показа)
+    setTimeout(() => {
+        const msgIndex = activeMessages.findIndex(msg => msg.id === messageId);
+        if (msgIndex !== -1) {
+            // Удаляем элемент из DOM
+            if (activeMessages[msgIndex].element && activeMessages[msgIndex].element.parentNode) {
+                activeMessages[msgIndex].element.remove();
+            }
+            // Удаляем из массива
+            activeMessages.splice(msgIndex, 1);
+        }
+    }, 4000);
+}
+
+function AcceptButton() {
+    const button = document.getElementById("StartParsingButton");
+    if (button) {
+        button.disabled = false;
+        button.style.opacity = "1";
+        button.style.cursor = "pointer";
+    }
+}
+
+function BlockButton() {
+    UpdateStatus("Ожидаем статистику!")
+    const button = document.getElementById("StartParsingButton");
+    if (button) {
+        button.disabled = true;
+        button.style.opacity = "0.5";
+        button.style.cursor = "not-allowed";
+    }
+}
+
+function OnAlert(event) {
+    var content = event.data;
+    console.log(content);
+    
+    if (content.startsWith("Парсинг завершен") || content.startsWith("Все парсеры завершили работу")) {
+        AcceptButton();
+    } else if (content.startsWith("Начало парсинга")) {
+        BlockButton();
+    }
+    
+    if (content.startsWith("Парсинг уже начат")) {
+        BlockButton();
+    }
+
+    if (content.startsWith("Ошибка")) {
+        ShowMessage(content, "error");
+    } else if (content.startsWith("Внимание") || content.startsWith("Внимания")) {
+        ShowMessage(content, "warning");
+    } else if (content.startsWith("Успех") || content.startsWith("Успешно")) {
+        ShowMessage(content, "success");
+    } else {
+        ShowMessage(content, "info");
+    }
+}
+
+function OnStatus(event) {
+    var content = event.data;
+    UpdateStatus(content)
+}
+
+ws.onmessage = OnAlert;
+stat_ws.onmessage = OnStatus
+
+
+function StartParsing() {
+    if (document.getElementById("StartParsingButton").disabled) {
+        ShowMessage("Парсинг уже запущен", "warning");
+        return;
+    }
+
+    var command = "start:all";
+    ws.send(command);
+}
+
+function StopParsing() {
+    var command = "stop:all";
+    ws.send(command);
+}
+
+// Очистка всех сообщений при закрытии страницы
+window.addEventListener('beforeunload', function() {
+    activeMessages.forEach(msg => {
+        if (msg.element && msg.element.parentNode) {
+            msg.element.remove();
+        }
+    });
+    activeMessages = [];
+});

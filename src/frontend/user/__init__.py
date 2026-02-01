@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter
 from fastapi.templating import Jinja2Templates
 
-from .handlers import UserRouter
+from .handlers import UserHandler
 from ...core.manager.manga import MangaManager
 from ...core.service.manga import FindService
 
@@ -14,12 +14,15 @@ TEMPLATES = USER_FILES / "templates"
 STATIC = USER_FILES / "static"
 
 
-def setup_user(
-    manager: MangaManager, templates: Jinja2Templates, find: FindService
-) -> APIRouter:
+def setup_user(manager: MangaManager, find: FindService) -> APIRouter:
+    templates = Jinja2Templates(TEMPLATES)
     router = APIRouter()
-    user_router = UserRouter(
-        manga_manager=manager, templates=templates, find=find, static=STATIC
+
+    user_router = UserHandler(
+        manga_manager = manager,
+        templates = templates,
+        find = find,
+        static = STATIC
     )
 
     router.include_router(user_router.router)

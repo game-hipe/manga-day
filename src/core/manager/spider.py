@@ -109,6 +109,8 @@ class SpiderManager:
         try:
             self._start = True
             await asyncio.shield(asyncio.gather(*self.tasks, return_exceptions=True))
+
+            logger.info("Все парсеры завершили работу.")
             await self.alert("Все парсеры завершили работу.")
 
         except (asyncio.CancelledError, asyncio.CancelledError):
@@ -212,8 +214,15 @@ class SpiderManager:
 
         async def _send(message: str, alert_engine: BaseAlert) -> None:
             try:
-                await alert_engine.alert(message)
+                result = await alert_engine.alert(message)
+                if not result:
+                    self._alerts.remove(alert_engine)
+                    logger.debug(
+                        f"Система уведомлений {type(alert_engine).__name__} было удалено"
+                    )
+
             except Exception as e:
+                self._alerts.remove(alert_engine)
                 logger.error(
                     f"Ошибка при отправке уведомления {alert_engine.__class__.__name__}: {e}"
                 )
@@ -260,7 +269,7 @@ class SpiderManager:
                     coro_status = "Завершён"
 
             result.append(
-                f"<b>{spider_name}</b> Статус: <b>{coro_status}</b>{f' - {spider.status}' if hasattr(spider, 'status') else ''}"
+                f"<b>{spider_name}</b> Статус: <b>{coro_status}</b>{f' - {spider.status}' if hasattr(spider, 'status') else '' if coro_status != "Завершён" else " - 100%"}"
             )
 
         return "\n".join(result)

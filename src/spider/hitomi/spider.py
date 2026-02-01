@@ -24,7 +24,7 @@ class HitomiSpider(BaseMangaSpider):
     @property
     async def total_pages(self) -> int:
         if self._max_page_fetched:
-            return self.total_pages
+            return self._total_pages
 
         response = await self.http.get(
             self.urljoin(
