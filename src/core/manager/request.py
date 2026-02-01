@@ -5,7 +5,7 @@ from typing import Unpack, Literal, TypeAlias, TypedDict, overload
 from aiohttp import ClientSession
 from aiohttp import ClientResponseError, ServerDisconnectedError
 from aiohttp.client import _RequestOptions
-
+from aiohttp import ClientOSError
 from cachetools import TTLCache
 from loguru import logger
 
@@ -214,6 +214,9 @@ class RequestManager:
 
                 except ServerDisconnectedError:
                     logger.error("Сервер принудительно отключил нас от сервера.")
+                    
+                except ClientOSError:
+                    logger.error("Ошибка сети: разрыв соединения или недоступность сервера.")
 
                 finally:
                     await asyncio.sleep(

@@ -197,10 +197,10 @@ class SpiderManager:
 
         except Exception as e:
             logger.error(
-                f"Ошибка при запуске/работе парсера {spider.__class__.__name__}: {e}"
+                f"Ошибка при запуске/работе парсера {spider.__class__.__name__} (Тип ошибки: {type(e).__name__}, Ошибка: {e})"
             )
             await self.alert(
-                f"Ошибка при запуске/работе парсера {spider.__class__.__name__}: {e}"
+                f"Ошибка при запуске/работе парсера {spider.__class__.__name__} (Тип ошибки: {type(e).__name__}, Ошибка: {e})"
             )
 
         finally:
