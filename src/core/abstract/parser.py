@@ -34,6 +34,19 @@ class BaseParser(Generic[_T], ABC):
         self.features = features or self.FEATURES
         self.situation = situation or self.DEFAULT_SITUATION
 
+        if not self.base_url:
+            raise ValueError(
+                "base_url не может быть пустым"
+            )
+        
+        if not self.base_url.startswith("http"):
+            raise ValueError(
+                "base_url должен быть URL-ом"
+            )
+            
+        if self.situation not in SITUATION.__args__:
+            raise ValueError(f"Неподдерживаемый тип разметки: {situation}")
+
     @overload
     def parse(
         self,
@@ -92,9 +105,9 @@ class BaseParser(Generic[_T], ABC):
             raise TypeError(
                 "Параметр 'url' не может быть None. Пожалуйста, укажите корректный URL."
             )
-        if url.startswith("http"):
+        if str(url).startswith("http"):
             return url
-        return urljoin(self.base_url, url)
+        return urljoin(self.base_url, str(url))
 
     def build_soup(self, markup: _IncomingMarkup, features: str | None = None):
         return BeautifulSoup(markup, features or self.features)

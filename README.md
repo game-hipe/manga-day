@@ -5,7 +5,7 @@
 ```bash
 git clone https://github.com/game-hipe/manga-day.git
 cd manga-day
-cp config-example.yaml > config.yaml
+cp config-example.yaml config.yaml
 
 nano config.yaml # Вставтье ваш бот токен, для работы.
 
@@ -13,11 +13,11 @@ docker-compose build --no-cache
 docker-compose up -d
 ```
 
-## 2 Способ через прямой python (python3.13.X+)
+## 2 Способ через прямой python (python3.14.X+)
 ```bash
 git clone https://github.com/game-hipe/manga-day.git
 cd manga-day
-cp config-example.yaml > config.yaml
+cp config-example.yaml config.yaml
 
 nano config.yaml # Вставтье ваш бот токен, для работы.
 pip install -r requirements.txt

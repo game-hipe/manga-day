@@ -22,9 +22,9 @@ class GlobalMangaParser(BaseMangaParser):
 
             if tag_name in self.TAGS:
                 if self.TAGS[tag_name] == "genres":
-                    tags[self.TAGS[tag_name]] = [
+                    tags[self.TAGS[tag_name]] = list(set(
                         t.get_text(strip=True) for t in tag.select("a.tag")
-                    ]
+                    ))
 
                 else:
                     tags[self.TAGS[tag_name]] = (
