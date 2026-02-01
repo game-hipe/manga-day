@@ -33,10 +33,10 @@ async def main():
         find = FindService(api)
         try:
             await asyncio.gather(
-                #start_bot(spider=spider),
-                #start_api(manager=api),
+                start_bot(spider=spider),
+                start_api(manager=api),
                 start_frontend(manager=api, find=find, spider=spider),
-                #scheduler.start(),
+                scheduler.start(),
             )
         finally:
             await engine.dispose()
@@ -49,5 +49,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info("Программа прервана пользователем.")
 
-    #except Exception as e:
-    #   logger.critical(f"Произошла ошибка: {e}")
+    except Exception as e:
+       logger.critical(f"Произошла ошибка: {e}")
+       raise

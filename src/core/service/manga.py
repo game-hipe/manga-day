@@ -316,3 +316,22 @@ class FindService:
             )
 
             return math.ceil((total or 0) / per_page), result
+
+    async def get(self, id: int, param: str) -> str | None:
+        model = None
+        if "genre" == param:
+            model = Genre
+        elif "author" == param:
+            model = Author
+        elif "language" == param:
+            model = Language
+        else:
+            raise ValueError(f"Неверный параметр: {param}")
+        
+        async with self.manager.Session() as session:
+            result = await session.get(model, id)
+            if result is None:
+                logger.warning(f"Объект не найден (id={id}, param={param})")
+                return None
+            else:
+                return result.name

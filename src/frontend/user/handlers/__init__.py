@@ -125,6 +125,7 @@ class UserHandler:
         self, *, genre_id: int, page: int = 1, request: Request
     ) -> None:
         pages, result = await self.find_engine.get_pages_by_genre(genre_id, page)
+        genre = await self.find_engine.get(genre_id, "genre")
         if not result:
             return self.templates.TemplateResponse(
                 "not_found.html", status_code=404, context={"request": request}
@@ -137,6 +138,7 @@ class UserHandler:
                 "mangas": [x.as_dict() for x in result],
                 "total": pages,
                 "page_now": page,
+                "title": "[Жанр] - " + (genre or "Неизвестный")
             },
         )
 
@@ -144,6 +146,7 @@ class UserHandler:
         self, *, author_id: int, page: int = 1, request: Request
     ) -> None:
         pages, result = await self.find_engine.get_pages_by_author(author_id, page)
+        author = await self.find_engine.get(author_id, "author")
         if not result:
             return self.templates.TemplateResponse(
                 "not_found.html", status_code=404, context={"request": request}
@@ -156,6 +159,7 @@ class UserHandler:
                 "mangas": [x.as_dict() for x in result],
                 "total": pages,
                 "page_now": page,
+                "title": "[Автор] - " + (author or "Неизвестный")
             },
         )
 
@@ -163,6 +167,7 @@ class UserHandler:
         self, *, language_id: int, page: int = 1, request: Request
     ) -> None:
         pages, result = await self.find_engine.get_pages_by_language(language_id, page)
+        language = await self.find_engine.get(language_id, "language")
         if not result:
             return self.templates.TemplateResponse(
                 "not_found.html", status_code=404, context={"request": request}
@@ -175,6 +180,7 @@ class UserHandler:
                 "mangas": [x.as_dict() for x in result],
                 "total": pages,
                 "page_now": page,
+                "title": "[Язык] - " + (language or "Неизвестный")
             },
         )
 
@@ -194,6 +200,7 @@ class UserHandler:
                 "mangas": [x.as_dict() for x in result],
                 "total": pages,
                 "page_now": page,
+                "title": query
             },
         )
 
