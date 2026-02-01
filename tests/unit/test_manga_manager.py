@@ -55,7 +55,7 @@ class TestMangaManager:
                 "https://example.com/gallery/2.jpg",
             ],
         )
-        
+
     @pytest.fixture
     def manga_data_1(self):
         return MangaSchema(

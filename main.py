@@ -17,7 +17,7 @@ from src.bot import start_bot
 from src.core import SpiderScheduler
 
 from src.core.service.manga import FindService
-from src.spider.hitomi.spider import HitomiSpider
+
 
 async def main():
     async with aiohttp.ClientSession() as session:
@@ -29,25 +29,17 @@ async def main():
         api = MangaManager(engine)
         spider = SpiderManager(session, api, "lxml")
         scheduler = SpiderScheduler(spider)
-        
-        spider = HitomiSpider(session)
-        
-        data = await spider.get(
-            "https://hitomi.si/mangazine/si231150"
-        )
-        
-        print(data)
-        
-        #find = FindService(api)
-#
-        #await asyncio.gather(
-        #    start_bot(spider=spider),
-        #    start_api(manager=api),
-        #    start_frontend(manager=api, find=find),
-        #    scheduler.start(),
-        #)
 
-        await engine.dispose()
+        find = FindService(api)
+        try:
+            await asyncio.gather(
+                start_bot(spider=spider),
+                start_api(manager=api),
+                start_frontend(manager=api, find=find),
+                scheduler.start(),
+            )
+        finally:
+            await engine.dispose()
 
 
 if __name__ == "__main__":
@@ -57,5 +49,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info("Программа прервана пользователем.")
 
-    #except Exception as e:
+    # except Exception as e:
     #    logger.critical(f"Произошла ошибка: {e}")

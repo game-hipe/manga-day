@@ -3,10 +3,9 @@ import asyncio
 from itertools import batched
 from typing import AsyncGenerator, Optional
 
-from bs4 import BeautifulSoup
 from loguru import logger
 
-from ...core.abstract.spider import BaseSpider
+from ...core.abstract.spider import BaseSpider, BaseManga
 from .parser import GlobalMangaParser, GlobalPageParser
 
 
@@ -80,7 +79,7 @@ class BaseMangaSpider(BaseSpider):
 
     async def pages(
         self, start_page: int | None = None
-    ) -> AsyncGenerator[BeautifulSoup, None]:
+    ) -> AsyncGenerator[BaseManga, None]:
         """
         Генератор, возвращающий разметку каждой страницы пагинации.
 
@@ -103,7 +102,7 @@ class BaseMangaSpider(BaseSpider):
 
         for url_batch in batched(
             (
-                parser.urljoin(self.PAGE_URL.format(page=page))
+                self.urljoin(self.PAGE_URL.format(page=page))
                 for page in range(start, total + 1)
             ),
             self.batch,

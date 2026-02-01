@@ -47,7 +47,7 @@ class SpiderManager:
         self._manager = manager
         self.tasks: list[asyncio.Task[None]] = []
         self.spider_tasks: dict[asyncio.Task, BaseSpider] = {}
-        
+
         self.spiders: list[BaseSpider] = []
         spider_module = importlib.import_module("...spider", package=__package__)
 
@@ -125,12 +125,12 @@ class SpiderManager:
 
         finally:
             result = await self._manager.get_total()
-            
+
             if result != self._total:
                 await self.alert(
                     f"Парсинг завершен. Найдено {result - self._total} манги. Парсинг завершен."
                 )
-                
+
             self.tasks.clear()
             self.spider_tasks.clear()
             self._start = False
@@ -178,12 +178,12 @@ class SpiderManager:
 
         finally:
             result = await self._manager.get_total()
-            
+
             if result != self._total:
                 await self.alert(
                     f"Парсинг завершен. Найдено {result - self._total} манги. Парсинг завершен."
                 )
-              
+
             self.tasks.clear()
             self.spider_tasks.clear()
 
@@ -259,6 +259,8 @@ class SpiderManager:
                 else:
                     coro_status = "Завершён"
 
-            result.append(f"<b>{spider_name}</b> Статус: <b>{coro_status}</b>{f' - {spider.status}' if hasattr(spider, 'status') else ""}")
+            result.append(
+                f"<b>{spider_name}</b> Статус: <b>{coro_status}</b>{f' - {spider.status}' if hasattr(spider, 'status') else ''}"
+            )
 
         return "\n".join(result)

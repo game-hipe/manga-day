@@ -139,6 +139,11 @@ class BaseSpider(ABC):
                 if result is None:
                     continue
 
+                if not result.gallery:
+                    logger.warning(
+                        f"Не удалось получить галерею (url={result.url}, title={result.title})"
+                    )
+
                 await self.manager.add_manga(result)
 
     @abstractmethod
@@ -193,7 +198,7 @@ class BaseSpider(ABC):
 
         Args:
             url (str): Относительный URL.
-        
+
         Returns:
             str: Объединенный URL.
         """
