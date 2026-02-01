@@ -1,5 +1,6 @@
 import asyncio
 
+from urllib.parse import urljoin
 from abc import ABC, abstractmethod
 from typing import overload, AsyncGenerator, Awaitable, Optional, Any, Unpack
 
@@ -185,3 +186,15 @@ class BaseSpider(ABC):
 
         elif not isinstance(self.manager, MangaManager):
             raise TypeError("manager должен быть MangaManager")
+
+    def urljoin(self, url: str) -> str:
+        """
+        Объединяет базовый URL с относительным.
+
+        Args:
+            url (str): Относительный URL.
+        
+        Returns:
+            str: Объединенный URL.
+        """
+        return urljoin(self.BASE_URL, url)

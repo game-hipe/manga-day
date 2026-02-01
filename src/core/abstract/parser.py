@@ -40,7 +40,7 @@ class BaseParser(Generic[_T], ABC):
         markup: _IncomingMarkup | BeautifulSoup,
         *,
         features: str | None = None,
-        situation: Literal["html"] = "html",
+        situation: Literal["html"],
     ) -> _T: ...
 
     @overload
@@ -68,7 +68,6 @@ class BaseParser(Generic[_T], ABC):
             ValueError: Если передан неподдерживаемый тип разметки
         """
         situation = situation or self.situation
-
         if situation == "html":
             if isinstance(markup, BeautifulSoup):
                 return self._parse_html(markup)
@@ -89,6 +88,10 @@ class BaseParser(Generic[_T], ABC):
         """Парсит JSON-данные."""
 
     def urljoin(self, url: str) -> str:
+        if url is None:
+            raise TypeError(
+                "Параметр 'url' не может быть None. Пожалуйста, укажите корректный URL."
+            )
         if url.startswith("http"):
             return url
         return urljoin(self.base_url, url)
