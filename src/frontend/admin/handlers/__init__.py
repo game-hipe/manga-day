@@ -74,10 +74,14 @@ class AdminHandler:
     async def status_socket(self, websocket: WebSocket):
         await websocket.accept()
         async def send_status():
+            latest = None
             try:
                 while True:
-                    await websocket.send_text(self.spider.status)
-                    await asyncio.sleep(10)
+                    if latest != self.spider.status:
+                        await websocket.send_text(self.spider.status)
+                    
+                    await asyncio.sleep(0.1)
+                    
 
             except WebSocketDisconnect:
                 logger.debug("Пользователь отключился")
