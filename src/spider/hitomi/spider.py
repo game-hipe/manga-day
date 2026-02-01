@@ -1,18 +1,12 @@
-import asyncio
-
-from typing import Optional, AsyncGenerator
-from itertools import batched
-
 from bs4 import BeautifulSoup
 from loguru import logger
 from pydantic import HttpUrl
 
-from ...core.entities.schemas import BaseManga
-from ...core.abstract.spider import BaseSpider
+from ..base_spider.spider import BaseMangaSpider
 from .parser import HitomiMangaParser, HitomiPageParser
 
 
-class HitomiSpider(BaseSpider):
+class HitomiSpider(BaseMangaSpider):
     BASE_URL = "https://hitomi.si"
     CUSTOM_COOKIES = {
         "read": "1",
@@ -24,11 +18,8 @@ class HitomiSpider(BaseSpider):
     MANGA = "/spa/manga/{id}/read"
     """URL - для получение галлереи"""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._total_pages: Optional[int] = None
-        self._processed_pages: int = 0
-        self._max_page_fetched: bool = False
+    PAGE_PARSER = HitomiPageParser
+    MANGA_PARSER = HitomiMangaParser
 
     @property
     async def total_pages(self) -> int:
@@ -78,7 +69,7 @@ class HitomiSpider(BaseSpider):
 
             return self._total_pages or 1
 
-    async def get(self, url):
+    async def get(self, url: str):
         parser = HitomiMangaParser(self.BASE_URL, self.features)
 
         markup = await self.http.get(url, "read")
@@ -99,52 +90,3 @@ class HitomiSpider(BaseSpider):
         )
 
         return base_manga
-
-    @property
-    def status(self) -> str:
-        """
-        Возвращает текущий статус прогресса парсинга в процентах.
-
-        Returns:
-            str: Процент выполнения в формате "XX%". Например: "67%"
-        """
-        total = self._total_pages or 1
-        percent = (self._processed_pages / total) * 100
-        return f"{int(percent)}%"
-
-    async def pages(
-        self, start_page: int | None = None
-    ) -> AsyncGenerator[BaseManga, None]:
-        parser = HitomiPageParser(self.BASE_URL, self.features)
-
-        total = await self.total_pages
-        logger.info(f"Обнаружено всего страниц: {total}")
-
-        start = start_page or 1
-        if start > total:
-            logger.info("Начальная страница больше максимальной. Парсинг завершён.")
-            return
-
-        for url_batch in batched(
-            (
-                self.urljoin(self.PAGE_URL.format(page=page))
-                for page in range(start, total + 1)
-            ),
-            self.batch,
-        ):
-            tasks = [
-                asyncio.create_task(self.http.get(url, "read")) for url in url_batch
-            ]
-
-            for task in asyncio.as_completed(tasks):
-                response = await task
-                if response is None:
-                    continue
-
-                self._processed_pages += 1  # Увеличиваем счётчик обработанных страниц
-                logger.debug(
-                    f"Обработана страница {self._processed_pages}/{total} ({self.status})"
-                )
-
-                soup = parser.build_soup(response)
-                yield parser.parse(soup)

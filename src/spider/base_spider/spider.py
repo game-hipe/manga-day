@@ -11,7 +11,7 @@ from .parser import GlobalMangaParser, GlobalPageParser
 
 class BaseMangaSpider(BaseSpider):
     PAGE_URL = "/page/{page}/"
-
+    START_PAGE = 2
     MANGA_PARSER: type[GlobalMangaParser]
     PAGE_PARSER: type[GlobalPageParser]
 
@@ -79,7 +79,7 @@ class BaseMangaSpider(BaseSpider):
 
     async def pages(
         self, start_page: int | None = None
-    ) -> AsyncGenerator[BaseManga, None]:
+    ) -> AsyncGenerator[list[BaseManga], None]:
         """
         Генератор, возвращающий разметку каждой страницы пагинации.
 
@@ -95,7 +95,7 @@ class BaseMangaSpider(BaseSpider):
         total = await self.total_pages
         logger.info(f"Обнаружено всего страниц: {total}")
 
-        start = start_page or 2
+        start = start_page or self.START_PAGE
         if start > total:
             logger.info("Начальная страница больше максимальной. Парсинг завершён.")
             return
