@@ -234,16 +234,17 @@ class MangaManager:
         async with self.Session() as session:
 
             async def get_page():
-                if result := await session.scalars(
-                    select(Manga).offset((page - 1) * (per_page)).limit(per_page)
-                ):
-                    return [
-                        BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
-                        for manga in result
-                    ]
+                async with self.Session() as session_page:
+                    if result := await session_page.scalars(
+                        select(Manga).offset((page - 1) * (per_page)).limit(per_page)
+                    ):
+                        return [
+                            BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
+                            for manga in result
+                        ]
 
-                logger.warning(f"Манга не найдена (page={page})")
-                return []
+                    logger.warning(f"Манга не найдена (page={page})")
+                    return []
 
             total, r = await asyncio.gather(
                 session.scalar(select(func.count()).select_from(Manga)),
