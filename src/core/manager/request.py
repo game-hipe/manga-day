@@ -214,9 +214,23 @@ class RequestManager:
 
                 except ServerDisconnectedError:
                     logger.error("Сервер принудительно отключил нас от сервера.")
-                    
-                except ClientOSError:
-                    logger.error("Ошибка сети: разрыв соединения или недоступность сервера.")
+                
+                # Новый обработчик для Connection reset by peer
+                except ConnectionResetError as error:
+                    logger.error(
+                        f"Соединение было сброшено (Connection reset by peer) (url={url}, method={method}, error={error})"
+                    )
+
+                except ClientOSError as error:
+                    # если ClientOSError содержит текст '[Errno 104] Connection reset by peer',
+                    # логируем это отдельно
+                    err_str = str(error)
+                    if "[Errno 104]" in err_str or "Connection reset by peer" in err_str:
+                        logger.error(
+                            f"Ошибка: [Errno 104] Connection reset by peer (url={url}, method={method}, error={error})"
+                        )
+                    else:
+                        logger.error(f"Ошибка сети: разрыв соединения или недоступность сервера. (error={error})")
 
                 finally:
                     await asyncio.sleep(
