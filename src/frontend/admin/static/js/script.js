@@ -4,6 +4,36 @@ const stat_ws = new WebSocket("ws://localhost:8000/admin/ws/status")
 // Массив для хранения текущих сообщений (для управления)
 let activeMessages = [];
 
+// Функции для управления модальным окном подтверждения
+function ShowStopConfirmation() {
+    const modal = document.getElementById("stopConfirmationModal");
+    if (modal) {
+        modal.style.display = "flex";
+        // Блокируем прокрутку фона
+        document.body.style.overflow = "hidden";
+    }
+}
+
+function HideStopConfirmation() {
+    const modal = document.getElementById("stopConfirmationModal");
+    if (modal) {
+        modal.style.display = "none";
+        // Восстанавливаем прокрутку фона
+        document.body.style.overflow = "auto";
+    }
+}
+
+function ConfirmStopParsing() {
+    HideStopConfirmation(); // Скрываем модальное окно
+    
+    // Отправляем команду остановки
+    var command = "stop:all";
+    ws.send(command);
+    
+    // Показываем уведомление об успешной отправке команды
+    ShowMessage("Команда на остановку парсинга отправлена", "warning");
+}
+
 function UpdateStatus(message) {
     const statusDiv = document.getElementById("status");
     
@@ -173,10 +203,27 @@ function StartParsing() {
     ws.send(command);
 }
 
-function StopParsing() {
-    var command = "stop:all";
-    ws.send(command);
-}
+// Старая функция StopParsing удалена, теперь используется ConfirmStopParsing
+
+// Закрытие модального окна при клике на фон
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById("stopConfirmationModal");
+    
+    if (modal) {
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                HideStopConfirmation();
+            }
+        });
+        
+        // Закрытие по клавише Esc
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && modal.style.display === 'flex') {
+                HideStopConfirmation();
+            }
+        });
+    }
+});
 
 // Очистка всех сообщений при закрытии страницы
 window.addEventListener('beforeunload', function() {
