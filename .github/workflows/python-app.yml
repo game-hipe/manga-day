@@ -34,11 +34,7 @@ jobs:
     
     - name: Run tests
       run: |
-        if python -m pytest --collect-only > /dev/null 2>&1; then
-          python -m pytest --cov=./ --cov-report=xml
-        else
-          echo "No tests found or pytest not configured properly"
-        fi
+        pytest
     
     - name: Upload coverage
       uses: codecov/codecov-action@v3
