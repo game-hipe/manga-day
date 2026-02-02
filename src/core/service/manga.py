@@ -33,7 +33,7 @@ class FindService:
             ValueError: Если количество манги на странице меньше 1.
         """
         per_page = per_page or self.BASE_PER_PAGE
-
+        raise AssertionError("Тест CI CD!")
         if page < 1:
             logger.error(f"Неверный номер страницы (page={page})")
             raise ValueError("Неверный номер страницы")
