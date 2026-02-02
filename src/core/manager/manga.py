@@ -2,7 +2,7 @@ import asyncio
 import math
 from typing import overload
 
-from sqlalchemy import func
+from sqlalchemy import func, desc
 
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload, joinedload
@@ -236,10 +236,15 @@ class MangaManager:
             async def get_page():
                 async with self.Session() as session_page:
                     if result := await session_page.scalars(
-                        select(Manga).offset((page - 1) * (per_page)).limit(per_page)
+                        select(Manga)
+                        .offset((page - 1) * (per_page))
+                        .limit(per_page)
+                        .order_by(desc(Manga.id))
                     ):
                         return [
-                            BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
+                            BaseManga(
+                                title=manga.title, poster=manga.poster, url=manga.url
+                            )
                             for manga in result
                         ]
 

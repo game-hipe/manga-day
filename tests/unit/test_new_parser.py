@@ -8,29 +8,30 @@ from src.spider.hmanga.parser import MangaParser as HmangaParser
 from src.spider.multi_manga.parser import MangaParser as MultiMangaParser
 from src.spider.hitomi.parser import HitomiMangaParser
 
+
 class BaseTestParser:
     """Базовый класс для тестирования парсеров"""
-    
+
     @pytest.fixture
     def minimal_valid_html(self):
         """Минимальный валидный HTML для парсера"""
         raise NotImplementedError
-    
+
     @pytest.fixture
     def parser(self):
         """Фикстура должна быть переопределена в дочерних классах"""
         raise NotImplementedError
-    
+
     def test_parse_empty_html(self, parser):
         """Тест парсинга пустого HTML"""
         with pytest.raises(ValueError):
             parser.parse("")
-    
+
     def test_parse_none_html(self, parser):
         """Тест парсинга None"""
         with pytest.raises(TypeError):
             parser.parse(None)
-    
+
     def test_parse_malformed_html(self, parser):
         """Тест парсинга битого HTML"""
         malformed = "<html><body><div>Unclosed div"
@@ -41,13 +42,13 @@ class BaseTestParser:
             assert result is not None
         except Exception as e:
             assert isinstance(e, (ValueError, AttributeError))
-    
+
     def test_parse_with_missing_canonical(self, parser, minimal_valid_html):
         """Тест парсинга HTML без canonical ссылки"""
         with pytest.raises(ValueError, match="Не удалось извлечь данные из HTML."):
-            html = minimal_valid_html.replace('rel="canonical"', '')
+            html = minimal_valid_html.replace('rel="canonical"', "")
             parser.parse(html)
-    
+
     def test_parser_initialization(self, parser):
         """Тест инициализации парсера"""
         assert parser.base_url is not None
@@ -58,7 +59,7 @@ class TestHmangaParser(BaseTestParser):
     @pytest.fixture
     def parser(self):
         return HmangaParser("https://hmanga.my/", situation="html")
-    
+
     @pytest.fixture
     def minimal_valid_html(self):
         return """
@@ -67,7 +68,7 @@ class TestHmangaParser(BaseTestParser):
             <div id="info"><h1>Minimal Manga</h1></div>
         </html>
         """
-    
+
     @pytest.fixture
     def sample_html(self):
         return """
@@ -87,7 +88,7 @@ class TestHmangaParser(BaseTestParser):
             </section>
         </html>
         """
-    
+
     @pytest.fixture
     def html_without_author(self):
         """HTML без информации об авторе"""
@@ -107,7 +108,7 @@ class TestHmangaParser(BaseTestParser):
             </section>
         </html>
         """
-    
+
     @pytest.fixture
     def html_without_language(self):
         """HTML без указания языка"""
@@ -122,7 +123,7 @@ class TestHmangaParser(BaseTestParser):
             </div>
         </html>
         """
-    
+
     @pytest.fixture
     def html_without_tags(self):
         """HTML без тегов"""
@@ -137,7 +138,7 @@ class TestHmangaParser(BaseTestParser):
             </div>
         </html>
         """
-    
+
     @pytest.fixture
     def html_without_poster(self):
         """HTML без постера"""
@@ -154,7 +155,7 @@ class TestHmangaParser(BaseTestParser):
             </section>
         </html>
         """
-    
+
     @pytest.fixture
     def html_without_title(self):
         """HTML без заголовка"""
@@ -169,7 +170,7 @@ class TestHmangaParser(BaseTestParser):
             </div>
         </html>
         """
-    
+
     @pytest.fixture
     def html_with_multiple_languages(self):
         """HTML с указанием нескольких языков"""
@@ -184,7 +185,7 @@ class TestHmangaParser(BaseTestParser):
             </div>
         </html>
         """
-    
+
     @pytest.fixture
     def html_with_special_characters(self):
         """HTML со специальными символами в названии"""
@@ -199,8 +200,7 @@ class TestHmangaParser(BaseTestParser):
             </div>
         </html>
         """
-    
-    
+
     def test_parse_valid_html(self, parser, sample_html):
         """Тест парсинга валидного HTML"""
         result = parser.parse(sample_html)
@@ -210,48 +210,41 @@ class TestHmangaParser(BaseTestParser):
         assert "Drama" in result.genres
         assert len(result.genres) == 2
         assert str(result.poster) == "https://hmanga.my/poster.jpg"
-    
-    
+
     def test_parse_no_author(self, parser, html_without_author):
         """Тест парсинга HTML без автора"""
         result = parser.parse(html_without_author)
         assert result.author is None
         assert result.title == "No Author Manga"
-    
-    
+
     def test_parse_no_language(self, parser, html_without_language):
         """Тест парсинга HTML без языка"""
         result = parser.parse(html_without_language)
         # Проверяем что язык либо None, либо дефолтное значение
         assert result.language is None or result.language == ""
-    
-    
+
     def test_parse_no_tags(self, parser, html_without_tags):
         """Тест парсинга HTML без тегов"""
         result = parser.parse(html_without_tags)
         assert result.genres == [] or result.genres is None
-    
-    
+
     def test_parse_no_poster(self, parser, html_without_poster):
         """Тест парсинга HTML без постера"""
         with pytest.raises(ValueError, match="Не удалось извлечь данные из HTML."):
             parser.parse(html_without_poster)
-    
-    
+
     def test_parse_no_title(self, parser, html_without_title):
         """Тест парсинга HTML без заголовка"""
         with pytest.raises(ValueError, match="Не удалось извлечь данные из HTML."):
             parser.parse(html_without_title)
-    
-    
+
     def test_parse_multiple_languages(self, parser, html_with_multiple_languages):
         """Тест парсинга HTML с несколькими языками в названии"""
-        
+
         result = parser.parse(html_with_multiple_languages)
         # Проверяем что парсер корректно обрабатывает сложные названия
         assert "[English][Chinese][Japanese]" in result.title
-    
-    
+
     def test_parse_special_characters(self, parser, html_with_special_characters):
         """Тест парсинга HTML со специальными символами"""
         result = parser.parse(html_with_special_characters)
@@ -259,8 +252,7 @@ class TestHmangaParser(BaseTestParser):
         assert "テスト" in result.title
         assert '"Quotes"' in result.title
         assert "<Tags>" in result.title or "&lt;Tags&gt;" in result.title
-    
-    
+
     def test_parse_empty_gallery(self, parser):
         """Тест парсинга HTML без галереи"""
         html = """
@@ -275,8 +267,7 @@ class TestHmangaParser(BaseTestParser):
         """
         result = parser.parse(html)
         assert result.gallery == [] or result.gallery is None
-    
-    
+
     def test_parse_relative_urls(self, parser):
         """Тест обработки относительных URL"""
         html = """
@@ -291,8 +282,7 @@ class TestHmangaParser(BaseTestParser):
         result = parser.parse(html)
         # Проверяем что относительные пути корректно преобразуются
         assert result.poster is not None
-    
-    
+
     def test_parse_invalid_image_url(self, parser):
         """Тест обработки невалидных URL изображений"""
         html = """
@@ -307,11 +297,11 @@ class TestHmangaParser(BaseTestParser):
         result = parser.parse(html)
         # Парсер должен либо пропустить невалидный URL, либо сохранить как есть
         assert result is not None
-    
+
     # -------------------------------------------
     # ТЕСТЫ С РЕАЛЬНЫМИ ДАННЫМИ
     # -------------------------------------------
-    
+
     @pytest.fixture
     def tags(self):
         return [
@@ -325,51 +315,45 @@ class TestHmangaParser(BaseTestParser):
             "Sole Male",
             "Tutor",
         ]
-    
+
     @pytest.fixture
     def real_html(self):
         with open("test_templates/hamnga-1.html", "r", encoding="utf-8") as f:
             return f.read()
-    
-    
+
     def test_parse_real_html_title(self, parser, real_html):
         result = parser.parse(real_html)
         assert (
             result.title
             == "[Hagure Moguri] Ogaritai Hitozuma Kateikyoushi ~Musuko to Danna ga Inai Sabishii Seikatsu o Okutteru Naraboku no Mama ni Natte~ [Chinese]"
         )
-    
-    
+
     def test_parse_real_html_genres(self, parser, real_html, tags):
         result = parser.parse(real_html)
-        
+
         for tag in tags:
             assert tag in result.genres
         # Дополнительно проверяем количество тегов
         assert len(result.genres) >= len(tags)
-    
-    
+
     def test_parse_real_html_language(self, parser, real_html):
         result = parser.parse(real_html)
         assert result.language == "chinese"
-    
-    
+
     def test_parse_real_html_poster(self, parser, real_html):
         result = parser.parse(real_html)
         assert (
             str(result.poster)
             == "https://hmanga.my/uploads/posts/2026-01/medium/1767911442_1.webp"
         )
-    
-    
+
     def test_parse_real_html_gallery(self, parser, real_html):
         result = parser.parse(real_html)
         assert len(result.gallery) == 38
         # Проверяем что все URL в галерее валидны
         for img in result.gallery:
             assert str(img).startswith("http")
-    
-    
+
     def test_parse_real_html_author(self, parser, real_html):
         result = parser.parse(real_html)
         assert result.author is None
@@ -379,7 +363,7 @@ class TestMultiMangaParser(BaseTestParser):
     @pytest.fixture
     def parser(self):
         return MultiMangaParser("https://multi-manga.today", situation="html")
-    
+
     @pytest.fixture
     def minimal_valid_html(self):
         return """
@@ -388,7 +372,7 @@ class TestMultiMangaParser(BaseTestParser):
             <div id="info"><h1>Минимальная Манга</h1></div>
         </html>
         """
-    
+
     @pytest.fixture
     def sample_html(self):
         return """
@@ -412,7 +396,7 @@ class TestMultiMangaParser(BaseTestParser):
             </section>
         </html>
         """
-    
+
     @pytest.fixture
     def html_with_cyrillic(self):
         """HTML с кириллическими символами"""
@@ -433,8 +417,7 @@ class TestMultiMangaParser(BaseTestParser):
             </section>
         </html>
         """
-    
-    
+
     def test_parse_valid_html(self, parser, sample_html):
         result = parser.parse(sample_html)
         print(result)
@@ -444,17 +427,15 @@ class TestMultiMangaParser(BaseTestParser):
         assert len(result.genres) == 2
         assert str(result.poster) == "https://multi-manga.today/poster.jpg"
         assert result.author == "Тестовый Автор"
-    
-    
+
     def test_parse_cyrillic_tags(self, parser, html_with_cyrillic):
         """Тест парсинга кириллических тегов"""
         result = parser.parse(html_with_cyrillic)
-        
+
         assert "Объёмная грудь" in result.genres
         assert "Ёлки-палки" in result.genres
         assert result.title == "Манга с Ё и Ъ"
-    
-    
+
     def test_parse_html_with_script_tags(self, parser):
         """Тест парсинга HTML с script тегами"""
         html = """
@@ -474,7 +455,7 @@ class TestMultiMangaParser(BaseTestParser):
         result = parser.parse(html)
         assert result.title == "Манга со скриптами"
         # Убеждаемся что скрипты не мешают парсингу
-    
+
     def test_parse_html_with_comments(self, parser):
         """Тест парсинга HTML с комментариями"""
         html = """
@@ -493,8 +474,7 @@ class TestMultiMangaParser(BaseTestParser):
         """
         result = parser.parse(html)
         assert result.title == "Манга с комментариями"
-    
-    
+
     def test_parse_with_duplicate_tags(self, parser):
         """Тест парсинга HTML с дублирующимися тегами"""
         html = """
@@ -521,8 +501,7 @@ class TestMultiMangaParser(BaseTestParser):
         assert len(result.genres) == 2
         assert "Секс" in result.genres
         assert "Драма" in result.genres
-    
-    
+
     def test_parse_with_encoded_urls(self, parser):
         """Тест парсинга HTML с закодированными URL"""
         html = """
@@ -539,11 +518,11 @@ class TestMultiMangaParser(BaseTestParser):
         result = parser.parse(html)
         # Проверяем что пробелы в URL декодируются
         assert result.poster is not None
-    
+
     # -------------------------------------------
     # ТЕСТЫ С РЕАЛЬНЫМИ ДАННЫМИ
     # -------------------------------------------
-    
+
     @pytest.fixture
     def tags(self):
         return [
@@ -574,51 +553,48 @@ class TestMultiMangaParser(BaseTestParser):
             "школьная форма",
             "школьный купальник",
         ]
-    
+
     @pytest.fixture
     def real_html(self):
         with open("test_templates/multi-manga-1.html", "r", encoding="utf-8") as f:
             return f.read()
-    
-    
+
     def test_parse_real_html_title(self, parser, real_html):
         result = parser.parse(real_html)
         assert (
             result.title
             == "Моя повседневная жизнь с сестрой-грязнулей, которой нужен только секс ~Если победишь сестрёнку, то я разрешу тебе кончить без резинки!~ (Boku to Gasatsu na Onee no Seiyoku Shori Seikatsu ~Onee-chan ni Katetara Ninshin Kakugo de Nama Ecchi Hen~)"
         )
-    
-    
+
     def test_parse_real_html_genres(self, parser, real_html, tags):
         result = parser.parse(real_html)
-        
+
         for tag in tags:
             assert tag in result.genres
         # Проверяем что тегов достаточно много
         assert len(result.genres) >= len(tags)
-    
-    
+
     def test_parse_real_html_language(self, parser, real_html):
         result = parser.parse(real_html)
         assert result.language == "Русский"
-    
-    
+
     def test_parse_real_html_poster(self, parser, real_html):
         result = parser.parse(real_html)
         assert (
             str(result.poster)
             == "https://multi-manga.today/uploads/posts/2026-01/medium/1767914666_01.webp"
         )
-    
-    
+
     def test_parse_real_html_gallery(self, parser, real_html):
         result = parser.parse(real_html)
         assert len(result.gallery) == 36
         # Проверяем что все изображения в галерее имеют правильные расширения
         for img in result.gallery:
-            assert any(str(img).endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif'])
-    
-    
+            assert any(
+                str(img).endswith(ext)
+                for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]
+            )
+
     def test_parse_real_html_author(self, parser, real_html):
         result = parser.parse(real_html)
         assert result.author == "Jovejun"
@@ -628,7 +604,7 @@ class HitomiParser(BaseTestParser):
     @pytest.fixture
     def parser(self):
         return HitomiMangaParser("https://hmanga.my/", situation="html")
-    
+
     @pytest.fixture
     def minimal_valid_html(self):
         return """
@@ -637,27 +613,28 @@ class HitomiParser(BaseTestParser):
             <div id="info"><h1>Minimal Manga</h1></div>
         </html>
         """
-    
-    
 
 
-@pytest.mark.parametrize("parser_class,base_url", [
-    (HmangaParser, "https://hmanga.my/"),
-    (MultiMangaParser, "https://multi-manga.today"),
-])
+@pytest.mark.parametrize(
+    "parser_class,base_url",
+    [
+        (HmangaParser, "https://hmanga.my/"),
+        (MultiMangaParser, "https://multi-manga.today"),
+    ],
+)
 def test_parser_initialization_errors(parser_class, base_url):
     """Тест ошибок инициализации парсеров"""
     # Тест с некорректным URL
     with pytest.raises(ValueError):
         parser_class("", situation="html")
-    
+
     with pytest.raises(ValueError):
         parser_class(None, situation="html")
-    
+
     # Тест с некорректной ситуацией
     with pytest.raises(ValueError):
         parser_class(base_url, situation="invalid_situation")
-    
+
     # Корректная инициализация
     parser = parser_class(base_url, situation="html")
     assert parser.base_url == base_url
@@ -667,13 +644,12 @@ def test_parser_initialization_errors(parser_class, base_url):
 # Дополнительные интеграционные тесты
 class TestParserIntegration:
     """Интеграционные тесты для парсеров"""
-    
-    
+
     def test_parsers_return_consistent_structure(self):
         """Тест что оба парсера возвращают одинаковую структуру данных"""
         hmanga_parser = HmangaParser("https://hmanga.my/", situation="html")
         multi_parser = MultiMangaParser("https://multi-manga.today", situation="html")
-        
+
         # Создаем минимальный HTML для обоих парсеров
         hmanga_html = """
         <html>
@@ -684,7 +660,7 @@ class TestParserIntegration:
             </div>
         </html>
         """
-        
+
         multi_html = """
         <html>
             <link rel="canonical" href="https://multi-manga.today/manga/1">
@@ -694,30 +670,29 @@ class TestParserIntegration:
             </div>
         </html>
         """
-        
+
         hmanga_result = hmanga_parser.parse(hmanga_html)
         multi_result = multi_parser.parse(multi_html)
-        
+
         # Проверяем что оба результата имеют одинаковые атрибуты
-        assert hasattr(hmanga_result, 'title')
-        assert hasattr(multi_result, 'title')
-        assert hasattr(hmanga_result, 'genres')
-        assert hasattr(multi_result, 'genres')
-        assert hasattr(hmanga_result, 'poster')
-        assert hasattr(multi_result, 'poster')
-        assert hasattr(hmanga_result, 'author')
-        assert hasattr(multi_result, 'author')
-        assert hasattr(hmanga_result, 'language')
-        assert hasattr(multi_result, 'language')
-    
-    
+        assert hasattr(hmanga_result, "title")
+        assert hasattr(multi_result, "title")
+        assert hasattr(hmanga_result, "genres")
+        assert hasattr(multi_result, "genres")
+        assert hasattr(hmanga_result, "poster")
+        assert hasattr(multi_result, "poster")
+        assert hasattr(hmanga_result, "author")
+        assert hasattr(multi_result, "author")
+        assert hasattr(hmanga_result, "language")
+        assert hasattr(multi_result, "language")
+
     def test_parser_with_different_encodings(self):
         """Тест парсеров с разными кодировками"""
         parsers = [
             HmangaParser("https://hmanga.my/", situation="html"),
-            MultiMangaParser("https://multi-manga.today", situation="html")
+            MultiMangaParser("https://multi-manga.today", situation="html"),
         ]
-        
+
         # HTML с разными кодировками в строке
         test_cases = [
             ("Normal HTML", "utf-8"),
@@ -725,7 +700,7 @@ class TestParserIntegration:
             ("HTML with emoji: 😀🎉", "utf-8"),
             ("HTML with Latin-1: café résumé", "iso-8859-1"),
         ]
-        
+
         for title, encoding in test_cases:
             html = f"""
             <html>
@@ -737,7 +712,7 @@ class TestParserIntegration:
                 </div>
             </html>
             """
-            
+
             for parser in parsers:
                 try:
                     result = parser.parse(html)

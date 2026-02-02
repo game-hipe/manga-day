@@ -35,15 +35,11 @@ class BaseParser(Generic[_T], ABC):
         self.situation = situation or self.DEFAULT_SITUATION
 
         if not self.base_url:
-            raise ValueError(
-                "base_url не может быть пустым"
-            )
-        
+            raise ValueError("base_url не может быть пустым")
+
         if not self.base_url.startswith("http"):
-            raise ValueError(
-                "base_url должен быть URL-ом"
-            )
-            
+            raise ValueError("base_url должен быть URL-ом")
+
         if self.situation not in SITUATION.__args__:
             raise ValueError(f"Неподдерживаемый тип разметки: {situation}")
 

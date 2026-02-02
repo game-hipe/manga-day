@@ -1,11 +1,11 @@
 import asyncio
 import math
 
-from sqlalchemy import select, bindparam, func
+from sqlalchemy import select, func, desc
 from sqlalchemy.orm import selectinload
 from loguru import logger
 
-from ..entities.schemas import BaseManga, FiltersSchema
+from ..entities.schemas import BaseManga
 from ..entities.models import Genre, GenreManga, Language, Author, Manga
 from ..manager.manga import MangaManager
 
@@ -46,23 +46,24 @@ class FindService:
             base_query = select(GenreManga).where(GenreManga.genre_id == genre_id)
 
             async def scalars_manga():
-                query = (
-                    base_query.options(selectinload(GenreManga.manga))
-                    .offset((page - 1) * (per_page))
-                    .limit(per_page)
-                )
-                mangas = await session.scalars(query)
+                async with self.manager.Session() as manga_session:
+                    query = (
+                        base_query.options(selectinload(GenreManga.manga))
+                        .offset((page - 1) * (per_page))
+                        .limit(per_page)
+                    ).order_by(desc(Manga.id))
+                    mangas = await manga_session.scalars(query)
 
-                if not mangas:
-                    logger.warning(
-                        f"Манга не найдена (genre_id={genre_id}, page={page})"
-                    )
-                    return []
+                    if not mangas:
+                        logger.warning(
+                            f"Манга не найдена (genre_id={genre_id}, page={page})"
+                        )
+                        return []
 
-                return [
-                    BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
-                    for manga in [x.manga for x in mangas]
-                ]
+                    return [
+                        BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
+                        for manga in [x.manga for x in mangas]
+                    ]
 
             total, result = await asyncio.gather(
                 session.scalar(select(func.count()).select_from(base_query.subquery())),
@@ -101,18 +102,23 @@ class FindService:
             base_query = select(Manga).where(Manga.author_id == author_id)
 
             async def scalars_manga():
-                query = base_query.offset((page - 1) * (per_page)).limit(per_page)
-                mangas = await session.scalars(query)
-                if not mangas:
-                    logger.warning(
-                        f"Манга не найдена (author_id={author_id}, page={page})"
+                async with self.manager.Session() as manga_session:
+                    query = (
+                        base_query.offset((page - 1) * (per_page))
+                        .limit(per_page)
+                        .order_by(desc(Manga.id))
                     )
-                    return []
+                    mangas = await manga_session.scalars(query)
+                    if not mangas:
+                        logger.warning(
+                            f"Манга не найдена (author_id={author_id}, page={page})"
+                        )
+                        return []
 
-                return [
-                    BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
-                    for manga in mangas
-                ]
+                    return [
+                        BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
+                        for manga in mangas
+                    ]
 
             total, result = await asyncio.gather(
                 session.scalar(select(func.count()).select_from(base_query.subquery())),
@@ -151,18 +157,23 @@ class FindService:
             base_query = select(Manga).where(Manga.language_id == language_id)
 
             async def scalars_manga():
-                query = base_query.offset((page - 1) * (per_page)).limit(per_page)
-                mangas = await session.scalars(query)
-                if not mangas:
-                    logger.warning(
-                        f"Манга не найдена (author_id={language_id}, page={page})"
+                async with self.manager.Session() as manga_session:
+                    query = (
+                        base_query.offset((page - 1) * (per_page))
+                        .limit(per_page)
+                        .order_by(desc(Manga.id))
                     )
-                    return []
+                    mangas = await manga_session.scalars(query)
+                    if not mangas:
+                        logger.warning(
+                            f"Манга не найдена (author_id={language_id}, page={page})"
+                        )
+                        return []
 
-                return [
-                    BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
-                    for manga in mangas
-                ]
+                    return [
+                        BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
+                        for manga in mangas
+                    ]
 
             total, result = await asyncio.gather(
                 session.scalar(select(func.count()).select_from(base_query.subquery())),
@@ -170,94 +181,6 @@ class FindService:
             )
 
             return math.ceil((total or 0) / per_page), result
-
-    async def get_manga_by_filter(
-        self, page: int, filter: FiltersSchema, per_page: int | None = None
-    ) -> list[BaseManga]:
-        """
-        Получает список манги, соответствующей фильтрам.
-
-        Поддерживает фильтрацию по названию, языку, автору и жанрам.
-
-        Args:
-            page (int): Номер страницы.
-            filter (FiltersSchema): Фильтры для поиска.
-            per_page (int | None): Количество результатов на странице.
-
-        Returns:
-            list[BaseManga]: Список подходящих манги.
-        """
-        if page < 1:
-            logger.error(f"Неверный номер страницы (page={page})")
-            raise ValueError("Неверный номер страницы")
-
-        if per_page < 1:
-            logger.error(f"Неверное количество манги на странице (per_page={per_page})")
-            raise ValueError("Неверное количество манги на странице")
-
-        async with self.manager.Session() as session:
-            language = None
-            author = None
-            genres = None
-
-            if filter.language:
-                language = await session.scalar(
-                    select(Language).where(Language.name == filter.language)
-                )
-                if language is None:
-                    logger.warning(f"Язык не найден (language={filter.language})")
-                    return []
-
-            if filter.author:
-                author = await session.scalar(
-                    select(Author).where(Author.name == filter.author)
-                )
-                if author is None:
-                    logger.warning(f"Автор не найден (author={filter.author})")
-                    return []
-
-            if filter.genres:
-                genre_objs = await session.scalars(
-                    select(Genre).where(Genre.name.in_(filter.genres))
-                )
-                genres = list(genre_objs)
-                if not genres:
-                    logger.warning(f"Жанры не найдены (genres={filter.genres})")
-                    return []
-
-                genres = list(
-                    await session.scalars(
-                        select(GenreManga).where(
-                            GenreManga.genre_id.in_([x.id for x in genres])
-                        )
-                    )
-                )
-
-            query = select(Manga)
-            if filter.title is not None:
-                query = query.where(Manga.title.ilike(bindparam(filter.title)))
-            if language is not None:
-                query = query.where(Manga.language_id == language.id)
-            if author is not None:
-                query = query.where(Manga.author_id == author.id)
-            if genres is not None:
-                query = query.where(Manga.id.in_([x.manga_id for x in genres]))
-
-            query = query.offset((page - 1) * (per_page or self.BASE_PER_PAGE)).limit(
-                per_page or self.BASE_PER_PAGE
-            )
-
-            mangas = await session.scalars(query)
-            results = list(mangas)
-
-            if results:
-                return [
-                    BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
-                    for manga in results
-                ]
-
-            logger.warning(f"Манга не найдена (page={page}, filter={filter})")
-            return []
 
     async def get_pages_by_query(
         self, query: str, page: int, per_page: int | None = None
@@ -299,16 +222,21 @@ class FindService:
             )
 
             async def scalars_manga():
-                find_query = base_query.offset((page - 1) * (per_page)).limit(per_page)
-                mangas = await session.scalars(find_query)
-                if not mangas:
-                    logger.warning(f"Манга не найдена (query={query}, page={page})")
-                    return []
+                async with self.manager.Session() as session:
+                    find_query = (
+                        base_query.offset((page - 1) * (per_page))
+                        .limit(per_page)
+                        .order_by(desc(Manga.id))
+                    )
+                    mangas = await session.scalars(find_query)
+                    if not mangas:
+                        logger.warning(f"Манга не найдена (query={query}, page={page})")
+                        return []
 
-                return [
-                    BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
-                    for manga in mangas
-                ]
+                    return [
+                        BaseManga(title=manga.title, poster=manga.poster, url=manga.url)
+                        for manga in mangas
+                    ]
 
             total, result = await asyncio.gather(
                 session.scalar(select(func.count()).select_from(base_query.subquery())),
@@ -327,7 +255,7 @@ class FindService:
             model = Language
         else:
             raise ValueError(f"Неверный параметр: {param}")
-        
+
         async with self.manager.Session() as session:
             result = await session.get(model, id)
             if result is None:

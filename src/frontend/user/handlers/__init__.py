@@ -138,7 +138,7 @@ class UserHandler:
                 "mangas": [x.as_dict() for x in result],
                 "total": pages,
                 "page_now": page,
-                "title": "[Жанр] - " + (genre or "Неизвестный")
+                "title": "[Жанр] - " + (genre or "Неизвестный"),
             },
         )
 
@@ -159,7 +159,7 @@ class UserHandler:
                 "mangas": [x.as_dict() for x in result],
                 "total": pages,
                 "page_now": page,
-                "title": "[Автор] - " + (author or "Неизвестный")
+                "title": "[Автор] - " + (author or "Неизвестный"),
             },
         )
 
@@ -180,7 +180,7 @@ class UserHandler:
                 "mangas": [x.as_dict() for x in result],
                 "total": pages,
                 "page_now": page,
-                "title": "[Язык] - " + (language or "Неизвестный")
+                "title": "[Язык] - " + (language or "Неизвестный"),
             },
         )
 
@@ -200,7 +200,7 @@ class UserHandler:
                 "mangas": [x.as_dict() for x in result],
                 "total": pages,
                 "page_now": page,
-                "title": query
+                "title": query,
             },
         )
 

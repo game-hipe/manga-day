@@ -19,10 +19,7 @@ def setup_user(manager: MangaManager, find: FindService) -> APIRouter:
     router = APIRouter()
 
     user_router = UserHandler(
-        manga_manager = manager,
-        templates = templates,
-        find = find,
-        static = STATIC
+        manga_manager=manager, templates=templates, find=find, static=STATIC
     )
 
     router.include_router(user_router.router)

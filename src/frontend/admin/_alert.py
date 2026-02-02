@@ -1,8 +1,6 @@
 from ...core.abstract.alert import BaseAlert
-from fastapi.websockets import (
-    WebSocket,
-    WebSocketState
-)
+from fastapi.websockets import WebSocket, WebSocketState
+
 
 class AdminAlert(BaseAlert):
     def __init__(self, wb: WebSocket):
@@ -14,6 +12,6 @@ class AdminAlert(BaseAlert):
 
         await self._wb.send_text(message)
         return True
-        
+
     def is_open(self):
         return self._wb.client_state == WebSocketState.CONNECTED

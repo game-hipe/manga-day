@@ -50,5 +50,5 @@ if __name__ == "__main__":
         logger.info("Программа прервана пользователем.")
 
     except Exception as e:
-       logger.critical(f"Произошла ошибка: {e}")
-       raise
+        logger.critical(f"Произошла ошибка: {e}")
+        raise

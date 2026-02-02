@@ -117,23 +117,6 @@ class OutputMangaSchema(MangaSchema):
         )
 
 
-class FiltersSchema(BaseModel):
-    """
-    Схема для хранения фильтров поиска
-
-    Args:
-        title (str | None): название манги
-        author (str | None): автор манги
-        language (str | None): язык манги
-        genres (list[str]): список жанров (строки)
-    """
-
-    title: str | None = Field(default=None)
-    author: str | None = Field(default=None)
-    language: str | None = Field(default=None)
-    genres: list[str] = Field(default_factory=list)
-
-
 class ProxySchema(BaseModel):
     """
     Схема данных для настройки прокси-сервера с аутентификацией

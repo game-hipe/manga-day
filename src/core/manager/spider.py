@@ -269,7 +269,7 @@ class SpiderManager:
                     coro_status = "Завершён"
 
             result.append(
-                f"<b>{spider_name}</b> Статус: <b>{coro_status}</b>{f' - {spider.status}' if hasattr(spider, 'status') else '' if coro_status != "Завершён" else " - 100%"}"
+                f"<b>{spider_name}</b> Статус: <b>{coro_status}</b>{f' - {spider.status}' if hasattr(spider, 'status') else '' if coro_status != 'Завершён' else ' - 100%'}"
             )
 
         return "\n".join(result)
