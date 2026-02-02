@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.14"]  # Актуальные версии
-
+    
     steps:
     - uses: actions/checkout@v4
     
@@ -23,6 +23,10 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+        
+    - name: Configuration Settings
+      run: |
+        cp config-example.yaml config.yaml
     
     - name: Install dependencies
       run: |
@@ -34,11 +38,7 @@ jobs:
     
     - name: Run tests
       run: |
-        if python -m pytest --collect-only > /dev/null 2>&1; then
-          python -m pytest --cov=./ --cov-report=xml
-        else
-          echo "No tests found or pytest not configured properly"
-        fi
+        pytest
     
     - name: Upload coverage
       uses: codecov/codecov-action@v3
