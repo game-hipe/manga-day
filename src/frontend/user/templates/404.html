@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manga-Day интересная манга на сегодня</title>
     <link rel="stylesheet" href="/static/css/base.css">
-    <link rel="icon" href="/static/images/icon.ico" type="image/x-icon">
 </head>
 <body>
     <header>
         <nav role="navigation">
             <a class="logo" href="/">
-                <img src="/static/images/logo.png" alt="Manga-Day" loading="lazy">
+                <img src="/static/images/logo.png" alt="Manga-Day">
             </a>
             <div class="search-container">
                 <form class="search-form" id="search-form">
@@ -24,8 +23,15 @@
             </div>
         </nav>
     </header>
-
-    {% block content %}{% endblock %}
+    <main>
+        <link rel="stylesheet" href="/static/css/404.css">
+        <div class="error-message-not-found">
+            <img src="/static/images/404.png" alt="Милая аниме девушку на сером фоне, с футболкой с надпись '404 Not Found', в руках у неё свисток, и которая рукой показывает знак 'Stop'">
+            <h1>Похоже, вы потерялись в тёмных глубинах сайта!</h1>
+            <h2>404</h2>
+            <button onclick="window.location.assign('/');">Вернуться на главную</button>
+        </div> 
+    </main>
 
     <footer>
         <div class="footer-container">
@@ -125,79 +131,6 @@
                     searchInput.value = searchQuery;
                 }
             }
-
-            // Функция для ленивой загрузки изображений
-            function lazyLoadImages() {
-                const lazyImages = document.querySelectorAll('img[data-src]');
-                
-                if ('IntersectionObserver' in window) {
-                    // Используем IntersectionObserver для современного подхода
-                    const imageObserver = new IntersectionObserver((entries, observer) => {
-                        entries.forEach(entry => {
-                            if (entry.isIntersecting) {
-                                const img = entry.target;
-                                img.src = img.dataset.src;
-                                if (img.dataset.srcset) {
-                                    img.srcset = img.dataset.srcset;
-                                }
-                                img.removeAttribute('data-src');
-                                if (img.dataset.srcset) {
-                                    img.removeAttribute('data-srcset');
-                                }
-                                img.classList.remove('lazy');
-                                imageObserver.unobserve(img);
-                            }
-                        });
-                    }, {
-                        rootMargin: '50px 0px',
-                        threshold: 0.1
-                    });
-
-                    lazyImages.forEach(img => {
-                        imageObserver.observe(img);
-                    });
-                } else {
-                    // Фоллбэк для старых браузеров
-                    let lazyLoadThrottleTimeout;
-                    
-                    function lazyLoad() {
-                        if (lazyLoadThrottleTimeout) {
-                            clearTimeout(lazyLoadThrottleTimeout);
-                        }
-                        
-                        lazyLoadThrottleTimeout = setTimeout(() => {
-                            const scrollTop = window.pageYOffset;
-                            lazyImages.forEach(img => {
-                                if (img.offsetTop < (window.innerHeight + scrollTop)) {
-                                    img.src = img.dataset.src;
-                                    if (img.dataset.srcset) {
-                                        img.srcset = img.dataset.srcset;
-                                    }
-                                    img.removeAttribute('data-src');
-                                    if (img.dataset.srcset) {
-                                        img.removeAttribute('data-srcset');
-                                    }
-                                    img.classList.remove('lazy');
-                                }
-                            });
-                            
-                            if (lazyImages.length === 0) {
-                                document.removeEventListener("scroll", lazyLoad);
-                                window.removeEventListener("resize", lazyLoad);
-                                window.removeEventListener("orientationchange", lazyLoad);
-                            }
-                        }, 20);
-                    }
-                    
-                    document.addEventListener("scroll", lazyLoad);
-                    window.addEventListener("resize", lazyLoad);
-                    window.addEventListener("orientationchange", lazyLoad);
-                    lazyLoad(); // Первоначальная загрузка
-                }
-            }
-
-            // Инициализируем ленивую загрузку
-            lazyLoadImages();
         });
     </script>
 
