@@ -51,7 +51,8 @@ class FindService:
                         base_query.options(selectinload(GenreManga.manga))
                         .offset((page - 1) * (per_page))
                         .limit(per_page)
-                    ).order_by(desc(Manga.id))
+                        .order_by(desc(GenreManga.id))
+                    )
                     mangas = await manga_session.scalars(query)
 
                     if not mangas:
