@@ -23,6 +23,7 @@ class AdminHandler:
         templates: Jinja2Templates,
         static: Path | str | None = None,
     ):
+        self._latest = None
         self._router = APIRouter(prefix="/admin")
         self.spider = manager
         self.spider = spider
@@ -62,11 +63,11 @@ class AdminHandler:
         await websocket.accept()
 
         async def send_status():
-            latest = None
             try:
                 while True:
-                    if latest != self.spider.status:
+                    if self._latest != self.spider.status:
                         await websocket.send_text(self.spider.status)
+                        self._latest = self.spider.status
 
                     await asyncio.sleep(0.1)
 
@@ -83,11 +84,20 @@ class AdminHandler:
 
             while True:
                 command = await websocket.receive_text()
+
                 if command.startswith("start"):
-                    await self.spider.start_parsing()
+                    if self.spider._start:
+                        await alert.alert("Парсер уже запущен!")
+                        continue
+
+                    asyncio.create_task(self.spider.start_parsing())
 
                 elif command.startswith("stop"):
-                    await self.spider.stop_parsing()
+                    if not self.spider._start:
+                        await alert.alert("Парсер уже остановлен!")
+                        continue
+
+                    asyncio.create_task(self.spider.stop_parsing())
 
                 else:
                     await self.spider.alert("Внимания Неизвестная команда!")

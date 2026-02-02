@@ -124,7 +124,7 @@ function BlockButton() {
 function OnAlert(event) {
     var content = event.data;
     console.log(content);
-    
+
     if (content.startsWith("Парсинг завершен") || content.startsWith("Все парсеры завершили работу")) {
         AcceptButton();
     } else if (content.startsWith("Начало парсинга")) {
@@ -148,6 +148,14 @@ function OnAlert(event) {
 
 function OnStatus(event) {
     var content = event.data;
+    if (content.includes("В работе")) {
+    const button = document.getElementById("StartParsingButton");
+        if (button) {
+            button.disabled = true;
+            button.style.opacity = "0.5";
+            button.style.cursor = "not-allowed";
+        }
+    }
     UpdateStatus(content)
 }
 
