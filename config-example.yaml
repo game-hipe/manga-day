@@ -14,6 +14,9 @@ bot:
   api_key: "ABCDEFG:1234567890" # Токен бота
   admins: [12345] # Админы бота
 
+user_bot:
+  api_key: "ABCDEFG:1234567890" # Токен бота
+
 database:
   db: "sqlite+aiosqlite:///var/database.db" # Строка подключения к базе данных
 

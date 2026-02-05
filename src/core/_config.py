@@ -37,13 +37,17 @@ class UpdateConfig(BaseModel):
 
 class BotConfig(BaseModel):
     api_key: str
+    
+
+class AdminBotConfig(BotConfig):
     admins: list[int]
 
 
 class Config(BaseModel):
     logging: LoggingConfig
     update: UpdateConfig
-    bot: BotConfig
+    bot: AdminBotConfig
+    user_bot: BotConfig
     database: DataBaseConfig
     api: ApiConfig
 

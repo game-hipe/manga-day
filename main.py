@@ -13,6 +13,7 @@ from src.core.manager.spider import SpiderManager
 from src.frontend import start_frontend
 from src.api import start_api
 from src.bot import start_bot
+from src.bot import start_user
 
 from src.core import SpiderScheduler
 
@@ -36,6 +37,7 @@ async def main():
                 start_bot(spider=spider),
                 start_api(manager=api),
                 start_frontend(manager=api, find=find, spider=spider),
+                start_user(manager = api, spider=spider),
                 scheduler.start(),
             )
         finally:

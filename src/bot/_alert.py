@@ -4,8 +4,8 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramNotFound
 from loguru import logger
 
-from ...core.abstract.alert import BaseAlert
-from ...core import config
+from ..core.abstract.alert import BaseAlert
+from ..core import config
 
 
 class BotAlert(BaseAlert):
