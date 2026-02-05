@@ -7,8 +7,8 @@ from aiogram.types import BotCommand
 from aiogram.fsm.storage.memory import MemoryStorage
 from loguru import logger
 
-from ..core import config
-from ..core.manager.spider import SpiderManager
+from ...core import config
+from ...core.manager.spider import SpiderManager
 from .handlers.commands import CommandsHandler
 from .middleware.admins import AdminMiddleware
 from ._alert import BotAlert

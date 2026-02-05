@@ -1,3 +1,3 @@
-from ._bot import start_bot, setup_bot, BotConfig
+from .admin._bot import start_bot, setup_bot, BotConfig
 
 __all__ = ["start_bot", "setup_bot", "BotConfig"]

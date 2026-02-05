@@ -2,7 +2,7 @@ from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
 
-from ...core.manager.spider import SpiderManager
+from ....core.manager.spider import SpiderManager
 from .._text import GREETING, HELP
 
 
