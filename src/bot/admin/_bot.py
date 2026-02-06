@@ -98,7 +98,7 @@ async def setup_bot(**kwargs: Unpack[BotConfig]):
                 await dp.stop_polling()
             except RuntimeError:
                 pass
-        await spider.alert("<b>Бот прекратил свою работу</b>")
+        await spider.alert("<b>Бот прекратил свою работу</b>", "warning")
         logger.info("Бот остановлен")
 
 

@@ -41,7 +41,12 @@ async def main():
                 start_bot(spider=spider),
                 start_api(manager=api),
                 start_frontend(manager=api, find=find, spider=spider),
-                start_user(manager=api, alert=alert, pdf_service=pdf),
+                start_user(
+                    manager=api,
+                    alert=alert,
+                    pdf_service=pdf,
+                    save_path=config.pdf.save_path,
+                ),
                 scheduler.start(),
             )
         finally:

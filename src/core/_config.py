@@ -1,3 +1,4 @@
+import os
 import sys
 
 from loguru import logger
@@ -8,6 +9,10 @@ from yaml import full_load
 __all__ = ["config"]
 
 CONFIG_FILE = "config.yaml"
+
+
+class PDFConfig(BaseModel):
+    save_path: str = Field("var/pdf")
 
 
 class ApiConfig(BaseModel):
@@ -50,6 +55,7 @@ class Config(BaseModel):
     user_bot: BotConfig
     database: DataBaseConfig
     api: ApiConfig
+    pdf: PDFConfig
 
 
 def load_config():
@@ -66,6 +72,11 @@ def load_config():
     logger.add(sys.stderr, level=config.logging.level, format=config.logging.format)
 
     logger.info("Конфигурация успешно загружена!")
+
+    try:
+        os.mkdir(config.pdf.save_path)
+    except FileExistsError:
+        pass
 
     return config
 

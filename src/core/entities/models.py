@@ -1,7 +1,7 @@
 import hashlib
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import String, ForeignKey, JSON, Index, Integer
+from sqlalchemy import String, ForeignKey, JSON, Index
 
 
 class Base(DeclarativeBase): ...
@@ -121,7 +121,7 @@ class GeneratedPdf(Base):
     __tablename__ = "generated_pdf"
     id: Mapped[int] = mapped_column(primary_key=True)
     id_manga: Mapped[int] = mapped_column(ForeignKey("mangas.id"), unique=True)
-    id_file: Mapped[int] = mapped_column(Integer())
+    id_file: Mapped[str] = mapped_column(String(256))
     __table_args__ = (Index("idx_generated_pdf_id_file", "id_file"),)
 
     manga: Mapped[Manga] = relationship("Manga", back_populates="generated_pdf")  # noqa

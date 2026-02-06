@@ -88,7 +88,7 @@ class OutputMangaSchema(MangaSchema):
     genres: list[ObjectWithId] = Field(default_factory=list)
     author: ObjectWithId | None = Field(default=None)
     language: ObjectWithId | None = Field(default=None)
-    pdf_id: int | None = Field(default=None)
+    pdf_id: str | None = Field(default=None)
 
     id: int
 

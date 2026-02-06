@@ -1,6 +1,10 @@
+import os
+
+from pathlib import Path
+
 from aiogram import Router
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 
 from ....core.service import PDFService
 from ....core.manager import MangaManager
@@ -15,7 +19,7 @@ class CommandsHandler:
     ):
         self.pdf = pdf
         self.manager = manager
-        self.save_path = save_path or self.BASE_SAVE_PATH
+        self.save_path = Path(save_path or self.BASE_SAVE_PATH)
         self.router = Router()
         self.register_handlers()
 
@@ -48,20 +52,30 @@ class CommandsHandler:
                     caption=SHOW_MANGA.format(
                         title=manga.title,
                         genres=", ".join(x.name for x in manga.genres),
-                        author=manga.author or "Неизвестно",
+                        author=manga.author.name if manga.author else "Неизвестно",
                     ),
                 )
                 return
 
-            file = await self.pdf.download(manga, self.save_path)
-            sent_message = await message.answer_document(file)
+            file = FSInputFile(
+                await self.pdf.download(manga, self.save_path / manga.sku)
+            )
+            sent_message = await message.answer_document(
+                file,
+                caption=SHOW_MANGA.format(
+                    title=manga.title,
+                    genres=", ".join(x.name for x in manga.genres),
+                    author=manga.author.name if manga.author else "Неизвестно",
+                )
+            )
 
             if sent_message.document:
                 file_id = sent_message.document.file_id
 
             await self.manager.add_pdf(file_id, manga.id)
+            os.remove(file.path)
 
         except ValueError:
             await message.answer(
-                "Пожалуйста введите данные в виде download [АРТИКУЛ или URL]"
+                "Пожалуйста введите данные в виде <code>download [АРТИКУЛ или URL]</code>"
             )

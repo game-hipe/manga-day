@@ -20,12 +20,14 @@ class BotConfig(TypedDict):
         manager (MangaManager): Экземпляр менеджера манги.
         pdf_service (PDFService): Экземпляр для работы с PDF.
         alert (AlertManager): Экземпляр менеджера оповещений.
+        save_path (str | None, optional): Путь для хранение PDF - файлов
         token (str | None, optional): Токен Telegram-бота. По умолчанию берётся из конфига.
     """
 
     manager: MangaManager
     pdf_service: PDFService
     alert: AlertManager
+    save_path: str | None
     token: str | None
 
 
@@ -63,6 +65,8 @@ async def setup_user(**kwargs: Unpack[BotConfig]):
         TypeError: Если manager не является экземпляром MangaManager.
     """
     alert = kwargs.get("alert")
+    pdf = kwargs.get("pdf_service")
+    save_path = kwargs.get("save_path")
 
     manager = kwargs.get("manager")
     token = kwargs.get("token") or config.user_bot.api_key
@@ -83,7 +87,7 @@ async def setup_user(**kwargs: Unpack[BotConfig]):
             logger.info("Инициализация бота...")
             await set_command(bot)
 
-            handler = CommandsHandler(manager=manager)
+            handler = CommandsHandler(manager=manager, pdf=pdf, save_path=save_path)
 
             dp.include_routers(handler.router)
 
@@ -96,7 +100,7 @@ async def setup_user(**kwargs: Unpack[BotConfig]):
             except RuntimeError:
                 pass
 
-        await alert.alert("<b>Бот прекратил свою работу</b>")
+        await alert.alert("<b>Бот прекратил свою работу</b>", "warning")
         logger.info("USER - Бот остановлен")
 
 

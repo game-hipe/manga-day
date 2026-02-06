@@ -290,11 +290,13 @@ class MangaManager:
         """
         async with self.Session() as session:
             async with session.begin():
-                if session.get(Manga, id):
+                if await session.scalar(
+                    select(GeneratedPdf).where(GeneratedPdf.id_manga == manga_id)
+                ):
                     logger.warning("PDF - для этой манги уже добавлен!")
                     return
 
-                obj = GeneratedPdf(file_id=file_id, manga_id=manga_id)
+                obj = GeneratedPdf(id_file=file_id, id_manga=manga_id)
                 session.add(obj)
 
             logger.info(
