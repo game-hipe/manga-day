@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 
+from ....core import config
 from ....core.manager import MangaManager, SpiderManager
 from .._alert import AdminAlert
 
@@ -56,7 +57,7 @@ class AdminHandler:
 
     async def index(self, request: Request):
         return self.templates.TemplateResponse(
-            "index.html", context={"request": request}
+            "index.html", context={"request": request, "port": config.api.frontend_port}
         )
 
     async def status_socket(self, websocket: WebSocket):

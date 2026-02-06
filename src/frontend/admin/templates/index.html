@@ -78,6 +78,12 @@
             background-color: #bdc3c7;
         }
     </style>
+    <script>
+        {% block content %}
+            const ws = new WebSocket("ws://localhost:{{ port }}/admin/ws");
+            const stat_ws = new WebSocket("ws://localhost:{{ port }}/admin/ws/status")
+        {% endblock %}
+    </script>
 </head>
 <body>
     <script src="/admin/static/js/script.js"></script>

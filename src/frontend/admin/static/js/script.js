@@ -1,6 +1,3 @@
-const ws = new WebSocket("ws://localhost:8000/admin/ws");
-const stat_ws = new WebSocket("ws://localhost:8000/admin/ws/status")
-
 // Массив для хранения текущих сообщений (для управления)
 let activeMessages = [];
 

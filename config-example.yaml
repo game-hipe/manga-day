@@ -16,6 +16,7 @@ bot:
 
 user_bot:
   api_key: "ABCDEFG:1234567890" # Токен бота
+  url: "https://t.me/example_bot"
 
 database:
   db: "sqlite+aiosqlite:///var/database.db" # Строка подключения к базе данных
@@ -23,6 +24,9 @@ database:
 api:
   frontend_port: 8000 # Порт фронтенда
   backend_port: 8080 # Порт бэкенда
+
+  frontend_host: "127.0.0.1"
+  backend_host: "0.0.0.0"
 
 pdf:
   save_path: "var/pdf"

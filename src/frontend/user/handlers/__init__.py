@@ -8,6 +8,8 @@ from fastapi.templating import Jinja2Templates
 
 from ....core.manager.manga import MangaManager
 from ....core.service.manga import FindService
+from ....core import config
+
 
 USER_FILES = Path(os.path.abspath(__file__)).parent.parent
 
@@ -118,7 +120,7 @@ class UserHandler:
             )
 
         return self.templates.TemplateResponse(
-            "manga.html", context={"request": request, "manga": manga.as_dict()}
+            "manga.html", context={"request": request, "manga": manga.as_dict(), "bot": config.user_bot.url}
         )
 
     async def get_genres_pages(

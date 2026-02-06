@@ -32,7 +32,7 @@ async def start_api(manager: MangaManager) -> None:
     """
     app = setup_api(manager)
 
-    _config = uvicorn.Config(app, host="0.0.0.0", port=config.api.backend_port)
+    _config = uvicorn.Config(app, host=config.api.backend_host, port=config.api.backend_port)
 
     server = uvicorn.Server(_config)
     await server.serve()
