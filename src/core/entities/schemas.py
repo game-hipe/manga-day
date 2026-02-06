@@ -82,11 +82,13 @@ class OutputMangaSchema(MangaSchema):
 
     Args:
         id (int): Внутренний ID либо сайта, либо БД
+        pdf_id (int): ID - PDF в ТГ боте
     """
 
     genres: list[ObjectWithId] = Field(default_factory=list)
     author: ObjectWithId | None = Field(default=None)
     language: ObjectWithId | None = Field(default=None)
+    pdf_id: int | None = Field(default=None)
 
     id: int
 

@@ -7,11 +7,7 @@ from loguru import logger
 
 from src.core import config
 from src.core.entities.models import Base
-from src.core.manager import (
-    MangaManager,
-    SpiderManager,
-    AlertManager
-)
+from src.core.manager import MangaManager, SpiderManager, AlertManager
 
 from src.frontend import start_frontend
 from src.api import start_api
@@ -45,7 +41,7 @@ async def main():
                 start_bot(spider=spider),
                 start_api(manager=api),
                 start_frontend(manager=api, find=find, spider=spider),
-                start_user(manager = api, spider=spider),
+                start_user(manager=api, alert=alert, pdf_service=pdf),
                 scheduler.start(),
             )
         finally:

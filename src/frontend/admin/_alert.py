@@ -10,12 +10,7 @@ class AdminAlert(BaseAlert):
         if not self.is_open():
             return False
 
-        await self._wb.send_json(
-            {
-                "message": message,
-                "level": level
-            }
-        )
+        await self._wb.send_json({"message": message, "level": level})
         return True
 
     def is_open(self):

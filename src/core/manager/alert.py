@@ -8,7 +8,7 @@ from ..abstract.alert import BaseAlert, LEVEL
 class AlertManager:
     def __init__(self):
         self._alerts: list[BaseAlert] = []
-    
+
     def add_alert(self, alert: BaseAlert) -> None:
         """Добавить уведомление."""
         if not isinstance(alert, BaseAlert):
@@ -26,9 +26,10 @@ class AlertManager:
             logger.debug(
                 f"Обработчик уведомлений {alert.__class__.__name__} уже существует"
             )
-            
+
     async def alert(self, message: str, level: LEVEL):
         """Уведомить всех о событии."""
+
         async def _send(message: str, alert_engine: BaseAlert) -> None:
             try:
                 result = await alert_engine.alert(message, level)
@@ -45,7 +46,7 @@ class AlertManager:
                 )
 
         await asyncio.gather(*[_send(message, alert) for alert in self._alerts])
-        
+
     def remove_alert(self, alert: BaseAlert) -> None:
         """Удалить уведомление."""
         if alert in self._alerts:
@@ -57,7 +58,7 @@ class AlertManager:
             logger.warning(
                 f"Обработчик уведомлений {alert.__class__.__name__} не найден"
             )
-        
+
     @property
     def alerts(self):
         """Список уведомлений."""

@@ -37,7 +37,7 @@ class UpdateConfig(BaseModel):
 
 class BotConfig(BaseModel):
     api_key: str
-    
+
 
 class AdminBotConfig(BotConfig):
     admins: list[int]

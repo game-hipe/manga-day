@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 
 LEVEL: TypeAlias = Literal["info", "warning", "error", "critical"]
 
+
 class BaseAlert(ABC):
     """
     Абстрактный класс для отправки уведомлений.

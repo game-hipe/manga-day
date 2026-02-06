@@ -17,6 +17,7 @@ CACHE = TTLCache(128, 300)
 
 class BaseSpiderTest:
     """Базовый класс для тестирования спайдеров"""
+
     @pytest_asyncio.fixture
     async def session(self):
         """Асинхронная фикстура для создания сессии"""
@@ -199,10 +200,12 @@ class TestSpiderHitomi(BaseSpiderTest):
         "aunt",
         "father",
     ]
-    
+
     EXPECTED_TITLE = "Family 31 - 35 [pepper0]"
     EXPECTED_LANGUAGE = "japanese"
-    EXPECTED_POSTER = "https://hitomi.si/img/thumb/ab/f2/101093/101093-101093-1960x1466.webp"
+    EXPECTED_POSTER = (
+        "https://hitomi.si/img/thumb/ab/f2/101093/101093-101093-1960x1466.webp"
+    )
     EXPECTED_GALLERY_COUNT = 58
     EXPECTED_AUTHOR = "pepper0"
 

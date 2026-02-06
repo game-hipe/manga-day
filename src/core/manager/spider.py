@@ -33,7 +33,7 @@ class SpiderManager:
         alert: AlertManager,
         features: str | None = None,
         batch: int | None = None,
-        **kwargs: Unpack[RequestItem]
+        **kwargs: Unpack[RequestItem],
     ) -> None: ...
 
     def __init__(
@@ -214,10 +214,7 @@ class SpiderManager:
             await self.alert(f"Парсер завершил работу {spider.__class__.__name__}")
 
     async def alert(self, message: str, level: LEVEL | None = None) -> None:
-        await self._alert_manager.alert(
-            message = message,
-            level = level or "info"
-        )
+        await self._alert_manager.alert(message=message, level=level or "info")
 
     def add_alert(self, alert: BaseAlert) -> None:
         """Добавить уведомление."""
@@ -244,9 +241,12 @@ class SpiderManager:
 
         status_lines = []
         max_spider_name_len = max(
-            (len(self.spider_tasks.get(task).__class__.__name__)
-            for task in self.tasks if self.spider_tasks.get(task)),
-            default=10
+            (
+                len(self.spider_tasks.get(task).__class__.__name__)
+                for task in self.tasks
+                if self.spider_tasks.get(task)
+            ),
+            default=10,
         )
 
         for task in self.tasks:
@@ -266,14 +266,20 @@ class SpiderManager:
                     extra = " — 100%"
             else:
                 coro_status = "В работе"
-                extra = f" — {spider.status}" if hasattr(spider, "status") and spider.status else ""
+                extra = (
+                    f" — {spider.status}"
+                    if hasattr(spider, "status") and spider.status
+                    else ""
+                )
 
             padded_name = spider_name.ljust(max_spider_name_len)
 
-            status_lines.append(f"<b>{padded_name}</b> — Статус: <b>{coro_status}</b>{extra}")
+            status_lines.append(
+                f"<b>{padded_name}</b> — Статус: <b>{coro_status}</b>{extra}"
+            )
 
         return "\n".join(status_lines)
-    
+
     @property
     def alert_manager(self) -> AlertManager:
         """Возвращает менеджер уведомлений."""

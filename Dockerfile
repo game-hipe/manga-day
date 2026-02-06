@@ -4,6 +4,8 @@ WORKDIR /app
 
 RUN mkdir /app/var
 
+RUN mkdir /app/var/pdf
+
 VOLUME [ "/app/var" ]
 
 COPY requirements.txt .

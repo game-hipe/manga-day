@@ -8,7 +8,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from loguru import logger
 
 from ...core import config
-from ...core.manager import MangaManager, SpiderManager
+from ...core.manager import MangaManager, AlertManager
+from ...core.service import PDFService
 from .handler import CommandsHandler
 
 
@@ -17,12 +18,14 @@ class BotConfig(TypedDict):
 
     Args:
         manager (MangaManager): Экземпляр менеджера манги.
-        spider (SpiderManager, optional): Экземпляр для управление парсингом (Нужна только система Алёртов) # NOTE: Не придерживается концепции единой отвественности нужно создать AlertManager
+        pdf_service (PDFService): Экземпляр для работы с PDF.
+        alert (AlertManager): Экземпляр менеджера оповещений.
         token (str | None, optional): Токен Telegram-бота. По умолчанию берётся из конфига.
     """
 
     manager: MangaManager
-    spider: SpiderManager | None
+    pdf_service: PDFService
+    alert: AlertManager
     token: str | None
 
 
@@ -59,7 +62,7 @@ async def setup_user(**kwargs: Unpack[BotConfig]):
         AttributeError: Если не передан manager.
         TypeError: Если manager не является экземпляром MangaManager.
     """
-    spider = kwargs.get("spider")  # WARNING: Костыль!
+    alert = kwargs.get("alert")
 
     manager = kwargs.get("manager")
     token = kwargs.get("token") or config.user_bot.api_key
@@ -93,7 +96,7 @@ async def setup_user(**kwargs: Unpack[BotConfig]):
             except RuntimeError:
                 pass
 
-        await spider.alert("<b>Бот прекратил свою работу</b>")
+        await alert.alert("<b>Бот прекратил свою работу</b>")
         logger.info("USER - Бот остановлен")
 
 

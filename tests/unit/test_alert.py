@@ -72,7 +72,6 @@ class TestAlertManager:
         """Тест удаления несуществующего обработчика."""
         with caplog.at_level(logger.level("WARNING").name):
             alert_manager.remove_alert(failing_alert)
-    
 
     @pytest.mark.asyncio
     async def test_alert_sends_to_all_handlers(self, alert_manager, successful_alert):
@@ -91,7 +90,6 @@ class TestAlertManager:
             await alert_manager.alert("Failing message", "error")
 
         assert failing_alert not in alert_manager.alerts
-
 
     @pytest.mark.asyncio
     async def test_exception_in_alert_removes_handler(self, alert_manager, caplog):
