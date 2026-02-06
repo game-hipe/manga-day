@@ -1,7 +1,7 @@
 import hashlib
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import String, ForeignKey, JSON, Index
+from sqlalchemy import String, ForeignKey, JSON, Index, Integer
 
 
 class Base(DeclarativeBase): ...
@@ -109,6 +109,24 @@ class Gallery(Base):
     manga: Mapped[Manga] = relationship("Manga", back_populates="gallery")  # noqa
 
 
+class GeneratedPdf(Base):
+    """
+    Модель сгенерированного pdf
+
+    Args:
+        id (int): ID - на мангу
+        id_file (int): ID файла в тг
+    """
+    __tablename__ = "generated_pdf"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    id_manga: Mapped[int] = mapped_column(ForeignKey("mangas.id"))
+    id_file: Mapped[int] = mapped_column(Integer())
+    __table_args__ = (
+        Index("idx_generated_pdf_id_file", "id_file"),
+    )
+    
+    manga: Mapped[Manga] = relationship("Manga", back_populates="generated_pdf")  # noqa
+
 class Manga(Base):
     """
     Модель манги
@@ -150,6 +168,8 @@ class Manga(Base):
 
     gallery: Mapped[Gallery] = relationship("Gallery", back_populates="manga")
 
+    generated_pdf: Mapped[GeneratedPdf] = relationship("GeneratedPdf", back_populates="manga")  # noqa
+    
     @property
     def genres(self) -> list[Genre]:
         return [genre.genre for genre in self.genres_connection]
