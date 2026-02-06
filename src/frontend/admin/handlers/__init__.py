@@ -6,7 +6,7 @@ from loguru import logger
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.websockets import WebSocket, WebSocketDisconnect
+from fastapi.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 from ....core import config
 from ....core.manager import MangaManager, SpiderManager
@@ -71,9 +71,15 @@ class AdminHandler:
                         self._latest = self.spider.status
 
                     await asyncio.sleep(0.1)
+            except asyncio.CancelledError:
+                logger.info("Отключение системы.")
 
             except WebSocketDisconnect:
                 logger.debug("Пользователь отключился")
+                
+            finally:
+                if not websocket.client_state == WebSocketState.DISCONNECTED:
+                    await websocket.close()
 
         await send_status()
 

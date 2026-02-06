@@ -99,7 +99,7 @@ async def setup_user(**kwargs: Unpack[BotConfig]):
                 await dp.stop_polling()
             except RuntimeError:
                 pass
-
+        
         await alert.alert("<b>Бот прекратил свою работу</b>", "warning")
         logger.info("USER - Бот остановлен")
 
