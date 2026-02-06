@@ -9,6 +9,7 @@ from aiohttp import ClientSession
 from cachetools import TTLCache
 from src.spider.hmanga import HmangaSpider
 from src.spider.multi_manga import MultiMangaSpider
+from src.spider.hitomi import HitomiSpider
 
 
 CACHE = TTLCache(128, 300)
@@ -16,7 +17,6 @@ CACHE = TTLCache(128, 300)
 
 class BaseSpiderTest:
     """Базовый класс для тестирования спайдеров"""
-
     @pytest_asyncio.fixture
     async def session(self):
         """Асинхронная фикстура для создания сессии"""
@@ -181,6 +181,63 @@ class TestSpiderHmanga(BaseSpiderTest):
     @pytest.mark.asyncio
     async def test_spider_get_author(self, manga_data):
         assert manga_data.author is None
+
+    @pytest.mark.asyncio
+    async def test_spider_run(self, spider):
+        with pytest.raises(AttributeError):
+            await spider.run()
+
+
+class TestSpiderHitomi(BaseSpiderTest):
+    BASE_URL = "https://hitomi.si"
+    TEST_URL = "https://hitomi.si/mangazine/si101093"
+
+    TAGS = [
+        "milf",
+        "mother",
+        "sister",
+        "aunt",
+        "father",
+    ]
+    
+    EXPECTED_TITLE = "Family 31 - 35 [pepper0]"
+    EXPECTED_LANGUAGE = "japanese"
+    EXPECTED_POSTER = "https://hitomi.si/img/thumb/ab/f2/101093/101093-101093-1960x1466.webp"
+    EXPECTED_GALLERY_COUNT = 58
+    EXPECTED_AUTHOR = "pepper0"
+
+    @pytest_asyncio.fixture
+    async def spider(self, session):
+        return HitomiSpider(session)
+
+    @pytest.mark.asyncio
+    async def test_spider_get_manga(self, manga_data):
+        assert manga_data is not None
+
+    @pytest.mark.asyncio
+    async def test_spider_get_title(self, manga_data):
+        assert manga_data.title == self.EXPECTED_TITLE
+
+    @pytest.mark.asyncio
+    async def test_spider_get_genres(self, manga_data):
+        for tag in self.TAGS:
+            assert tag in manga_data.genres
+
+    @pytest.mark.asyncio
+    async def test_spider_get_language(self, manga_data):
+        assert manga_data.language == self.EXPECTED_LANGUAGE
+
+    @pytest.mark.asyncio
+    async def test_spider_get_poster(self, manga_data):
+        assert str(manga_data.poster) == self.EXPECTED_POSTER
+
+    @pytest.mark.asyncio
+    async def test_spider_get_gallery(self, manga_data):
+        assert len(manga_data.gallery) == self.EXPECTED_GALLERY_COUNT
+
+    @pytest.mark.asyncio
+    async def test_spider_get_author(self, manga_data):
+        assert manga_data.author == self.EXPECTED_AUTHOR
 
     @pytest.mark.asyncio
     async def test_spider_run(self, spider):
