@@ -7,9 +7,12 @@ from loguru import logger
 
 from src.core import config
 from src.core.entities.models import Base
-from src.core.manager import MangaManager
-from src.core.manager import SpiderManager
-from src.core.manager import AlertManager
+from src.core.manager.download import DownloadManager
+from src.core.manager import (
+    MangaManager,
+    SpiderManager,
+    AlertManager
+)
 
 from src.frontend import start_frontend
 from src.api import start_api
@@ -30,20 +33,24 @@ async def main():
 
         alert = AlertManager()
         api = MangaManager(engine)
-        spider = SpiderManager(session, api, alert, "lxml")
-        scheduler = SpiderScheduler(spider)
-
-        find = FindService(api)
-        try:
-            await asyncio.gather(
-                start_bot(spider=spider),
-                start_api(manager=api),
-                start_frontend(manager=api, find=find, spider=spider),
-                start_user(manager = api, spider=spider),
-                scheduler.start(),
-            )
-        finally:
-            await engine.dispose()
+        
+        download = DownloadManager(session, api)
+        await download.download("e73711d67addbab775b6c76a4a646bdb", "images")
+        
+        #spider = SpiderManager(session, api, alert, "lxml")
+        #scheduler = SpiderScheduler(spider)
+#
+        #find = FindService(api)
+        #try:
+        #    await asyncio.gather(
+        #        start_bot(spider=spider),
+        #        start_api(manager=api),
+        #        start_frontend(manager=api, find=find, spider=spider),
+        #        start_user(manager = api, spider=spider),
+        #        scheduler.start(),
+        #    )
+        #finally:
+        #    await engine.dispose()
 
 
 if __name__ == "__main__":

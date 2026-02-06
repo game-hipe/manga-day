@@ -119,7 +119,7 @@ class GeneratedPdf(Base):
     """
     __tablename__ = "generated_pdf"
     id: Mapped[int] = mapped_column(primary_key=True)
-    id_manga: Mapped[int] = mapped_column(ForeignKey("mangas.id"))
+    id_manga: Mapped[int] = mapped_column(ForeignKey("mangas.id"), unique=True)
     id_file: Mapped[int] = mapped_column(Integer())
     __table_args__ = (
         Index("idx_generated_pdf_id_file", "id_file"),
