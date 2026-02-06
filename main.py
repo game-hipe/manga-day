@@ -7,7 +7,6 @@ from loguru import logger
 
 from src.core import config
 from src.core.entities.models import Base
-from src.core.manager.download import DownloadManager
 from src.core.manager import (
     MangaManager,
     SpiderManager,
@@ -21,6 +20,7 @@ from src.bot import start_user
 
 from src.core import SpiderScheduler
 
+from src.core.service.download import DownloadManager
 from src.core.service.manga import FindService
 
 
