@@ -2,12 +2,13 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
+from ....core.service import PDFService
 from ....core.manager import MangaManager
 from .._text import GREETING, HELP
 
 
 class CommandsHandler:
-    def __init__(self, manager: MangaManager):
+    def __init__(self, manager: MangaManager, pdf: PDFService):
         self.manager = manager
         self.router = Router()
         self.register_handlers()

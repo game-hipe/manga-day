@@ -20,8 +20,8 @@ from src.bot import start_user
 
 from src.core import SpiderScheduler
 
-from src.core.service.download import DownloadManager
-from src.core.service.manga import FindService
+from src.core.service import PDFService
+from src.core.service import FindService
 
 
 async def main():
@@ -33,24 +33,23 @@ async def main():
 
         alert = AlertManager()
         api = MangaManager(engine)
-        
-        download = DownloadManager(session, api)
-        await download.download("e73711d67addbab775b6c76a4a646bdb", "images")
-        
-        #spider = SpiderManager(session, api, alert, "lxml")
-        #scheduler = SpiderScheduler(spider)
-#
-        #find = FindService(api)
-        #try:
-        #    await asyncio.gather(
-        #        start_bot(spider=spider),
-        #        start_api(manager=api),
-        #        start_frontend(manager=api, find=find, spider=spider),
-        #        start_user(manager = api, spider=spider),
-        #        scheduler.start(),
-        #    )
-        #finally:
-        #    await engine.dispose()
+
+        spider = SpiderManager(session, api, alert, "lxml")
+        scheduler = SpiderScheduler(spider)
+
+        find = FindService(api)
+        pdf = PDFService(session)
+
+        try:
+            await asyncio.gather(
+                start_bot(spider=spider),
+                start_api(manager=api),
+                start_frontend(manager=api, find=find, spider=spider),
+                start_user(manager = api, spider=spider),
+                scheduler.start(),
+            )
+        finally:
+            await engine.dispose()
 
 
 if __name__ == "__main__":
