@@ -7,8 +7,9 @@ from loguru import logger
 
 from src.core import config
 from src.core.entities.models import Base
-from src.core.manager.manga import MangaManager
-from src.core.manager.spider import SpiderManager
+from src.core.manager import MangaManager
+from src.core.manager import SpiderManager
+from src.core.manager import AlertManager
 
 from src.frontend import start_frontend
 from src.api import start_api
@@ -27,8 +28,9 @@ async def main():
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
+        alert = AlertManager()
         api = MangaManager(engine)
-        spider = SpiderManager(session, api, "lxml")
+        spider = SpiderManager(session, api, alert, "lxml")
         scheduler = SpiderScheduler(spider)
 
         find = FindService(api)

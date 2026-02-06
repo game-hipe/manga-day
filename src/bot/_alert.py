@@ -4,7 +4,7 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramNotFound
 from loguru import logger
 
-from ..core.abstract.alert import BaseAlert
+from ..core.abstract.alert import BaseAlert, LEVEL
 from ..core import config
 
 
@@ -14,8 +14,9 @@ class BotAlert(BaseAlert):
     def __init__(self, bot: Bot):
         self.bot = bot
 
-    async def alert(self, message: str):
+    async def alert(self, message: str, level: LEVEL):
         """Отправляет сообщение в чаты администраторов бота"""
+        message += f"\n\nУровень: <b>{level}</b>"
 
         async def send(chat_id: int):
             try:

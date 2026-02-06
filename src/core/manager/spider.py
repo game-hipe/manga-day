@@ -8,9 +8,10 @@ import aiohttp
 from loguru import logger
 
 from ..abstract.spider import BaseSpider
-from ..abstract.alert import BaseAlert
+from ..abstract.alert import BaseAlert, LEVEL
 from .request import RequestManager, RequestItem
 from .manga import MangaManager
+from .alert import AlertManager
 
 
 class SpiderManager:
@@ -19,6 +20,7 @@ class SpiderManager:
         self,
         session: RequestManager,
         manager: MangaManager,
+        alert: AlertManager,
         features: str | None = None,
         batch: int | None = None,
     ) -> None: ...
@@ -28,25 +30,27 @@ class SpiderManager:
         self,
         session: aiohttp.ClientSession,
         manager: MangaManager,
+        alert: AlertManager,
         features: str | None = None,
         batch: int | None = None,
-        **kwargs: Unpack[RequestItem],
+        **kwargs: Unpack[RequestItem]
     ) -> None: ...
 
     def __init__(
         self,
         session: aiohttp.ClientSession | RequestManager,
         manager: MangaManager,
+        alert: AlertManager,
         features: str = None,
         batch: int = None,
         **kwargs,
     ):
         self._total: int = 0
         self._start: bool = False
-        self._alerts: list[BaseAlert] = []
         self._manager = manager
         self.tasks: list[asyncio.Task[None]] = []
         self.spider_tasks: dict[asyncio.Task, BaseSpider] = {}
+        self._alert_manager = alert
 
         self.spiders: list[BaseSpider] = []
         spider_module = importlib.import_module("...spider", package=__package__)
@@ -209,67 +213,68 @@ class SpiderManager:
             logger.info(f"Парсер завершил работу {spider.__class__.__name__}")
             await self.alert(f"Парсер завершил работу {spider.__class__.__name__}")
 
-    async def alert(self, message: str) -> None:
-        """Уведомить всех о событии."""
-
-        async def _send(message: str, alert_engine: BaseAlert) -> None:
-            try:
-                result = await alert_engine.alert(message)
-                if not result:
-                    self._alerts.remove(alert_engine)
-                    logger.debug(
-                        f"Система уведомлений {type(alert_engine).__name__} было удалено"
-                    )
-
-            except Exception as e:
-                self._alerts.remove(alert_engine)
-                logger.error(
-                    f"Ошибка при отправке уведомления {alert_engine.__class__.__name__}: {e}"
-                )
-
-        await asyncio.gather(*[_send(message, alert) for alert in self._alerts])
+    async def alert(self, message: str, level: LEVEL | None = None) -> None:
+        await self._alert_manager.alert(
+            message = message,
+            level = level or "info"
+        )
 
     def add_alert(self, alert: BaseAlert) -> None:
         """Добавить уведомление."""
-        if not isinstance(alert, BaseAlert):
-            logger.warning(
-                "Не удалось добавить обработчик так-как он не наследуется от BaseAlert"
-            )
-            raise TypeError("Обработчик уведомлений должен быть наследником BaseAlert")
-
-        if alert not in self._alerts:
-            self._alerts.append(alert)
-            logger.debug(
-                f"Добавлен новый обработчик уведомлений: {alert.__class__.__name__}"
-            )
-        else:
-            logger.debug(
-                f"Обработчик уведомлений {alert.__class__.__name__} уже существует"
-            )
+        self._alert_manager.add_alert(alert)
 
     @property
     def status(self) -> str:
-        """Статус парсеров"""
-        result = []
+        """
+        Возвращает читаемый статус всех запущенных парсеров (spider'ов).
+
+        Формат вывода:
+            <Имя Spider> — Статус: <Состояние корутины> [— Доп. статус/прогресс]
+
+        Примеры:
+            MangaSpider — Статус: В работе — Парсинг глав: 45/100
+            AnimeSpider — Статус: Завершён — 100%
+            OldSpider   — Статус: Отменён
+
+        Returns:
+            str: Отформатированный текстовый статус всех задач.
+        """
         if not self.tasks:
             return "Парсинг не запущен"
 
+        status_lines = []
+        max_spider_name_len = max(
+            (len(self.spider_tasks.get(task).__class__.__name__)
+            for task in self.tasks if self.spider_tasks.get(task)),
+            default=10
+        )
+
         for task in self.tasks:
             spider = self.spider_tasks.get(task)
-            spider_name = spider.__class__.__name__ if spider else "Unknown"
-
-            coro_status = "В работе"
+            spider_name = getattr(spider, "__class__", None)
+            spider_name = spider_name.__name__ if spider_name else "Неизвестно"
 
             if task.cancelled():
                 coro_status = "Отменён"
+                extra = ""
             elif task.done():
                 if task.exception():
                     coro_status = "Ошибка"
+                    extra = f" — {type(task.exception()).__name__}: {task.exception()}"
                 else:
                     coro_status = "Завершён"
+                    extra = " — 100%"
+            else:
+                coro_status = "В работе"
+                extra = f" — {spider.status}" if hasattr(spider, "status") and spider.status else ""
 
-            result.append(
-                f"<b>{spider_name}</b> Статус: <b>{coro_status}</b>{f' - {spider.status}' if hasattr(spider, 'status') else '' if coro_status != 'Завершён' else ' - 100%'}"
-            )
+            padded_name = spider_name.ljust(max_spider_name_len)
 
-        return "\n".join(result)
+            status_lines.append(f"<b>{padded_name}</b> — Статус: <b>{coro_status}</b>{extra}")
+
+        return "\n".join(status_lines)
+    
+    @property
+    def alert_manager(self) -> AlertManager:
+        """Возвращает менеджер уведомлений."""
+        return self._alert_manager

@@ -87,25 +87,27 @@ class AdminHandler:
 
                 if command.startswith("start"):
                     if self.spider._start:
-                        await alert.alert("Парсер уже запущен!")
+                        await alert.alert("Парсер уже запущен!", "warning")
                         continue
 
                     asyncio.create_task(self.spider.start_parsing())
 
                 elif command.startswith("stop"):
                     if not self.spider._start:
-                        await alert.alert("Парсер уже остановлен!")
+                        await alert.alert("Парсер уже остановлен!", "warning")
                         continue
 
                     asyncio.create_task(self.spider.stop_parsing())
 
                 else:
-                    await self.spider.alert("Внимания Неизвестная команда!")
+                    await self.spider.alert("Внимания Неизвестная команда!", "warning")
 
         except (WebSocketDisconnect, RuntimeError):
             logger.debug("Пользователь отключился")
+
+        finally:
             try:
-                self.spider._alerts.remove(alert)
+                self.spider.alert_manager.remove_alert(alert)
             except ValueError:
                 logger.debug("Уведомление было удалено сборщиком")
 

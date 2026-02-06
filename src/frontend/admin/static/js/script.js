@@ -152,28 +152,21 @@ function BlockButton() {
 }
 
 function OnAlert(event) {
-    var content = event.data;
-    console.log(content);
+    var content = JSON.parse(event.data);
+    var message = content.message;
+    var level = content.level;
 
-    if (content.startsWith("Парсинг завершен") || content.startsWith("Все парсеры завершили работу")) {
+    if (message.startsWith("Парсинг завершен") || message.startsWith("Все парсеры завершили работу")) {
         AcceptButton();
-    } else if (content.startsWith("Начало парсинга")) {
+    } else if (message.startsWith("Начало парсинга")) {
         BlockButton();
     }
     
-    if (content.startsWith("Парсинг уже начат")) {
+    if (message.startsWith("Парсинг уже начат")) {
         BlockButton();
     }
 
-    if (content.startsWith("Ошибка")) {
-        ShowMessage(content, "error");
-    } else if (content.startsWith("Внимание") || content.startsWith("Внимания")) {
-        ShowMessage(content, "warning");
-    } else if (content.startsWith("Успех") || content.startsWith("Успешно")) {
-        ShowMessage(content, "success");
-    } else {
-        ShowMessage(content, "info");
-    }
+    ShowMessage(message, level);
 }
 
 function OnStatus(event) {
