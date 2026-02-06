@@ -3,6 +3,7 @@
 {% block content %}
 <main>
     <link rel="stylesheet" href="/static/css/manga.css">
+    <script src="/static/js/script.js"></script>
     <div id="info">
         <div id="cover">
             <!-- Постер добавляем сразу, но с lazy -->
@@ -36,6 +37,12 @@
                 <a href="/manga/language/{{ manga.language.id }}">{{ manga.language.name }}</a>
             </div>
             {% endif %}
+        </div>
+        <div class="article-block">
+            <p>Чтобы скопировать артикул, нажмите 
+                <span class="sku-btn" data-sku="{{ manga.sku }}">Сюда</span>
+            </p>
+            <div class="copy-notification" id="copyNotification">Скопировано!</div>
         </div>
     </div>
     <div id="gallery">

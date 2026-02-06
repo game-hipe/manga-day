@@ -196,9 +196,20 @@ class UserHandler:
     ) -> None:
         pages, result = await self.find_engine.get_pages_by_query(query, page)
         if not result:
-            return self.templates.TemplateResponse(
-                "not_found.html", status_code=404, context={"request": request}
-            )
+            result = await self.find_engine.manager.get_manga_by_sku("396d24d6573c26c64d4d8a010cbd9a58")
+            if not result:
+                return self.templates.TemplateResponse(
+                    "not_found.html", status_code=404, context={"request": request}
+                )
+            else:
+                return self.templates.TemplateResponse(
+                    "manga.html",
+                    context={
+                        "request": request,
+                        "manga": result.as_dict(),
+                        "bot": config.user_bot.url,
+                    },
+                )
 
         return self.templates.TemplateResponse(
             "index.html",

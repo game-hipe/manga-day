@@ -402,3 +402,51 @@ main {
     from { opacity: 0; }
     to { opacity: 1; }
 }
+
+.article-block {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: var(--card-bg);
+    position: relative;
+    display: flex;
+}
+
+.sku-btn {
+    color: #cfd0d1;
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.sku-btn:hover {
+    background-color: #2e2e2e;
+    color: #d3d3d3;
+}
+
+.sku-btn:active {
+    transform: scale(0.95);
+}
+
+.copy-notification {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: #4CAF50;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    z-index: 100;
+}
+
+.copy-notification.show {
+    opacity: 1;
+    visibility: visible;
+}
