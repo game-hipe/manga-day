@@ -120,7 +120,12 @@ class UserHandler:
             )
 
         return self.templates.TemplateResponse(
-            "manga.html", context={"request": request, "manga": manga.as_dict(), "bot": config.user_bot.url}
+            "manga.html",
+            context={
+                "request": request,
+                "manga": manga.as_dict(),
+                "bot": config.user_bot.url,
+            },
         )
 
     async def get_genres_pages(

@@ -18,7 +18,7 @@ class PDFConfig(BaseModel):
 class ApiConfig(BaseModel):
     frontend_port: int = Field(8000)
     backend_port: int = Field(8080)
-    
+
     frontend_host: str = Field("0.0.0.0")
     backend_host: str = Field("0.0.0.0")
 

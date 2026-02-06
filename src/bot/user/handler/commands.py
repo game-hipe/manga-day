@@ -33,14 +33,17 @@ class CommandsHandler:
         if command.args:
             manga = await self._get_manga(command.args)
             if manga is None:
-                await message.answer(f"Не найдена манга по запросу {command.args} (ﾉД`)")
+                await message.answer(
+                    f"Не найдена манга по запросу {command.args} (ﾉД`)"
+                )
                 return
 
-            msg = await message.answer(f"Манга {manga.title} Найдена! Пожалуйста подождите...")
+            msg = await message.answer(
+                f"Манга {manga.title} Найдена! Пожалуйста подождите..."
+            )
             await self.download_manga(manga, msg)
             return
 
-            
         await message.answer(GREETING)
 
     async def help(self, message: Message):
@@ -54,8 +57,10 @@ class CommandsHandler:
             if manga is None:
                 await message.answer(f"Не найдена манга по запросу {query} (ﾉД`)")
                 return
-            
-            msg = await message.answer(f"Манга {manga.title} Найдена! Пожалуйста подождите...")
+
+            msg = await message.answer(
+                f"Манга {manga.title} Найдена! Пожалуйста подождите..."
+            )
             await self.download_manga(manga, msg)
 
         except ValueError:
@@ -68,9 +73,9 @@ class CommandsHandler:
             manga = await self.manager.get_manga_by_url(query)
         else:
             manga = await self.manager.get_manga_by_sku(query)
-            
+
         return manga
-    
+
     async def download_manga(self, manga: OutputMangaSchema, message: Message):
         if manga.pdf_id:
             await message.delete()
@@ -84,9 +89,7 @@ class CommandsHandler:
             )
             return
 
-        file = FSInputFile(
-            await self.pdf.download(manga, self.save_path / manga.sku)
-        )
+        file = FSInputFile(await self.pdf.download(manga, self.save_path / manga.sku))
         await message.delete()
         sent_message = await message.answer_document(
             file,
@@ -94,7 +97,7 @@ class CommandsHandler:
                 title=manga.title,
                 genres=", ".join(x.name for x in manga.genres),
                 author=manga.author.name if manga.author else "Неизвестно",
-            )
+            ),
         )
 
         if sent_message.document:

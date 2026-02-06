@@ -41,7 +41,9 @@ async def start_frontend(
 ) -> None:
     app = setup_frontend(manager, find, spider)
 
-    _config = uvicorn.Config(app, host=config.api.frontend_host, port=config.api.frontend_port)
+    _config = uvicorn.Config(
+        app, host=config.api.frontend_host, port=config.api.frontend_port
+    )
     server = uvicorn.Server(_config)
 
     await server.serve()
