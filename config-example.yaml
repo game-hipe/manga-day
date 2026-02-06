@@ -25,7 +25,7 @@ api:
   frontend_port: 8000 # Порт фронтенда
   backend_port: 8080 # Порт бэкенда
 
-  frontend_host: "127.0.0.1"
+  frontend_host: "0.0.0.0"
   backend_host: "0.0.0.0"
 
 pdf:
