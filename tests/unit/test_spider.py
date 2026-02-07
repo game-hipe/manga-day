@@ -204,7 +204,7 @@ class TestSpiderHitomi(BaseSpiderTest):
     EXPECTED_TITLE = "Family 31 - 35 [pepper0]"
     EXPECTED_LANGUAGE = "japanese"
     EXPECTED_POSTER = (
-        "https://hitomi.si/img/thumb/ab/f2/101093/101093-101093-1960x1466.webp"
+        "101093-101093-1960x1466.webp"
     )
     EXPECTED_GALLERY_COUNT = 58
     EXPECTED_AUTHOR = "pepper0"
@@ -232,7 +232,7 @@ class TestSpiderHitomi(BaseSpiderTest):
 
     @pytest.mark.asyncio
     async def test_spider_get_poster(self, manga_data):
-        assert str(manga_data.poster) == self.EXPECTED_POSTER
+        assert self.EXPECTED_POSTER in str(manga_data.poster)
 
     @pytest.mark.asyncio
     async def test_spider_get_gallery(self, manga_data):

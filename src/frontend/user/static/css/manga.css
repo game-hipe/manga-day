@@ -384,16 +384,6 @@ main {
     100% { background-position: -200% 0; }
 }
 
-.container-gallery img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: opacity 0.3s;
-}
-
 .container-gallery img:not([src*="placeholder"]) {
     animation: fadeIn 0.5s;
 }
