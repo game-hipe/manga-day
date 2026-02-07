@@ -305,10 +305,18 @@ class MangaManager:
 
     async def in_database(self, manga: BaseManga) -> bool:
         async with self.Session() as session:
-            if await session.scalar(select(Manga).where(Manga.sku == manga.sku)):
-                return True
+            db_manga = None
+            try:
+                db_manga = await session.scalar(select(Manga).where(Manga.sku == manga.sku))
+                if db_manga:
+                    return True
 
-            return False
+                return False
+            finally:
+                if db_manga is not None and db_manga.poster != str(manga.poster):
+                    db_manga.poster = str(manga.poster)
+                    await session.commit()
+                
 
     async def get_total(self) -> int:
         async with self.Session() as session:
