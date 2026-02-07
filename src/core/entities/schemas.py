@@ -1,7 +1,7 @@
 import hashlib
 
 from aiohttp import BasicAuth
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, HttpUrl, Field, field_validator
 
 
 class ObjectWithId(BaseModel):
@@ -117,6 +117,27 @@ class OutputMangaSchema(MangaSchema):
             language=self.language.name if self.language else None,
             gallery=self.gallery,
         )
+
+
+class ApiOutputManga(OutputMangaSchema):
+    """
+    Схема для отображения манги в API с добавленным sku
+    
+    Args:
+        sku (str): уникальный идентификатор манги
+    """
+    sku: str | None = None
+    
+    @field_validator('sku', mode='before')
+    @classmethod
+    def set_sku_if_none(cls, v, info):
+        if v is None:
+            # Получаем title из данных
+            title = info.data.get('title')
+            if title:
+                data = title.encode("utf-8")
+                return hashlib.sha256(data).hexdigest()[:32]
+        return v
 
 
 class ProxySchema(BaseModel):
