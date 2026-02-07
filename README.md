@@ -29,6 +29,10 @@ pip install -r requirements.txt
 python main.py
 ```
 
+> [!WARNING]
+> Донор данных hitomi, была добавлена защита Cloudflare, поэтому на данный момента паук "hitomi" не доступен.
+
+
 ## Структура проекта
 
 ```text
