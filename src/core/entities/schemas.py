@@ -122,17 +122,13 @@ class OutputMangaSchema(MangaSchema):
 class ApiOutputManga(OutputMangaSchema):
     """
     Схема для отображения манги в API с добавленным sku
-    
-    Args:
-        sku (str): уникальный идентификатор манги
     """
-    sku: str | None = None
+    manga_sku: str | None = Field(default=None, alias="sku", serialization_alias="sku")
     
-    @field_validator('sku', mode='before')
+    @field_validator('manga_sku', mode='before')
     @classmethod
     def set_sku_if_none(cls, v, info):
         if v is None:
-            # Получаем title из данных
             title = info.data.get('title')
             if title:
                 data = title.encode("utf-8")

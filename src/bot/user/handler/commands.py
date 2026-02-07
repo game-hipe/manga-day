@@ -65,7 +65,7 @@ class CommandsHandler:
 
         except ValueError:
             await message.answer(
-                "Пожалуйста введите данные в виде <code>download [АРТИКУЛ или URL]</code>"
+                "Пожалуйста введите данные в виде <code>/download [АРТИКУЛ или URL]</code>"
             )
 
     async def _get_manga(self, query: str):
@@ -85,6 +85,8 @@ class CommandsHandler:
                     title=manga.title,
                     genres=", ".join(x.name for x in manga.genres),
                     author=manga.author.name if manga.author else "Неизвестно",
+                    language=manga.language.name if manga.language else "Неизвестно",
+                    sku = manga.sku
                 ),
             )
             return
@@ -95,8 +97,10 @@ class CommandsHandler:
             file,
             caption=SHOW_MANGA.format(
                 title=manga.title,
-                genres=", ".join(x.name for x in manga.genres),
+                genres=", ".join(x.name for x in manga.genres) or "Отсутствует",
                 author=manga.author.name if manga.author else "Неизвестно",
+                language=manga.language.name if manga.language else "Неизвестно",
+                sku = manga.sku
             ),
         )
 
