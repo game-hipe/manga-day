@@ -10,6 +10,8 @@ from .parser import GlobalMangaParser, GlobalPageParser
 
 
 class BaseMangaSpider(BaseSpider):
+    HAS_CLOUDFARE = False
+
     PAGE_URL = "/page/{page}/"
     START_PAGE = 2
     MANGA_PARSER: type[GlobalMangaParser]

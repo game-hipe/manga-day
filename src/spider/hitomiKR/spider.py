@@ -6,10 +6,10 @@ from ..base_spider.spider import BaseMangaSpider
 from .parser import HitomiMangaParser, HitomiPageParser
 
 
-class HitomiSpider(BaseMangaSpider):
+class HitomiKRSpider(BaseMangaSpider):
     HAS_CLOUDFARE = True
 
-    BASE_URL = "https://hitomi.si"
+    BASE_URL = "https://hitomikr.org"
     CUSTOM_COOKIES = {
         "read": "1",
     }
@@ -81,7 +81,7 @@ class HitomiSpider(BaseMangaSpider):
 
         base_manga = parser.parse(markup, features=self.features, situation="html")
 
-        id = url.split("/")[-1].replace("si", "")
+        id = url.split("/")[-1].replace("re", "")
         gallery = await self.http.get(self.urljoin(self.MANGA.format(id=id)), "json")
         if gallery is None:
             logger.error(f"Не удалось получить галлерею: {url}")
