@@ -83,7 +83,7 @@ class CommandsHandler:
                     manga.pdf_id,
                     caption=SHOW_MANGA.format(
                         title=manga.title,
-                        genres=", ".join(x.name for x in manga.genres),
+                        genres=", ".join(x.name for x in manga.genres) or "Отсутствует",
                         author=manga.author.name if manga.author else "Неизвестно",
                         language=manga.language.name
                         if manga.language
@@ -94,6 +94,12 @@ class CommandsHandler:
                 return
 
             path = await self.pdf.download(manga, self.save_path / manga.sku)
+            if path is None:
+                await message.answer(
+                    f"Не удалось скачать мангу {manga.title} (ﾉД`)"
+                )
+                return
+
             file = FSInputFile(path)
             sent_message = await message.answer_document(
                 file,

@@ -59,12 +59,12 @@ class PDFService:
 
     async def download(
         self, gallery: list[str] | MangaSchema | OutputMangaSchema, path: str | Path
-    ) -> Path:
+    ) -> Path | None:
         """Метод для скачивание фоток в PDF
 
         Args:
             gallery (list[str] | MangaSchema): URL-ы фоток или схема манги
-            path (str | Path): путь для сохраниение (пример "manga.pdf")
+            path (Path | None): путь для сохраниение (пример "manga.pdf"), если не удалось создать PDF возращаеи None
         """
         if isinstance(gallery, MangaSchema):
             gallery = [str(x) for x in gallery.gallery]
@@ -95,7 +95,7 @@ class PDFService:
                 result = await task
                 if not result:
                     logger.warning("Не удалось скачать изображение")
-                    continue
+                    return None
 
             images = await self._convert(saved_images)
             await self._build_pdf(images, path)
@@ -115,7 +115,7 @@ class PDFService:
             self.executer, lambda: img.save(path, save_all=True, append_images=images)
         )
 
-    async def _write(self, path: str, url: str):
+    async def _write(self, path: str, url: str) -> bool:
         """Записывает webp в файл
 
         Args:
@@ -140,7 +140,7 @@ class PDFService:
             list[IMG]: фотки
         """
 
-        def _convert(save_path):
+        def _convert(save_path: str | Path):
             return Image.open(save_path).convert("RGB")
 
         loop = asyncio.get_event_loop()
