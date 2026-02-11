@@ -1,3 +1,3 @@
 from .spider import HitomiKRSpider
 
-__all__ = ["HitomiSpider"]
+__all__ = ["HitomiKRSpider"]

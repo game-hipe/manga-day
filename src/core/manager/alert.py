@@ -30,7 +30,7 @@ class AlertManager:
     async def alert(self, message: str, level: LEVEL):
         """Уведомить всех о событии."""
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
         except RuntimeError:
             logger.info("Невозможно отправить Alert, even-loop закрыт")
             return
