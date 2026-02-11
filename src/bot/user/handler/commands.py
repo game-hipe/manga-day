@@ -85,7 +85,9 @@ class CommandsHandler:
                         title=manga.title,
                         genres=", ".join(x.name for x in manga.genres),
                         author=manga.author.name if manga.author else "Неизвестно",
-                        language=manga.language.name if manga.language else "Неизвестно",
+                        language=manga.language.name
+                        if manga.language
+                        else "Неизвестно",
                         sku=manga.sku,
                     ),
                 )
