@@ -32,7 +32,7 @@ async def main():
 
         spider = SpiderManager(session, api, alert, "lxml")
         scheduler = SpiderScheduler(spider)
-        
+
         find = FindService(api)
         pdf = PDFService(session)
 

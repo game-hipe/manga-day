@@ -76,7 +76,7 @@ class AdminHandler:
 
             except WebSocketDisconnect:
                 logger.debug("Пользователь отключился")
-                
+
             finally:
                 if not websocket.client_state == WebSocketState.DISCONNECTED:
                     await websocket.close()

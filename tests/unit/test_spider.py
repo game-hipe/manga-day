@@ -203,9 +203,7 @@ class TestSpiderHitomi(BaseSpiderTest):
 
     EXPECTED_TITLE = "Family 31 - 35 [pepper0]"
     EXPECTED_LANGUAGE = "japanese"
-    EXPECTED_POSTER = (
-        "101093-101093-1960x1466.webp"
-    )
+    EXPECTED_POSTER = "101093-101093-1960x1466.webp"
     EXPECTED_GALLERY_COUNT = 58
     EXPECTED_AUTHOR = "pepper0"
 

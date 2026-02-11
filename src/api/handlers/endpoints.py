@@ -33,7 +33,7 @@ class Endpoints:
             summary="Получить список манги по страницам",
             tags=["manga"],
         )
-        
+
         self._router.add_api_route(
             "/manga/sku/{sku}",
             self.get_manga_by_sku,
@@ -42,7 +42,7 @@ class Endpoints:
             summary="Получить мангу по SKU",
             tags=["manga"],
         )
-        
+
         self._router.add_api_route(
             "/manga/url/{url}",
             self.get_manga_by_url,
@@ -51,7 +51,7 @@ class Endpoints:
             summary="Получить мангу по URL",
             tags=["manga"],
         )
-        
+
         self._router.add_api_route(
             "/manga/{id}",
             self.get_manga,
@@ -67,7 +67,7 @@ class Endpoints:
         Args:
             page (int): Номер страницы
 
-        Returns: 
+        Returns:
             CountResponse[list[BaseManga] | None]: Результат даннных, с количеством страниц
         """
         total, result = await self.manga_manager.get_manga_pages(page)
@@ -76,27 +76,26 @@ class Endpoints:
                 status=True,
                 message=f"Удалось достать {len(result)} манги",
                 result=result,
-                count=total
+                count=total,
             )
 
         except Exception as e:
-            return CountResponse(status=False, message=f"Не удалось достать манги: {e}", count=0)
-        
+            return CountResponse(
+                status=False, message=f"Не удалось достать манги: {e}", count=0
+            )
+
     async def get_manga_by_sku(self, sku: str) -> BaseResponse[ApiOutputManga | None]:
         """Получить страницу.
 
         Args:
             page (int): Номер страницы)
-            sku (str): 
+            sku (str):
 
         Returns:
             ApiOutputManga | None: Данные манги или None, если не найдена.
         """
-        return await self._get_manga(
-            self.manga_manager.get_manga_by_sku,
-            sku
-        )
-        
+        return await self._get_manga(self.manga_manager.get_manga_by_sku, sku)
+
     async def get_manga_by_url(self, url: str) -> BaseResponse[ApiOutputManga | None]:
         """Получить страницу.
 
@@ -106,11 +105,8 @@ class Endpoints:
         Returns:
             ApiOutputManga | None: Данные манги или None, если не найдена.
         """
-        return await self._get_manga(
-            self.manga_manager.get_manga_by_url,
-            url
-        )
-        
+        return await self._get_manga(self.manga_manager.get_manga_by_url, url)
+
     async def get_manga(self, id: int) -> BaseResponse[ApiOutputManga | None]:
         """Получить страницу.
 
@@ -120,25 +116,23 @@ class Endpoints:
         Returns:
             ApiOutputManga | None: Данные манги или None, если не найдена.
         """
-        return await self._get_manga(
-            self.manga_manager.get_manga,
-            id
-        )
-        
-    async def _get_manga(self, func: Awaitable[OutputMangaSchema | None], *args) -> BaseResponse[ApiOutputManga | None]:
+        return await self._get_manga(self.manga_manager.get_manga, id)
+
+    async def _get_manga(
+        self, func: Awaitable[OutputMangaSchema | None], *args
+    ) -> BaseResponse[ApiOutputManga | None]:
         """Метод для того что-бы получить мангу"""
         try:
             manga = await func(*args)
             if manga is None:
-                return BaseResponse(
-                    status = False, message = "Манга не найдена"
-                )
+                return BaseResponse(status=False, message="Манга не найдена")
             return BaseResponse(
-                status = True, message = "Манга найдена", result = ApiOutputManga(**manga.as_dict())
+                status=True,
+                message="Манга найдена",
+                result=ApiOutputManga(**manga.as_dict()),
             )
         except Exception as e:
             return BaseResponse(status=False, message=f"Не удалось достать мангу: {e}")
-        
 
     @property
     def router(self) -> APIRouter:

@@ -61,9 +61,11 @@ class SpiderManager:
                     spider_factory: type[BaseSpider] = getattr(spider_module, spider)
                     if hasattr(spider_factory, "HAS_CLOUDFARE"):
                         if getattr(spider_factory, "HAS_CLOUDFARE"):
-                            logger.warning(f"Парсер {spider} использует CloudFare. Парсер будет пропущен при инцилизации")
+                            logger.warning(
+                                f"Парсер {spider} использует CloudFare. Парсер будет пропущен при инцилизации"
+                            )
                             continue
-                            
+
                     self.spiders.append(
                         spider_factory(
                             session=session,
