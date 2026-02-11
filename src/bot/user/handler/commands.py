@@ -95,9 +95,7 @@ class CommandsHandler:
 
             path = await self.pdf.download(manga, self.save_path / manga.sku)
             if path is None:
-                await message.answer(
-                    f"Не удалось скачать мангу {manga.title} (ﾉД`)"
-                )
+                await message.answer(f"Не удалось скачать мангу {manga.title} (ﾉД`)")
                 return
 
             file = FSInputFile(path)
