@@ -210,7 +210,7 @@ class TestSpiderHitomi(BaseSpiderTest):
     @pytest_asyncio.fixture
     async def spider(self, session):
         if HitomiSpider.HAS_CLOUDFARE:
-            pytest.exit("Сайт добавил Cloudfare", 0)
+            pytest.skip("Сайт добавил Cloudfare")
 
         return HitomiSpider(session)
 

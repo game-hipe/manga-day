@@ -21,7 +21,7 @@ class Genre(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
 
-    mangas_connection: Mapped[list[GenreManga]] = relationship(  # noqa
+    mangas_connection: Mapped[list["GenreManga"]] = relationship(
         "GenreManga", back_populates="genre"
     )
 
@@ -42,7 +42,7 @@ class Author(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
 
-    mangas: Mapped[list[Manga]] = relationship(  # noqa
+    mangas: Mapped[list["Manga"]] = relationship(
         "Manga", back_populates="author"
     )
 
@@ -63,7 +63,7 @@ class Language(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
 
-    mangas: Mapped[list[Manga]] = relationship(  # noqa
+    mangas: Mapped[list["Manga"]] = relationship(
         "Manga", back_populates="language"
     )
 
@@ -87,8 +87,8 @@ class GenreManga(Base):
     genre_id: Mapped[int] = mapped_column(ForeignKey("genres.id"))
     manga_id: Mapped[int] = mapped_column(ForeignKey("mangas.id"))
 
-    genre: Mapped[Genre] = relationship("Genre", back_populates="mangas_connection")  # noqa
-    manga: Mapped[Manga] = relationship("Manga", back_populates="genres_connection")  # noqa
+    genre: Mapped["Genre"] = relationship("Genre", back_populates="mangas_connection")
+    manga: Mapped["Manga"] = relationship("Manga", back_populates="genres_connection")
 
 
 class Gallery(Base):
@@ -106,7 +106,7 @@ class Gallery(Base):
     urls: Mapped[list[str]] = mapped_column(JSON())
     manga_id: Mapped[int] = mapped_column(ForeignKey("mangas.id"))
 
-    manga: Mapped[Manga] = relationship("Manga", back_populates="gallery")  # noqa
+    manga: Mapped["Manga"] = relationship("Manga", back_populates="gallery")
 
 
 class GeneratedPdf(Base):
@@ -124,7 +124,7 @@ class GeneratedPdf(Base):
     id_file: Mapped[str] = mapped_column(String(256))
     __table_args__ = (Index("idx_generated_pdf_id_file", "id_file"),)
 
-    manga: Mapped[Manga] = relationship("Manga", back_populates="generated_pdf")  # noqa
+    manga: Mapped["Manga"] = relationship("Manga", back_populates="generated_pdf")
 
 
 class Manga(Base):
@@ -158,22 +158,22 @@ class Manga(Base):
     author_id: Mapped[int] = mapped_column(ForeignKey("author.id"), nullable=True)
     sku: Mapped[str] = mapped_column(String(32), unique=True, index=True)
 
-    genres_connection: Mapped[list[GenreManga]] = relationship(
+    genres_connection: Mapped[list["GenreManga"]] = relationship(
         "GenreManga", back_populates="manga"
     )
 
-    author: Mapped[Author] = relationship("Author", back_populates="mangas")
+    author: Mapped["Author"] = relationship("Author", back_populates="mangas")
 
-    language: Mapped[Language] = relationship("Language", back_populates="mangas")
+    language: Mapped["Language"] = relationship("Language", back_populates="mangas")
 
-    gallery: Mapped[Gallery] = relationship("Gallery", back_populates="manga")
+    gallery: Mapped["Gallery"] = relationship("Gallery", back_populates="manga")
 
-    generated_pdf: Mapped[GeneratedPdf] = relationship(
+    generated_pdf: Mapped["GeneratedPdf"] = relationship(
         "GeneratedPdf", back_populates="manga"
-    )  # noqa
+    )
 
     @property
-    def genres(self) -> list[Genre]:
+    def genres(self) -> list["Genre"]:
         return [genre.genre for genre in self.genres_connection]
 
     def as_dict(self) -> dict:
