@@ -8,8 +8,9 @@ import aiohttp
 
 from loguru import logger
 
+from ..abstract.request import RequestItem
 from ..manager.manga import MangaManager
-from ..manager.request import RequestManager, RequestItem
+from ..manager.request import RequestManager
 from ..entities.schemas import MangaSchema, BaseManga
 
 

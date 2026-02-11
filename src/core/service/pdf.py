@@ -11,8 +11,9 @@ from loguru import logger
 from PIL import Image
 from PIL.Image import Image as IMG
 
+from ..abstract.request import RequestItem
 from ..entities.schemas import MangaSchema, OutputMangaSchema
-from ..manager.request import RequestManager, RequestItem
+from ..manager.request import RequestManager
 
 
 class PDFService:

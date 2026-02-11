@@ -1,74 +1,19 @@
 import asyncio
 import random
-from typing import Unpack, Literal, TypeAlias, TypedDict, overload
+from typing import Unpack, Literal, TypeAlias, overload
 
 from aiohttp import ClientSession
 from aiohttp import ClientResponseError, ServerDisconnectedError
 from aiohttp.client import _RequestOptions
 from aiohttp import ClientOSError
-from cachetools import TTLCache
 from loguru import logger
 
-from ..entities.schemas import ProxySchema
+from ..abstract.request import BaseRequestManager
 
 ReturnType: TypeAlias = Literal["text", "read"]
 
 
-class RequestItem(TypedDict):
-    max_concurrents: int | None = (None,)
-    max_retries: int | None = (None,)
-    sleep_time: int | None = (None,)
-    use_random: bool | None = (None,)
-    proxy: list[ProxySchema] | None = (None,)
-    maxsize: int | None = (None,)
-    ttl: float | None = None
-
-
-class RequestManager:
-    """Менеджер для запросов."""
-
-    SLEEP_TIME: int = 2
-    """Базовое время сна, после запроса."""
-
-    USE_RANDOM: int = True
-    """Базовое значение, использование рандома при ожидании"""
-
-    MAX_CONCURRENTS: int = 5
-    """Базовое значение, количество запросов одновременно"""
-
-    MAX_RETRIES: int = 3
-    """Базовое значение, максимальное количество попыток."""
-
-    MAXSIZE: int = 128
-    """Базовое значение, максимального размера кэша."""
-
-    TTL: float = 300
-    """Базовое значение, время жизни кэша."""
-
-    def __init__(self, session: ClientSession, **kw: Unpack[RequestItem]):
-        """Ицилизация RequestManager
-
-        Args:
-            session (ClientSession): Сессия aiohttp.
-            max_concurrents (int, None, optional): Максимальное количество запросов.
-            max_retries (int, None, optional): Максимальное количество попыток.
-            sleep_time (int, None, optional): Время сна после запроса. Обычное значени SLEEP_TIME.
-            use_random (bool, optional): Использовать ли рандом во время ожидания. Обычное значени USE_RANDOM.
-            proxy (list[ProxySchema], optional): Прокси. Обычное значение [].
-        """
-        self.session = session
-        self.max_concurrents = kw.get("max_concurrents") or self.MAX_CONCURRENTS
-        self.max_retries = kw.get("max_retries") or self.MAX_RETRIES
-        self.sleep_time = kw.get("sleep_time") or self.SLEEP_TIME
-        self.use_random = kw.get("use_random") or self.USE_RANDOM
-
-        self.semaphore = asyncio.Semaphore(self.max_concurrents)
-        self.proxy = [] or kw.get("proxy")
-
-        self.cache = TTLCache(
-            maxsize=kw.get("maxsize") or self.MAXSIZE, ttl=kw.get("ttl") or self.TTL
-        )
-
+class RequestManager(BaseRequestManager[ClientSession]):
     @overload
     async def request(
         self,
@@ -238,10 +183,7 @@ class RequestManager:
                         )
 
                 finally:
-                    await asyncio.sleep(
-                        self.sleep_time
-                        * (random.uniform(0, 1) if self.use_random else 1)
-                    )
+                    await self.sleep()
 
             logger.error(f"Не удалось получить страницу за {self.max_retries} попыток")
 

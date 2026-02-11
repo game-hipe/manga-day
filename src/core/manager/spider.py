@@ -7,9 +7,10 @@ import aiohttp
 
 from loguru import logger
 
+from ..abstract.request import RequestItem
 from ..abstract.spider import BaseSpider
 from ..abstract.alert import BaseAlert, LEVEL
-from .request import RequestManager, RequestItem
+from .request import RequestManager
 from .manga import MangaManager
 from .alert import AlertManager
 
