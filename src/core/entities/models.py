@@ -42,9 +42,7 @@ class Author(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
 
-    mangas: Mapped[list["Manga"]] = relationship(
-        "Manga", back_populates="author"
-    )
+    mangas: Mapped[list["Manga"]] = relationship("Manga", back_populates="author")
 
 
 class Language(Base):
@@ -63,9 +61,7 @@ class Language(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
 
-    mangas: Mapped[list["Manga"]] = relationship(
-        "Manga", back_populates="language"
-    )
+    mangas: Mapped[list["Manga"]] = relationship("Manga", back_populates="language")
 
 
 class GenreManga(Base):
