@@ -77,35 +77,41 @@ class CommandsHandler:
         return manga
 
     async def download_manga(self, manga: OutputMangaSchema, message: Message):
-        if manga.pdf_id:
-            await message.delete()
-            await message.answer_document(
-                manga.pdf_id,
+        try:
+            if manga.pdf_id:
+                await message.answer_document(
+                    manga.pdf_id,
+                    caption=SHOW_MANGA.format(
+                        title=manga.title,
+                        genres=", ".join(x.name for x in manga.genres),
+                        author=manga.author.name if manga.author else "Неизвестно",
+                        language=manga.language.name if manga.language else "Неизвестно",
+                        sku=manga.sku,
+                    ),
+                )
+                return
+
+            path = await self.pdf.download(manga, self.save_path / manga.sku)
+            file = FSInputFile(path)
+            sent_message = await message.answer_document(
+                file,
                 caption=SHOW_MANGA.format(
                     title=manga.title,
-                    genres=", ".join(x.name for x in manga.genres),
+                    genres=", ".join(x.name for x in manga.genres) or "Отсутствует",
                     author=manga.author.name if manga.author else "Неизвестно",
                     language=manga.language.name if manga.language else "Неизвестно",
                     sku=manga.sku,
                 ),
             )
-            return
 
-        file = FSInputFile(await self.pdf.download(manga, self.save_path / manga.sku))
-        await message.delete()
-        sent_message = await message.answer_document(
-            file,
-            caption=SHOW_MANGA.format(
-                title=manga.title,
-                genres=", ".join(x.name for x in manga.genres) or "Отсутствует",
-                author=manga.author.name if manga.author else "Неизвестно",
-                language=manga.language.name if manga.language else "Неизвестно",
-                sku=manga.sku,
-            ),
-        )
+            if sent_message.document:
+                file_id = sent_message.document.file_id
 
-        if sent_message.document:
-            file_id = sent_message.document.file_id
-
-        await self.manager.add_pdf(file_id, manga.id)
-        os.remove(file.path)
+            await self.manager.add_pdf(file_id, manga.id)
+        except Exception as e:
+            await message.answer(
+                f"Произошла ошибка при загрузке манги {manga.title} ({e})"
+            )
+        finally:
+            await message.delete()
+            os.remove(file.path)
