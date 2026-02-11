@@ -3,7 +3,12 @@ from typing import Awaitable
 from fastapi import APIRouter
 
 from ...core.manager.manga import MangaManager
-from ...core.entities.schemas import BaseManga, ApiOutputManga, OutputMangaSchema, MangaSchema
+from ...core.entities.schemas import (
+    BaseManga,
+    ApiOutputManga,
+    OutputMangaSchema,
+    MangaSchema,
+)
 from .._response import BaseResponse, CountResponse
 
 
@@ -60,14 +65,14 @@ class Endpoints:
             summary="Получить мангу по внутреннему ID в БД",
             tags=["manga"],
         )
-        
+
         self._router.add_api_route(
             "/manga/add",
             self.add_manga,
             methods=["POST"],
             response_model=BaseResponse[OutputMangaSchema | None],
             summary="Добавить мангу",
-            tags=['manga']
+            tags=["manga"],
         )
 
     async def get_pages(self, page: int) -> CountResponse[list[BaseManga]]:
@@ -127,7 +132,9 @@ class Endpoints:
         """
         return await self._get_manga(self.manga_manager.get_manga, id)
 
-    async def add_manga(self, manga: MangaSchema) -> BaseResponse[OutputMangaSchema | None]:
+    async def add_manga(
+        self, manga: MangaSchema
+    ) -> BaseResponse[OutputMangaSchema | None]:
         """Добавляет мангу в БД
 
         Args:
@@ -139,15 +146,10 @@ class Endpoints:
         try:
             result = await self.manga_manager.add_manga(manga)
             return BaseResponse(
-                status = True,
-                message = f"Манга добавлена, с ID {result.id}",
-                result = result
+                status=True, message=f"Манга добавлена, с ID {result.id}", result=result
             )
         except Exception as e:
-            return BaseResponse(
-                status = False,
-                message = str(e)
-            )
+            return BaseResponse(status=False, message=str(e))
 
     async def _get_manga(
         self, func: Awaitable[OutputMangaSchema | None], *args

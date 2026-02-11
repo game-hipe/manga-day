@@ -28,9 +28,8 @@ services:
     volumes:
       - manga-day:/app/var
     ports:
-      - "8080:8080"
       - "8000:8000"
-    command: ["python", "main.py"]
+      - "8080:8080"
 
 volumes:
   manga-day:
