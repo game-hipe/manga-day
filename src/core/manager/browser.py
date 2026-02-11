@@ -7,6 +7,9 @@ from loguru import logger
 from ..abstract.request import BaseRequestManager
 
 
+__all__ = ["RequestBrowserManager"]
+
+
 class RequestBrowserManager(BaseRequestManager[Browser]):
     @asynccontextmanager
     async def get(self, url: str) -> AsyncGenerator[Page, None]:
@@ -21,7 +24,9 @@ class RequestBrowserManager(BaseRequestManager[Browser]):
                     response = await page.goto(url)
 
                     if response is None:
-                        logger.warning(f"Не удалось получить данные (url={url}, try-indx={try_indx})")
+                        logger.warning(
+                            f"Не удалось получить данные (url={url}, try-indx={try_indx})"
+                        )
 
                     if response.status == 404:
                         logger.warning("Страница не найдена, 404")
@@ -36,7 +41,7 @@ class RequestBrowserManager(BaseRequestManager[Browser]):
 
                     yield page
                     break
-                    
+
                 finally:
                     if page is not None:
                         await page.close()
