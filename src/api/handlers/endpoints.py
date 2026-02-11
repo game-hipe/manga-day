@@ -60,6 +60,15 @@ class Endpoints:
             summary="Получить мангу по внутреннему ID в БД",
             tags=["manga"],
         )
+        
+        self._router.add_api_route(
+            "/manga/add",
+            self.add_manga,
+            methods=["POST"],
+            response_model=BaseResponse[OutputMangaSchema | None],
+            summary="Добавить мангу",
+            tags=['manga']
+        )
 
     async def get_pages(self, page: int) -> CountResponse[list[BaseManga]]:
         """Получить страницу.
