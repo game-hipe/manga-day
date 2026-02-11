@@ -1,6 +1,7 @@
 import random
 from typing import Unpack, Literal, TypeAlias, overload
 
+from fake_headers import Headers
 from aiohttp import ClientSession
 from aiohttp import ClientResponseError, ServerDisconnectedError
 from aiohttp.client import _RequestOptions
@@ -13,6 +14,10 @@ ReturnType: TypeAlias = Literal["text", "read"]
 
 
 class RequestManager(BaseRequestManager[ClientSession]):
+    def __init__(self, session, **kw):
+        super().__init__(session, **kw)
+        self.headers = Headers()
+
     @overload
     async def request(
         self,
@@ -128,8 +133,9 @@ class RequestManager(BaseRequestManager[ClientSession]):
             logger.info(f"Попытка получить страницу (url={url}, method={method})")
             for _ in range(self.max_retries):
                 try:
+                    headers = kwargs.pop("headers", self.headers.generate())
                     async with self.session.request(
-                        method, url, **kwargs, **self._get_proxy()
+                        method, url, **kwargs, **self._get_proxy(), headers=headers
                     ) as response:
                         response.raise_for_status()
                         result = await getattr(response, type)()
@@ -180,6 +186,11 @@ class RequestManager(BaseRequestManager[ClientSession]):
                         logger.error(
                             f"Ошибка сети: разрыв соединения или недоступность сервера. (error={error})"
                         )
+                        
+                except TimeoutError:
+                    logger.error(
+                        f"Превышено время ожидание ответа, новая попытка (url={url}, method={method})"
+                    )
 
                 finally:
                     await self.sleep()
@@ -202,3 +213,6 @@ class RequestManager(BaseRequestManager[ClientSession]):
 
         proxy = random.choice(self.proxy)
         return proxy.auth()
+
+    def _get_headers(self):
+        return self.headers.generate()
