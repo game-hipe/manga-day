@@ -30,34 +30,27 @@ async def main():
         alert = AlertManager()
         api = MangaManager(engine)
 
-        #spider = SpiderManager(session, api, alert, "lxml")
-        #scheduler = SpiderScheduler(spider)
-
-        from src.spider.hitomiKR import HitomiKRSpider
-        spider = HitomiKRSpider(session)
-        
-        manga = await spider.get("https://hitomikr.org/g/re234356")
-        print(manga)
-            
+        spider = SpiderManager(session, api, alert, "lxml")
+        scheduler = SpiderScheduler(spider)
         
         find = FindService(api)
         pdf = PDFService(session)
 
-        #try:
-        #    await asyncio.gather(
-        #        start_bot(spider=spider),
-        #        start_api(manager=api),
-        #        start_frontend(manager=api, find=find, spider=spider),
-        #        start_user(
-        #            manager=api,
-        #            alert=alert,
-        #            pdf_service=pdf,
-        #            save_path=config.pdf.save_path,
-        #        ),
-        #        scheduler.start(),
-        #    )
-        #finally:
-        #    await engine.dispose()
+        try:
+            await asyncio.gather(
+                start_bot(spider=spider),
+                start_api(manager=api),
+                start_frontend(manager=api, find=find, spider=spider),
+                start_user(
+                    manager=api,
+                    alert=alert,
+                    pdf_service=pdf,
+                    save_path=config.pdf.save_path,
+                ),
+                scheduler.start(),
+            )
+        finally:
+            await engine.dispose()
 
 
 if __name__ == "__main__":

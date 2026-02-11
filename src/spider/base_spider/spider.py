@@ -12,6 +12,7 @@ from .parser import GlobalMangaParser, GlobalPageParser
 class BaseMangaSpider(BaseSpider):
     HAS_CLOUDFARE = False
 
+    MAX_PAGE_SELECTOR = "section.pagination a"
     PAGE_URL = "/page/{page}/"
     START_PAGE = 2
     MANGA_PARSER: type[GlobalMangaParser]
@@ -49,7 +50,7 @@ class BaseMangaSpider(BaseSpider):
                 return self._total_pages
 
             soup = parser.build_soup(markup)
-            page_links = soup.select("section.pagination a")
+            page_links = soup.select(self.MAX_PAGE_SELECTOR)
             if not page_links:
                 self._total_pages = 1
             else:
