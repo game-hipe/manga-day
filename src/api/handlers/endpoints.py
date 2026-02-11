@@ -3,7 +3,7 @@ from typing import Awaitable
 from fastapi import APIRouter
 
 from ...core.manager.manga import MangaManager
-from ...core.entities.schemas import BaseManga, ApiOutputManga, OutputMangaSchema
+from ...core.entities.schemas import BaseManga, ApiOutputManga, OutputMangaSchema, MangaSchema
 from .._response import BaseResponse, CountResponse
 
 
@@ -117,6 +117,28 @@ class Endpoints:
             ApiOutputManga | None: Данные манги или None, если не найдена.
         """
         return await self._get_manga(self.manga_manager.get_manga, id)
+
+    async def add_manga(self, manga: MangaSchema) -> BaseResponse[OutputMangaSchema | None]:
+        """Добавляет мангу в БД
+
+        Args:
+            manga (MangaSchema): Схема манги
+
+        Returns:
+            BaseResponse[OutputMangaSchema | None]: Возращает мангу с ID
+        """
+        try:
+            result = await self.manga_manager.add_manga(manga)
+            return BaseResponse(
+                status = True,
+                message = f"Манга добавлена, с ID {result.id}",
+                result = result
+            )
+        except Exception as e:
+            return BaseResponse(
+                status = False,
+                message = str(e)
+            )
 
     async def _get_manga(
         self, func: Awaitable[OutputMangaSchema | None], *args
