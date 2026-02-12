@@ -36,7 +36,7 @@ async def main():
         scheduler = SpiderScheduler(spider)
 
         find = FindService(api)
-        pdf = PDFService(session)
+        pdf = PDFService(session, proxy=proxy)
 
         try:
             await asyncio.gather(
