@@ -146,7 +146,7 @@ class Manga(Base):
     __tablename__ = "mangas"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(String(255))
+    title: Mapped[str] = mapped_column(String(1024))
     url: Mapped[str] = mapped_column(String(2048))
     poster: Mapped[str] = mapped_column(String(2048))
 
