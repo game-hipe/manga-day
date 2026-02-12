@@ -83,7 +83,7 @@ class AdminHandler:
                         await websocket.close()
                     except RuntimeError:
                         pass
-        
+
         try:
             await send_status()
         except RuntimeError:
