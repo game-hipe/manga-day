@@ -25,8 +25,10 @@ class BaseSpiderTest:
     async def session(self):
         """Асинхронная фикстура для создания сессии"""
         async with ClientSession(
-                **[AiohttpProxy.create(x) for x in config.proxy][0].auth() if [AiohttpProxy.create(x) for x in config.proxy] else None
-            ) as session:
+            **[AiohttpProxy.create(x) for x in config.proxy][0].auth()
+            if [AiohttpProxy.create(x) for x in config.proxy]
+            else None
+        ) as session:
             yield session
 
     @pytest.mark.asyncio
