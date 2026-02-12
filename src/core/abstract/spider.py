@@ -7,6 +7,7 @@ from typing import overload, AsyncGenerator, Awaitable, Optional, Any, Unpack
 import aiohttp
 
 from loguru import logger
+from sqlalchemy.exc import IntegrityError
 
 from ..abstract.request import RequestItem, BaseRequestManager
 from ..manager.manga import MangaManager
@@ -145,7 +146,12 @@ class BaseSpider(ABC):
                         f"Не удалось получить галерею (url={result.url}, title={result.title})"
                     )
 
-                await self.manager.add_manga(result)
+                try:
+                    await self.manager.add_manga(result)
+                except IntegrityError as error:
+                    logger.error(
+                        f"Ошибка во время добваления манги (manga={manga}, message={error})"
+                    )
 
     @abstractmethod
     async def get(self, url: str, **kwargs) -> Optional[MangaSchema]:

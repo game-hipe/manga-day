@@ -5,10 +5,13 @@ from loguru import logger
 from pydantic import BaseModel, Field
 from yaml import full_load
 
+from dotenv import load_dotenv
 
 __all__ = ["config"]
 
 CONFIG_FILE = "config.yaml"
+
+load_dotenv()
 
 
 class PDFConfig(BaseModel):
@@ -35,7 +38,7 @@ class LoggingConfig(BaseModel):
 
 
 class DataBaseConfig(BaseModel):
-    db: str
+    db: str = Field(os.getenv("DATABASE_URL"))
 
 
 class UpdateConfig(BaseModel):
@@ -44,12 +47,12 @@ class UpdateConfig(BaseModel):
 
 
 class BotConfig(BaseModel):
-    api_key: str
+    api_key: str = Field(os.getenv("ADMIN_TOKEN"))
     url: str
 
 
 class AdminBotConfig(BaseModel):
-    api_key: str
+    api_key: str = Field(os.getenv("USER_TOKEN"))
     admins: list[int]
 
 
@@ -58,7 +61,7 @@ class Config(BaseModel):
     update: UpdateConfig
     bot: AdminBotConfig
     user_bot: BotConfig
-    database: DataBaseConfig
+    database: DataBaseConfig = Field(default_factory=DataBaseConfig)
     api: ApiConfig
     pdf: PDFConfig
     proxy: list[str] = Field(default_factory=list)

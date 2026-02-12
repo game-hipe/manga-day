@@ -9,3 +9,4 @@ config.yaml
 backups
 
 test.py
+.env
