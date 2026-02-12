@@ -10,7 +10,7 @@ from cachetools import TTLCache
 from src.spider.hmanga import HmangaSpider
 from src.spider.multi_manga import MultiMangaSpider
 from src.spider.hitomi import HitomiSpider
-
+from src.spider.hentaiera import HentaiEraSpider
 
 CACHE = TTLCache(128, 300)
 
@@ -213,6 +213,67 @@ class TestSpiderHitomi(BaseSpiderTest):
             pytest.skip("Сайт добавил Cloudfare")
 
         return HitomiSpider(session)
+
+    @pytest.mark.asyncio
+    async def test_spider_get_manga(self, manga_data):
+        assert manga_data is not None
+
+    @pytest.mark.asyncio
+    async def test_spider_get_title(self, manga_data):
+        assert manga_data.title == self.EXPECTED_TITLE
+
+    @pytest.mark.asyncio
+    async def test_spider_get_genres(self, manga_data):
+        for tag in self.TAGS:
+            assert tag in manga_data.genres
+
+    @pytest.mark.asyncio
+    async def test_spider_get_language(self, manga_data):
+        assert manga_data.language == self.EXPECTED_LANGUAGE
+
+    @pytest.mark.asyncio
+    async def test_spider_get_poster(self, manga_data):
+        assert self.EXPECTED_POSTER in str(manga_data.poster)
+
+    @pytest.mark.asyncio
+    async def test_spider_get_gallery(self, manga_data):
+        assert len(manga_data.gallery) == self.EXPECTED_GALLERY_COUNT
+
+    @pytest.mark.asyncio
+    async def test_spider_get_author(self, manga_data):
+        assert manga_data.author == self.EXPECTED_AUTHOR
+
+    @pytest.mark.asyncio
+    async def test_spider_run(self, spider):
+        with pytest.raises(AttributeError):
+            await spider.run()
+
+
+class TestSpiderHentaiEra(BaseSpiderTest):
+    BASE_URL = "https://hentaiera.com"
+    TEST_URL = "https://hentaiera.com/gallery/1605408/"
+
+    TAGS = [
+        "lolicon",
+        "uncensored",
+        "group",
+        "anal",
+        "double penetration",
+        "unusual pupils",
+    ]
+
+    EXPECTED_TITLE = "(C95) [Bloody Okojo (Mojyako)] PINK! (Sword Art Online Alternative Gun Gale Online) [English] [Black Grimoires] [Decensored]"
+    EXPECTED_LANGUAGE = "english"
+    EXPECTED_POSTER = "cover.jpg"
+    EXPECTED_GALLERY_COUNT = 43
+    EXPECTED_AUTHOR = "mojyako"
+
+    @pytest_asyncio.fixture
+    async def spider(self, session):
+        if HentaiEraSpider.HAS_CLOUDFARE:
+            pytest.skip("Сайт добавил Cloudfare")
+
+        return HentaiEraSpider(session)
 
     @pytest.mark.asyncio
     async def test_spider_get_manga(self, manga_data):

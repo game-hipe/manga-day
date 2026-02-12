@@ -8,7 +8,7 @@ import aiohttp
 
 from loguru import logger
 
-from ..abstract.request import RequestItem
+from ..abstract.request import RequestItem, BaseRequestManager
 from ..manager.manga import MangaManager
 from ..manager.request import RequestManager
 from ..entities.schemas import MangaSchema, BaseManga
@@ -34,7 +34,7 @@ class BaseSpider(ABC):
     @overload
     def __init__(
         self,
-        session: RequestManager,
+        session: BaseRequestManager,
         manager: MangaManager | None = None,
         features: str = None,
         batch: int = None,
@@ -43,7 +43,7 @@ class BaseSpider(ABC):
         Инициализация спайдера с использованием существующего менеджера запросов.
 
         Args:
-            session (RequestManager): Управляемая сессия для выполнения HTTP-запросов.
+            session (BaseRequestManager): Управляемая сессия для выполнения запросов.
             manager (MangaManager | None): Менеджер для обработки и хранения данных о манге. Если менеджер является None то функция "run" перестает работать. (по умолчанию None).
             features (str): Парсер, используемый для разбора HTML (по умолчанию 'html.parser').
             batch (int): Размер пачки для парсинга (по умолчанию 10).
@@ -77,7 +77,7 @@ class BaseSpider(ABC):
 
     def __init__(
         self,
-        session: aiohttp.ClientSession | RequestManager,
+        session: aiohttp.ClientSession | BaseRequestManager,
         manager: MangaManager | None = None,
         features: str = None,
         batch: int = None,
@@ -87,16 +87,16 @@ class BaseSpider(ABC):
         Инициализация базового спайдера.
 
         Args:
-            session (aiohttp.ClientSession | RequestManager): Сессия или менеджер запросов.
+            session (aiohttp.ClientSession | BaseRequestManager): Сессия или менеджер запросов.
             manager (MangaManager): Менеджер для управления данными о манге. Если менеджер является None то функция "run" перестает работать. (по умолчанию None).
             features (str): Парсер HTML (по умолчанию 'html.parser').
             batch (int): Размер пачки для парсинга (по умолчанию 10).
-            **kwargs: Дополнительные параметры, передаваемые в RequestManager при необходимости.
+            **kwargs: Дополнительные параметры, передаваемые в BaseRequestManager при необходимости.
 
         Исключения:
-            TypeError: Если session не является ни ClientSession, ни RequestManager.
+            TypeError: Если session не является ни ClientSession, ни BaseRequestManager.
         """
-        if isinstance(session, RequestManager):
+        if isinstance(session, BaseRequestManager):
             self.http = session
 
         elif isinstance(session, aiohttp.ClientSession):
@@ -104,7 +104,7 @@ class BaseSpider(ABC):
 
         else:
             raise TypeError(
-                "Сессия должна быть aiohttp.ClientSession либо RequestManager"
+                "Сессия должна быть aiohttp.ClientSession либо наследоваться от BaseRequestManager"
             )
 
         self.batch = batch or self.BASE_BATCH

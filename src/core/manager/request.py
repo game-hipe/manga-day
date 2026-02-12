@@ -159,7 +159,7 @@ class RequestManager(BaseRequestManager[ClientSession]):
                         return
 
                     logger.error(
-                        f"Не удалось получить страницу (url={url}, method={method}, message={error.message})"
+                        f"Не удалось получить страницу (url={url}, method={method}, message={error.message}, status={error.status})"
                     )
 
                 except ServerDisconnectedError:
@@ -186,7 +186,7 @@ class RequestManager(BaseRequestManager[ClientSession]):
                         logger.error(
                             f"Ошибка сети: разрыв соединения или недоступность сервера. (error={error})"
                         )
-                        
+
                 except TimeoutError:
                     logger.error(
                         f"Превышено время ожидание ответа, новая попытка (url={url}, method={method})"

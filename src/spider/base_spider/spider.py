@@ -1,10 +1,13 @@
 import asyncio
 
 from itertools import batched
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Optional, Unpack
 
+from bs4 import BeautifulSoup
+from aiohttp.client import _RequestOptions
 from loguru import logger
 
+from ...core.entities.schemas import MangaSchema
 from ...core.abstract.spider import BaseSpider, BaseManga
 from .parser import GlobalMangaParser, GlobalPageParser
 
@@ -18,27 +21,24 @@ class BaseMangaSpider(BaseSpider):
     MANGA_PARSER: type[GlobalMangaParser]
     PAGE_PARSER: type[GlobalPageParser]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._total_pages: Optional[int] = None
-        self._processed_pages: int = 0
-        self._max_page_fetched: bool = False
+    _total_pages: Optional[int] = None
+    _processed_pages: int = 0
+    _max_page_fetched: bool = False
 
-    async def get(self, url):
+    async def get(self, url: str, **kw: Unpack[_RequestOptions]) -> MangaSchema | None:
         parser = self.MANGA_PARSER(self.BASE_URL, self.features)
 
-        markup = await self.http.get(url, "read")
+        markup = await self.http.get(url, "read", **kw)
         if markup is None:
             logger.error(f"Не удалось получить страницу: {url}")
             return
 
-        return parser.parse(markup)
+        return parser.parse(markup, features=self.features, situation="html")
 
     @property
     async def total_pages(self) -> int:
         """Асинхронно вычисляет и кэширует общее количество страниц."""
         if self._total_pages is None and not self._max_page_fetched:
-            parser = self.PAGE_PARSER(self.BASE_URL, self.features)
             markup = await self.http.get(self.BASE_URL, "read")
 
             if markup is None:
@@ -49,7 +49,7 @@ class BaseMangaSpider(BaseSpider):
                 self._max_page_fetched = True
                 return self._total_pages
 
-            soup = parser.build_soup(markup)
+            soup = BeautifulSoup(markup, self.features)
             page_links = soup.select(self.MAX_PAGE_SELECTOR)
             if not page_links:
                 self._total_pages = 1
