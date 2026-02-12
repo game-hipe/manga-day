@@ -92,37 +92,44 @@ class BaseMangaSpider(BaseSpider):
         Yields:
             BeautifulSoup: Объект soup для каждой страницы.
         """
-        parser = self.PAGE_PARSER(self.BASE_URL, self.features)
+        try:
+            parser = self.PAGE_PARSER(self.BASE_URL, self.features)
 
-        # Получаем общее количество страниц один раз
-        total = await self.total_pages
-        logger.info(f"Обнаружено всего страниц: {total}")
+            # Получаем общее количество страниц один раз
+            total = await self.total_pages
+            logger.info(f"Обнаружено всего страниц: {total}")
 
-        start = start_page or self.START_PAGE
-        if start > total:
-            logger.info("Начальная страница больше максимальной. Парсинг завершён.")
-            return
+            start = start_page or self.START_PAGE
+            if start > total:
+                logger.info("Начальная страница больше максимальной. Парсинг завершён.")
+                return
 
-        for url_batch in batched(
-            (
-                self.urljoin(self.PAGE_URL.format(page=page))
-                for page in range(start, total + 1)
-            ),
-            self.batch,
-        ):
-            tasks = [
-                asyncio.create_task(self.http.get(url, "read")) for url in url_batch
-            ]
+            for url_batch in batched(
+                (
+                    self.urljoin(self.PAGE_URL.format(page=page))
+                    for page in range(start, total + 1)
+                ),
+                self.batch,
+            ):
+                tasks = [
+                    asyncio.create_task(self.http.get(url, "read")) for url in url_batch
+                ]
 
-            for task in asyncio.as_completed(tasks):
-                response = await task
-                if response is None:
-                    continue
+                for task in asyncio.as_completed(tasks):
+                    response = await task
+                    if response is None:
+                        continue
 
-                self._processed_pages += 1  # Увеличиваем счётчик обработанных страниц
-                logger.debug(
-                    f"Обработана страница {self._processed_pages}/{total} ({self.status})"
-                )
+                    self._processed_pages += (
+                        1  # Увеличиваем счётчик обработанных страниц
+                    )
+                    logger.debug(
+                        f"Обработана страница {self._processed_pages}/{total} ({self.status})"
+                    )
 
-                soup = parser.build_soup(response)
-                yield parser.parse(soup)
+                    soup = parser.build_soup(response)
+                    yield parser.parse(soup)
+        finally:
+            self._total_pages = None
+            self._processed_pages = 0
+            self._max_page_fetched = False
