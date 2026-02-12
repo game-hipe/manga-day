@@ -7,8 +7,8 @@ logging: # Логирование
   rotation: "10 MB" # Ротация логов
 
 update:
-  start_time: "7:00 AM" # Время запуска бота
-  zone: "Asia/Yakutsk" # Часовой пояс
+  start_time: "7:00 AM EVERY 7 DAYS" # Время запуска бота
+  zone: "Europe/Moscow" # Часовой пояс
 
 bot:
   api_key: "ABCDEFG:1234567890" # Токен бота

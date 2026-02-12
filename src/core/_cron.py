@@ -24,10 +24,10 @@ class SpiderScheduler:
         self.scheduler = AsyncIOScheduler(timezone=pytz.timezone(self.zone))
 
     async def start(self):
-        hour, minute = self.get_time()
+        hour, minute, day = self.get_time()
         self.scheduler.add_job(
             self.manager.start_parsing,
-            CronTrigger(hour=hour, minute=minute, timezone=pytz.timezone(self.zone)),
+            CronTrigger(hour=hour, minute=minute, day=day, timezone=pytz.timezone(self.zone)),
         )
 
         self.scheduler.start()
@@ -39,5 +39,5 @@ class SpiderScheduler:
             self.scheduler.shutdown()
 
     def get_time(self):
-        dt = datetime.strptime(self.start_time, "%I:%M %p")
-        return dt.hour, dt.minute
+        dt = datetime.strptime(self.start_time, "%I:%M %p EVERY %d DAYS")
+        return dt.hour, dt.minute, dt.day
