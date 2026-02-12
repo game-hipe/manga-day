@@ -148,7 +148,7 @@ class BaseSpider(ABC):
                 await self.manager.add_manga(result)
 
     @abstractmethod
-    async def get(self, url: str) -> Optional[MangaSchema]:
+    async def get(self, url: str, **kwargs) -> Optional[MangaSchema]:
         """
         Абстрактный метод для получения данных о манге по URL.
 

@@ -71,7 +71,7 @@ class HitomiSpider(BaseMangaSpider):
 
             return self._total_pages or 1
 
-    async def get(self, url: str):
+    async def get(self, url: str, **kwargs):
         parser = HitomiMangaParser(self.BASE_URL, self.features)
 
         markup = await self.http.get(url, "read")

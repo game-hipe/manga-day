@@ -10,7 +10,7 @@ from loguru import logger
 from ..abstract.request import RequestItem
 from ..abstract.spider import BaseSpider
 from ..abstract.alert import BaseAlert, LEVEL
-from .request import RequestManager
+from .request import BaseRequestManager
 from .manga import MangaManager
 from .alert import AlertManager
 
@@ -19,11 +19,12 @@ class SpiderManager:
     @overload
     def __init__(
         self,
-        session: RequestManager,
+        session: BaseRequestManager,
         manager: MangaManager,
         alert: AlertManager,
         features: str | None = None,
         batch: int | None = None,
+        **kwargs: Unpack[RequestItem],
     ) -> None: ...
 
     @overload
@@ -39,7 +40,7 @@ class SpiderManager:
 
     def __init__(
         self,
-        session: aiohttp.ClientSession | RequestManager,
+        session: aiohttp.ClientSession | BaseRequestManager,
         manager: MangaManager,
         alert: AlertManager,
         features: str = None,

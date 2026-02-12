@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from loguru import logger
 
 from src.core import config
+from src.core.entities.schemas import ProxySchema
 from src.core.entities.models import Base
 from src.core.manager import MangaManager, SpiderManager, AlertManager
 
@@ -30,7 +31,8 @@ async def main():
         alert = AlertManager()
         api = MangaManager(engine)
 
-        spider = SpiderManager(session, api, alert, "lxml")
+        proxy = [ProxySchema.create(x) for x in config.proxy]
+        spider = SpiderManager(session, api, alert, "lxml", proxy=proxy)
         scheduler = SpiderScheduler(spider)
 
         find = FindService(api)

@@ -3,11 +3,20 @@ import random
 from typing import TypedDict, TypeVar, Generic, Unpack
 
 from cachetools import TTLCache
+from loguru import logger
 
 from ..entities.schemas import ProxySchema
 
 
 _T = TypeVar("_T")
+
+
+class ProxyStatus(TypedDict):
+    status: bool
+    """Рабочий ли прокси"""
+
+    total: int
+    """Общее количество неудачных запросов"""
 
 
 class RequestItem(TypedDict):
@@ -27,11 +36,15 @@ class RequestItem(TypedDict):
 
     proxy: list[ProxySchema] | None = (None,)
     """Прокси"""
+
     maxsize: int | None = (None,)
     """Максимальный размер кэша."""
 
     ttl: float | None = None
     """Время жизни кэша."""
+
+    max_chance: int | None = None
+    """Максимальное количество шансов для прокси"""
 
 
 class BaseRequestManager(Generic[_T]):
@@ -46,14 +59,20 @@ class BaseRequestManager(Generic[_T]):
     MAX_CONCURRENTS: int = 5
     """Базовое значение, количество запросов одновременно"""
 
-    MAX_RETRIES: int = 3
+    MAX_RETRIES: int = 5
     """Базовое значение, максимальное количество попыток."""
+
+    MAX_CHANCE: int = 3
+    """Базовое значение, максимального количество шансов для прокси, по истечению которых прокси буден указан как не рабочий"""
 
     MAXSIZE: int = 128
     """Базовое значение, максимального размера кэша."""
 
     TTL: float = 300
     """Базовое значение, время жизни кэша."""
+
+    BASE_PROXY: type[ProxySchema] = ProxySchema
+    """Базовый класс прокси"""
 
     def __init__(self, session: _T, **kw: Unpack[RequestItem]):
         """Ицилизация RequestManager
@@ -71,9 +90,13 @@ class BaseRequestManager(Generic[_T]):
         self.max_retries = kw.get("max_retries") or self.MAX_RETRIES
         self.sleep_time = kw.get("sleep_time") or self.SLEEP_TIME
         self.use_random = kw.get("use_random") or self.USE_RANDOM
+        self.max_chance = kw.get("max_chance") or self.MAX_CHANCE
 
         self.semaphore = asyncio.Semaphore(self.max_concurrents)
-        self.proxy = [] or kw.get("proxy")
+        self.proxy: dict[ProxySchema, ProxyStatus] = {
+            self.BASE_PROXY.model_validate(x.model_dump()): {"status": True, "total": 0}
+            for x in kw.get("proxy") or []
+        }
 
         self.cache = TTLCache(
             maxsize=kw.get("maxsize") or self.MAXSIZE, ttl=kw.get("ttl") or self.TTL
@@ -83,3 +106,25 @@ class BaseRequestManager(Generic[_T]):
         await asyncio.sleep(
             (time or self.sleep_time) * (random.uniform(0, 1) if self.use_random else 1)
         )
+
+    def get_proxy(self) -> ProxySchema | None:
+        if not self.proxy:
+            return None
+
+        work_proxy = list(filter(lambda x: self.proxy[x]["status"], self.proxy))
+        if not work_proxy:
+            logger.debug("Больше нет рабочих прокси")
+            self.proxy = {}
+            return None
+
+        proxy = random.choice(work_proxy)
+        return proxy
+
+    def wrong_response(self, proxy: ProxySchema):
+        logger.debug(f"Ошибка у прокси (proxy={proxy.proxy})")
+        self.proxy[proxy]["total"] += 1
+        if self.proxy[proxy]["total"] >= self.max_chance:
+            self.ban_proxy(proxy)
+
+    def ban_proxy(self, proxy: ProxySchema):
+        self.proxy[proxy]["status"] = False

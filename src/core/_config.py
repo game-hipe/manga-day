@@ -61,6 +61,7 @@ class Config(BaseModel):
     database: DataBaseConfig
     api: ApiConfig
     pdf: PDFConfig
+    proxy: list[str] = Field(default_factory=list)
 
 
 def load_config():

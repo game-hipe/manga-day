@@ -1,4 +1,3 @@
-import random
 from typing import Unpack, Literal, TypeAlias, overload
 
 from fake_headers import Headers
@@ -9,11 +8,14 @@ from aiohttp import ClientOSError
 from loguru import logger
 
 from ..abstract.request import BaseRequestManager
+from ..entities.schemas import AiohttpProxy
 
 ReturnType: TypeAlias = Literal["text", "read"]
 
 
 class RequestManager(BaseRequestManager[ClientSession]):
+    BASE_PROXY = AiohttpProxy
+
     def __init__(self, session, **kw):
         super().__init__(session, **kw)
         self.headers = Headers()
@@ -132,10 +134,18 @@ class RequestManager(BaseRequestManager[ClientSession]):
         async with self.semaphore:
             logger.info(f"Попытка получить страницу (url={url}, method={method})")
             for _ in range(self.max_retries):
+                proxy = self.get_proxy()
+                templates = {}
                 try:
-                    headers = kwargs.pop("headers", self.headers.generate())
+                    if proxy:
+                        templates = kwargs | proxy.auth()
+
+                    templates["headers"] = kwargs.get(
+                        "headers", self.headers.generate()
+                    )
+
                     async with self.session.request(
-                        method, url, **kwargs, **self._get_proxy(), headers=headers
+                        method, url, **templates
                     ) as response:
                         response.raise_for_status()
                         result = await getattr(response, type)()
@@ -158,6 +168,12 @@ class RequestManager(BaseRequestManager[ClientSession]):
                         )
                         return
 
+                    elif error.status == 407:
+                        logger.warning(
+                            f"Прокси более не доступен (proxy={proxy.proxy})"
+                        )
+                        if proxy:
+                            self.ban_proxy(proxy)
                     logger.error(
                         f"Не удалось получить страницу (url={url}, method={method}, message={error.message}, status={error.status})"
                     )
@@ -191,6 +207,8 @@ class RequestManager(BaseRequestManager[ClientSession]):
                     logger.error(
                         f"Превышено время ожидание ответа, новая попытка (url={url}, method={method})"
                     )
+                    if proxy:
+                        self.wrong_response(proxy)
 
                 finally:
                     await self.sleep()
@@ -206,13 +224,6 @@ class RequestManager(BaseRequestManager[ClientSession]):
         self, url: str, type: ReturnType, **kwargs: Unpack[_RequestOptions]
     ) -> str | bytes | None:
         return await self.request("POST", url, type=type, **kwargs)
-
-    def _get_proxy(self):
-        if not self.proxy:
-            return {}
-
-        proxy = random.choice(self.proxy)
-        return proxy.auth()
 
     def _get_headers(self):
         return self.headers.generate()

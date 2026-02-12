@@ -151,6 +151,27 @@ class ProxySchema(BaseModel):
     login: str | None = Field(default=None)
     password: str | None = Field(default=None)
 
+    def auth(self):
+        raise NotImplementedError("Метод auth должен быть реализован в потомках")
+
+    @classmethod
+    def create(cls, proxy: str):
+        try:
+            proxy, auth = proxy.split("@")
+            try:
+                login, password = auth.split(":")
+                return cls(proxy=proxy, login=login, password=password)
+            except ValueError:
+                return cls(proxy=proxy, login=auth)
+
+        except ValueError:
+            return cls(proxy=proxy)
+
+    def __hash__(self):
+        return hash(str(ProxySchema))
+
+
+class AiohttpProxy(ProxySchema):
     def auth(self) -> dict[str, str | BasicAuth]:
         return {
             "proxy": self.proxy,
