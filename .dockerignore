@@ -7,3 +7,15 @@ venv
 backups
 
 test.py
+
+.ruff_cache
+.pytest_cache
+.github
+
+tests
+test_templates
+
+README.md
+optional-requirements.txt
+env.example
+config-example.yaml

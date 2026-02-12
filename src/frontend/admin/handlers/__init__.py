@@ -26,7 +26,7 @@ class AdminHandler:
     ):
         self._latest = None
         self._router = APIRouter(prefix="/admin")
-        self.spider = manager
+        self.manager = manager
         self.spider = spider
 
         self.static = Path(static or STATIC)
@@ -65,6 +65,7 @@ class AdminHandler:
 
         async def send_status():
             try:
+                await websocket.send_text(self.spider.status)
                 while True:
                     if self._latest != self.spider.status:
                         await websocket.send_text(self.spider.status)
