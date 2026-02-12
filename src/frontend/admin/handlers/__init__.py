@@ -79,9 +79,15 @@ class AdminHandler:
 
             finally:
                 if not websocket.client_state == WebSocketState.DISCONNECTED:
-                    await websocket.close()
-
-        await send_status()
+                    try:
+                        await websocket.close()
+                    except RuntimeError:
+                        pass
+        
+        try:
+            await send_status()
+        except RuntimeError:
+            pass
 
     async def websocket(self, websocket: WebSocket):
         await websocket.accept()
