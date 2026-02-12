@@ -12,9 +12,6 @@ from src.spider.multi_manga import MultiMangaSpider
 from src.spider.hitomi import HitomiSpider
 from src.spider.hentaiera import HentaiEraSpider
 
-from src.core.entities.schemas import AiohttpProxy
-from src.core import config
-
 CACHE = TTLCache(128, 300)
 
 
