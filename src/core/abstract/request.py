@@ -45,6 +45,9 @@ class RequestItem(TypedDict):
 
     max_chance: int | None = None
     """Максимальное количество шансов для прокси"""
+    
+    ban_proxy: bool | None = None
+    """Банить ли прокси, если он не отвечает"""
 
 
 class BaseRequestManager(Generic[_T]):
@@ -72,7 +75,10 @@ class BaseRequestManager(Generic[_T]):
     """Базовое значение, время жизни кэша."""
 
     BASE_PROXY: type[ProxySchema] = ProxySchema
-    """Базовый класс прокси"""
+    """Базовое значение, класса прокси"""
+    
+    BAN_PROXY: bool = False
+    """Базовое значение, если прокси не отвечает"""
 
     def __init__(self, session: _T, **kw: Unpack[RequestItem]):
         """Ицилизация RequestManager
@@ -91,6 +97,7 @@ class BaseRequestManager(Generic[_T]):
         self.sleep_time = kw.get("sleep_time") or self.SLEEP_TIME
         self.use_random = kw.get("use_random") or self.USE_RANDOM
         self.max_chance = kw.get("max_chance") or self.MAX_CHANCE
+        self._ban_proxy = kw.get("ban_proxy") or self.BAN_PROXY
 
         self.semaphore = asyncio.Semaphore(self.max_concurrents)
         self.proxy: dict[ProxySchema, ProxyStatus] = {
@@ -114,7 +121,6 @@ class BaseRequestManager(Generic[_T]):
         work_proxy = list(filter(lambda x: self.proxy[x]["status"], self.proxy))
         if not work_proxy:
             logger.debug("Больше нет рабочих прокси")
-            self.proxy = {}
             return None
 
         proxy = random.choice(work_proxy)
@@ -127,4 +133,5 @@ class BaseRequestManager(Generic[_T]):
             self.ban_proxy(proxy)
 
     def ban_proxy(self, proxy: ProxySchema):
-        self.proxy[proxy]["status"] = False
+        if self._ban_proxy:
+            self.proxy[proxy]["status"] = False

@@ -168,7 +168,7 @@ class ProxySchema(BaseModel):
             return cls(proxy=proxy)
 
     def __hash__(self):
-        return hash(str(ProxySchema))
+        return hash(str(self.proxy))  # или hash(self.proxy)
 
 
 class AiohttpProxy(ProxySchema):
