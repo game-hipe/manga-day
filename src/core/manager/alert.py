@@ -6,8 +6,9 @@ from ..abstract.alert import BaseAlert, LEVEL
 
 
 class AlertManager:
-    def __init__(self):
+    def __init__(self, *alert: BaseAlert):
         self._alerts: list[BaseAlert] = []
+        self._alerts.extend(alert)
 
     def add_alert(self, alert: BaseAlert) -> None:
         """Добавить уведомление."""
