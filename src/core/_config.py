@@ -47,12 +47,12 @@ class UpdateConfig(BaseModel):
 
 
 class BotConfig(BaseModel):
-    api_key: str = Field(os.getenv("ADMIN_TOKEN"))
+    api_key: str = Field(os.getenv("USER_TOKEN"))
     url: str
 
 
 class AdminBotConfig(BaseModel):
-    api_key: str = Field(os.getenv("USER_TOKEN"))
+    api_key: str = Field(os.getenv("ADMIN_TOKEN"))
     admins: list[int]
 
 
