@@ -15,7 +15,7 @@ from .manga import MangaManager
 from .alert import AlertManager
 
 
-class SpiderManager:
+class SpiderManager:  # TODO: Нужно разделить, на подфункции, так-как это выглядит как "Божественный" класс
     @overload
     def __init__(
         self,

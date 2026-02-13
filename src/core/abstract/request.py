@@ -45,7 +45,7 @@ class RequestItem(TypedDict):
 
     max_chance: int | None = None
     """Максимальное количество шансов для прокси"""
-    
+
     ban_proxy: bool | None = None
     """Банить ли прокси, если он не отвечает"""
 
@@ -76,7 +76,7 @@ class BaseRequestManager(Generic[_T]):
 
     BASE_PROXY: type[ProxySchema] = ProxySchema
     """Базовое значение, класса прокси"""
-    
+
     BAN_PROXY: bool = False
     """Базовое значение, если прокси не отвечает"""
 
