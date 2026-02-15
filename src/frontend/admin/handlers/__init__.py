@@ -1,6 +1,7 @@
 import asyncio
 
 from pathlib import Path
+from typing import NoReturn
 
 from loguru import logger
 from fastapi import APIRouter, Request, HTTPException
@@ -10,8 +11,9 @@ from fastapi.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 from ....core import config
 from ....core.manager import MangaManager, SpiderManager
+from ....core.manager.spider import SpiderStatus
 from .._alert import AdminAlert
-
+from .schemas import ParsingSignal, SpiderResponse
 
 STATIC = Path(__file__).parent.parent / "static"
 
@@ -51,25 +53,45 @@ class AdminHandler:
             tags=["frontend"],
         )
 
-        self.router.add_api_websocket_route("/ws", self.websocket)
+        self.router.add_api_route(
+            "/command", self.spider_starter, methods=["POST"], tags=["admin"]
+        )
 
-        self.router.add_api_websocket_route("/ws/status", self.status_socket)
+        self.router.add_api_route(
+            "/spiders", self.get_spiders, tags=["admin"], methods=["GET"]
+        )
+
+        self.router.add_api_websocket_route("/ws", self.status_socket)
 
     async def index(self, request: Request):
         return self.templates.TemplateResponse(
             "index.html", context={"request": request, "port": config.api.frontend_port}
         )
 
-    async def status_socket(self, websocket: WebSocket):
+    async def get_spiders(self) -> list[SpiderStatus]:
+        return self.spider.status
+
+    async def status_socket(self, websocket: WebSocket) -> NoReturn:
         await websocket.accept()
+        alert = AdminAlert(websocket)
+        self.spider.alert.add_alert(alert)
 
         async def send_status():
             try:
-                await websocket.send_text(self.spider.status)
+                self._latest = self._spider_status
+                await websocket.send_json(
+                    SpiderResponse(
+                        result=[x.as_dict() for x in self.spider.status]
+                    ).model_dump()
+                )
                 while True:
-                    if self._latest != self.spider.status:
-                        await websocket.send_text(self.spider.status)
-                        self._latest = self.spider.status
+                    if self._latest != self._spider_status:
+                        await websocket.send_json(
+                            SpiderResponse(
+                                result=[x.as_dict() for x in self.spider.status]
+                            ).model_dump()
+                        )
+                        self._latest = self._spider_status
 
                     await asyncio.sleep(0.1)
             except asyncio.CancelledError:
@@ -89,41 +111,33 @@ class AdminHandler:
             await send_status()
         except RuntimeError:
             pass
-
-    async def websocket(self, websocket: WebSocket):
-        await websocket.accept()
-        try:
-            alert = AdminAlert(websocket)
-            self.spider.add_alert(alert)
-
-            while True:
-                command = await websocket.receive_text()
-
-                if command.startswith("start"):
-                    if self.spider._start:
-                        await alert.alert("Парсер уже запущен!", "warning")
-                        continue
-
-                    asyncio.create_task(self.spider.start_parsing())
-
-                elif command.startswith("stop"):
-                    if not self.spider._start:
-                        await alert.alert("Парсер уже остановлен!", "warning")
-                        continue
-
-                    asyncio.create_task(self.spider.stop_parsing())
-
-                else:
-                    await self.spider.alert("Внимания Неизвестная команда!", "warning")
-
-        except (WebSocketDisconnect, RuntimeError):
-            logger.debug("Пользователь отключился")
-
         finally:
-            try:
-                self.spider.alert_manager.remove_alert(alert)
-            except ValueError:
-                logger.debug("Уведомление было удалено сборщиком")
+            self.spider.alert.remove_alert(alert)
+
+    async def spider_starter(
+        self, signal: ParsingSignal
+    ) -> SpiderStatus | list[SpiderStatus]:
+        if signal.signal == "start":
+            if signal.spider == "all":
+                asyncio.create_task(self.spider.start_full_parsing())
+                await asyncio.sleep(signal.timeout)
+                return self.spider.status
+
+            asyncio.create_task(
+                self.spider.starter.start_spider(signal.spider, signal.page)
+            )
+            await asyncio.sleep(signal.timeout)
+            return self.spider.get_spider_status(signal.spider)
+
+        else:
+            if signal.spider == "all":
+                asyncio.create_task(self.spider.stop_all_spider())
+                await asyncio.sleep(signal.timeout)
+                return self.spider.status
+
+            asyncio.create_task(self.spider.starter.stop_spider(signal.spider))
+            await asyncio.sleep(signal.timeout)
+            return self.spider.get_spider_status(signal.spider)
 
     async def get_static(self, path: str) -> FileResponse:
         static_file = self.static / path
@@ -134,3 +148,7 @@ class AdminHandler:
     @property
     def router(self) -> APIRouter:
         return self._router
+
+    @property
+    def _spider_status(self):
+        return "\n".join(str(x) for x in self.spider.status)

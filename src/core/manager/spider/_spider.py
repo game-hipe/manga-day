@@ -8,7 +8,7 @@ import aiohttp
 
 from ._load import load_spiders
 from ._starter import SpiderStarter
-from ._status import SpiderStatus
+from ._status import SpiderStatus, SpiderStatusEnum
 from ..manga import MangaManager
 from ..alert import AlertManager
 from ...abstract.request import BaseRequestManager, RequestItem
@@ -120,48 +120,35 @@ class SpiderManager:
             raise AttributeError(
                 "Менеджер не был передан. Убедитесь, что менеджер передан перед запуском парсинга."
             )
-            
+        if all([x.status == SpiderStatusEnum.RUNNING for x in self.status]):
+            await self.starter._alert(
+                "Все пауки уже запущены, перезапуск не требуется.", "INFO"
+            )
+            return
         tasks = []
         for spider in self.spiders:
-            tasks.append(
-                asyncio.create_task(
-                    self._starter.start_spider(spider)
-                )
-            )
+            tasks.append(asyncio.create_task(self._starter.start_spider(spider)))
         try:
-            await asyncio.gather(*tasks, return_exceptions=True)
-        except (KeyboardInterrupt, asyncio.CancelledError):
-            await asyncio.shield(
-                self.stop_all_spider()
-            )
+            await asyncio.shield(asyncio.gather(*tasks, return_exceptions=True))
+        finally:
+            await asyncio.shield(self.stop_all_spider())
 
     async def stop_all_spider(self) -> None:
         """Останавливает все пауки."""
         tasks = []
         for spider in self.spiders:
-            tasks.append(
-                asyncio.create_task(
-                    self._starter.stop_spider(spider)
-                )
-            )
+            tasks.append(asyncio.create_task(self._starter.stop_spider(spider)))
 
         await asyncio.gather(*tasks, return_exceptions=True)
 
     @property
     def status(self) -> list[SpiderStatus]:
+        """Возвращает статус всех пауков."""
         all_status = []
         for spider in self.starter.spiders:
-            all_status.append(
-                SpiderStatus(
-                    name = spider.__class__.__name__,
-                    status = self._convert_status(
-                        self.starter.spiders[spider]
-                    ),
-                    message = spider.status if hasattr(spider, "status") else None
-                )
-            )
+            all_status.append(self.get_spider_status(spider))
         return all_status
-        
+
     @property
     def starter(self) -> SpiderStarter:
         """Возращает стартер пауков
@@ -171,17 +158,45 @@ class SpiderManager:
         """
         return self._starter
 
+    def get_spider_status(
+        self, spider: BaseSpider | type[BaseSpider] | str
+    ) -> SpiderStatus:
+        """Получает статус паука
+
+        Args:
+            spider (BaseSpider | type[BaseSpider] | str): Сам паук
+
+        Returns:
+            SpiderStatus: Статус об пауке
+        """
+        spider = self.starter._get_spider(spider)
+        return SpiderStatus(
+            name=spider.__class__.__name__,
+            status=self._convert_status(self.starter.spiders[spider]),
+            message=spider.status if hasattr(spider, "status") else None,
+        )
+
     @staticmethod
-    def _convert_status(task: asyncio.Task):
+    def _convert_status(task: asyncio.Task | None) -> SpiderStatusEnum:
+        """Вспомогательная функция что-бы возращать тип
+
+        Args:
+            task (asyncio.Task | None): Задачаm или None
+
+        Returns:
+            SpiderStatusEnum: Статус задачи
+        """
+        if task is None:
+            return SpiderStatusEnum.NOT_RUNNING
 
         if task.cancelled():
-            return "Отменён"
+            return SpiderStatusEnum.CANCELLED
 
         elif task.done():
             if task.exception():
-                return "Ошибка"
+                return SpiderStatusEnum.CANCELLED
 
             else:
-                return "Завершён"
+                return SpiderStatusEnum.SUCCESS
         else:
-            return "В работе"
+            return SpiderStatusEnum.RUNNING

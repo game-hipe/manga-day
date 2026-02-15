@@ -29,22 +29,24 @@ async def main():
             await conn.run_sync(Base.metadata.create_all)
 
         alert = AlertManager()
-        api = MangaManager(engine)
+        manager = MangaManager(engine)
 
         proxy = [ProxySchema.create(x) for x in config.proxy]
-        spider = SpiderManager(session, api, alert, "lxml", proxy=proxy)
+        spider = SpiderManager(
+            session, alert, manager=manager, features="lxml", proxy=proxy
+        )
         scheduler = SpiderScheduler(spider)
 
-        find = FindService(api)
+        find = FindService(manager)
         pdf = PDFService(session, proxy=proxy)
 
         try:
             await asyncio.gather(
                 start_bot(spider=spider),
-                start_api(manager=api),
-                start_frontend(manager=api, find=find, spider=spider),
+                start_api(manager=manager),
+                start_frontend(manager=manager, find=find, spider=spider),
                 start_user(
-                    manager=api,
+                    manager=manager,
                     alert=alert,
                     pdf_service=pdf,
                     save_path=config.pdf.save_path,
@@ -61,7 +63,3 @@ if __name__ == "__main__":
 
     except KeyboardInterrupt:
         logger.info("Программа прервана пользователем.")
-
-    except Exception as e:
-        logger.critical(f"Произошла ошибка: {e}")
-        raise

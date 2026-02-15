@@ -40,12 +40,16 @@ class CommandsHandler:
         - /help
         - /start_parsing
         - /stop_parsing
+        - /stop_spider
+        - /start_spider
         - /status
         """
         self.router.message.register(self.start, Command("start"))
         self.router.message.register(self.help, Command("help"))
         self.router.message.register(self.start_parsing, Command("start_parsing"))
         self.router.message.register(self.stop_parsing, Command("stop_parsing"))
+        self.router.message.register(self.stop_spider, Command("stop_spider"))
+        self.router.message.register(self.start_spider, Command("start_spider"))
         self.router.message.register(self.status, Command("status"))
 
     async def start(self, message: Message):
@@ -77,7 +81,7 @@ class CommandsHandler:
             Исключения могут быть выброшены методом start_parsing() SpiderManager.
         """
         await message.answer("Попытка начать парсинг")
-        await self.spider_manager.start_parsing()
+        await self.spider_manager.start_full_parsing()
 
     async def stop_parsing(self, message: Message):
         """Останавливает процесс парсинга по команде /stop_parsing.
@@ -92,7 +96,41 @@ class CommandsHandler:
             Исключения могут быть выброшены методом stop_parsing() SpiderManager.
         """
         await message.answer("Попытка остановить парсинг")
-        await self.spider_manager.stop_parsing()
+        await self.spider_manager.stop_all_spider()
+
+    async def stop_spider(self, message: Message):
+        """Останавливает спайдера по команде /stop [spider_name].
+
+        Args:
+            message (Message): Входящее сообщение от пользователя.
+        """
+        try:
+            _, spider_name = message.text.split()
+            try:
+                await self.spider_manager.starter.stop_spider(spider_name)
+            except KeyError:
+                await message.answer(f"Спайдер {spider_name} не найден.")
+        except ValueError:
+            await message.answer(
+                "Неверный формат команды. Используйте: /stop_spider [spider_name]"
+            )
+
+    async def start_spider(self, message: Message):
+        """Запускает спайдер по команде /start [spider_name].
+
+        Args:
+            message (Message): Входящее сообщение от пользователя.
+        """
+        try:
+            _, spider_name = message.text.split()
+            try:
+                await self.spider_manager.starter.start_spider(spider_name)
+            except KeyError:
+                await message.answer("Спайдер не найден.")
+        except ValueError:
+            await message.answer(
+                "Неверный формат команды. Используйте: /start_spider [spider_name]"
+            )
 
     async def status(self, message: Message):
         """Отправляет текущий статус парсера по команде /status.
@@ -103,4 +141,4 @@ class CommandsHandler:
         Raises:
             AttributeError: Если spider_manager не имеет атрибута status.
         """
-        await message.answer(self.spider_manager.status)
+        await message.answer("\n".join(str(x) for x in self.spider_manager.status))

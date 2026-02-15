@@ -3,121 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Админ панель сайта - Manga-Day</title>
-    <link rel="stylesheet" href="/admin/static/css/style.css">
+    <title>Панель управление Manga-Day</title>
     <link rel="icon" href="/static/images/icon.ico" type="image/x-icon">
-    <style>
-        /* Стили для модального окна подтверждения */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .modal {
-            background-color: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            width: 400px;
-            max-width: 90%;
-            text-align: center;
-        }
-        
-        .modal h2 {
-            color: #e74c3c;
-            margin-bottom: 15px;
-            font-size: 1.5rem;
-        }
-        
-        .modal p {
-            color: #333;
-            margin-bottom: 25px;
-            font-size: 1.1rem;
-            line-height: 1.5;
-        }
-        
-        .modal-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-        
-        .modal-button {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .confirm-stop {
-            background-color: #e74c3c;
-            color: white;
-        }
-        
-        .confirm-stop:hover {
-            background-color: #c0392b;
-        }
-        
-        .cancel-stop {
-            background-color: #ecf0f1;
-            color: #333;
-        }
-        
-        .cancel-stop:hover {
-            background-color: #bdc3c7;
-        }
-    </style>
-    <script>
-        host = window.location.host;
-        const ws = new WebSocket(`ws://${host}/admin/ws`);
-        const stat_ws = new WebSocket(`ws://${host}/admin/ws/status`)
-    </script>
+    <link rel="stylesheet" href="/admin/static/css/style.css">
+    <script src="/admin/static/js/script.js"></script>
+    
 </head>
 <body>
-    <script src="/admin/static/js/script.js"></script>
     <main>
-        <div class="status" id="status">
-            <ul><li><h1>Ожидания статуса...</h1></li></ul>
+        <div class="spiders" id="Spiders">
+            <strong>Пока что нет ни одного паука!</strong>
         </div>
 
-        <div class="parsing-management">
-            <button onclick="StartParsing()" id="StartParsingButton">Начать парсинг</button>
-            <button onclick="ShowStopConfirmation()" id="StopParsingButton">Остановить парсинг</button>
+        <div class="full-buttons">
+            <button type="button" onclick="StartAllSpider()" id="StartButton">Начать полное сканировние</button>
+            <button type="button" onclick="StopAllSpider()" id="StopButton">Оставновить сканирование</button>
         </div>
-
     </main>
-    <div class="messages">
-        <div class="message hide" id="message" >
-            <h1>
-                <span id="text"></span>
-            </h1>
-        </div>
-    </div>
-
-    <!-- Модальное окно подтверждения остановки парсинга -->
-    <div class="modal-overlay" id="stopConfirmationModal">
-        <div class="modal">
-            <h2>⚠️ Внимание!</h2>
-            <p>Вы уверены, что хотите остановить парсинг?<br>
-            Все активные процессы будут прерваны,<br>
-            а незавершенные данные могут быть потеряны.</p>
-            <div class="modal-buttons">
-                <button class="modal-button confirm-stop" onclick="ConfirmStopParsing()">Да, остановить</button>
-                <button class="modal-button cancel-stop" onclick="HideStopConfirmation()">Отмена</button>
-            </div>
-        </div>
-    </div>
-
+    <div class="messages"></div>
 </body>
 </html>

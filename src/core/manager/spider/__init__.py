@@ -5,9 +5,4 @@ from ._spider import SpiderManager
 from ._starter import SpiderStarter
 from ._status import SpiderStatus
 
-__all__ = [
-    "load_spiders",
-    "SpiderManager",
-    "SpiderStarter",
-    "SpiderStatus"
-]
+__all__ = ["load_spiders", "SpiderManager", "SpiderStarter", "SpiderStatus"]

@@ -26,7 +26,7 @@ class SpiderScheduler:
     async def start(self):
         hour, minute, day = self.get_time()
         self.scheduler.add_job(
-            self.manager.start_parsing,
+            self.manager.start_full_parsing,
             CronTrigger(
                 hour=hour, minute=minute, day=day, timezone=pytz.timezone(self.zone)
             ),

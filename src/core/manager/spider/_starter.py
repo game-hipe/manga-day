@@ -6,6 +6,7 @@ from typing import overload
 
 from loguru import logger
 
+from ._status import SpiderStatus, SpiderStatusEnum
 from ..alert import AlertManager, LEVEL
 from ...abstract.spider import BaseSpider
 
@@ -61,7 +62,7 @@ class SpiderStarter:
         Args:
             spider (BaseSpider): Сам паук.
         """
-        
+
     @overload
     async def stop_spider(self, spider: type[BaseSpider]) -> None:
         """Остановить работу паука
@@ -80,7 +81,7 @@ class SpiderStarter:
 
     async def start_spider(
         self, spider: str | BaseSpider | type[BaseSpider], start_page: int | None = None
-    ) -> None:
+    ) -> SpiderStatus:
         """Начать работу паука.
 
         Args:
@@ -91,16 +92,20 @@ class SpiderStarter:
 
         if self.spiders[spider]:
             logger.info(
-                f"Паук {spider.__class__.__name__} уже запущен. Необходимо остановить его перед запуском."
+                f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском."
             )
             await self.alert(
-                f"Паук {spider.__class__.__name__} уже запущен. Необходимо остановить его перед запуском."
+                f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском."
             )
-            return
+            return SpiderStatus(
+                name=self._get_spider_name(spider),
+                status=SpiderStatusEnum.NOT_RUNNING.value,
+                message=f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском.",
+            )
 
         try:
             await self._alert(
-                f"Паук {spider.__class__.__name__}, начал свою работу.", "info"
+                f"Паук {self._get_spider_name(spider)}, начал свою работу.", "info"
             )
             self.spiders[spider] = asyncio.create_task(
                 spider.run(start_page=start_page)
@@ -113,15 +118,26 @@ class SpiderStarter:
                     task.cancel()
 
             logger.warning(
-                f"Паук {spider.__class__.__name__}, был остановлен пользователем."
+                f"Паук {self._get_spider_name(spider)}, был остановлен пользователем."
             )
             await self._alert(
-                f"Паук {spider.__class__.__name__}, был остановлен пользователем.", "warning"
+                f"Паук {self._get_spider_name(spider)}, был остановлен пользователем.",
+                "warning",
+            )
+            return SpiderStatus(
+                name=self._get_spider_name(spider),
+                status=SpiderStatusEnum.CANCELLED.value,
+                message=f"Паук {self._get_spider_name(spider)}, был остановлен пользователем.",
             )
 
         finally:
+            logger.success(
+                f"Паук {self._get_spider_name(spider)}, закончил свою работу."
+            )
+            self.spiders[spider] = None
             await self._alert(
-                f"Паук {spider.__class__.__name__}, закончил свою работу.", "success"
+                f"Паук {self._get_spider_name(spider)}, закончил свою работу.",
+                "success",
             )
 
     async def stop_spider(self, spider: str | BaseSpider | type[BaseSpider]) -> None:
@@ -134,10 +150,10 @@ class SpiderStarter:
 
         if not self.spiders[spider]:
             logger.info(
-                f"Паук {spider.__class__.__name__} не запущен. Необходимо запустить его перед остановкой."
+                f"Паук {self._get_spider_name(spider)} не запущен. Необходимо запустить его перед остановкой."
             )
             await self._alert(
-                f"Паук {spider.__class__.__name__} не запущен. Необходимо запустить его перед остановкой.",
+                f"Паук {self._get_spider_name(spider)} не запущен. Необходимо запустить его перед остановкой.",
                 "warning",
             )
             return
@@ -147,20 +163,26 @@ class SpiderStarter:
                 if not task.done():
                     task.cancel()
 
-                    logger.info(f"Паук {spider.__class__.__name__}, был остановлен.")
+                    logger.info(
+                        f"Паук {self._get_spider_name(spider)}, был остановлен."
+                    )
                     await self._alert(
-                        f"Паук {spider.__class__.__name__}, был остановлен.", "warning"
+                        f"Паук {self._get_spider_name(spider)}, был остановлен.",
+                        "warning",
                     )
                 else:
-                    logger.info(f"Паук {spider.__class__.__name__}, уже остановлен.")
+                    logger.info(
+                        f"Паук {self._get_spider_name(spider)}, уже остановлен."
+                    )
                     await self._alert(
-                        f"Паук {spider.__class__.__name__}, уже остановлен.", "warning"
+                        f"Паук {self._get_spider_name(spider)}, уже остановлен.",
+                        "warning",
                     )
 
             else:
-                logger.warning(f"Паук {spider.__class__.__name__} не запущен.")
+                logger.warning(f"Паук {self._get_spider_name(spider)} не запущен.")
                 await self._alert(
-                    f"Паук {spider.__class__.__name__} не запущен.", "warning"
+                    f"Паук {self._get_spider_name(spider)} не запущен.", "warning"
                 )
         finally:
             self.spiders[spider] = None
@@ -182,22 +204,25 @@ class SpiderStarter:
             return spider
         elif isinstance(spider, str):
             for _spider in self.spiders:
-                if _spider.__class__.__name__ == spider:
+                if self._get_spider_name(_spider) == spider:
                     return _spider
             else:
-                logger.error(f"Паук {spider} не существует")
-                raise ValueError(f"Паук {spider} не существует")
+                logger.error(f"Паук '{spider}' не существует")
+                raise KeyError(f"Паук '{spider}' не существует")
         if issubclass(spider, BaseSpider):
             for _spider in self.spiders:
-                if type(_spider) == spider:
+                if type(_spider) is spider:
                     return _spider
             else:
-                logger.error(f"Паук {spider} не существует")
-                raise ValueError(f"Паук {spider} не существует")
+                logger.error(f"Паук '{spider}' не существует")
+                raise KeyError(f"Паук '{spider}' не существует")
         else:
             raise TypeError(
                 f"Паук должен быть либо BaseSpider, либо str, а не {type(spider)}"
             )
+
+    def _get_spider_name(self, spider: BaseSpider) -> str:
+        return spider.__class__.__name__
 
     async def _alert(self, message: str, level: LEVEL):
         """
@@ -212,3 +237,7 @@ class SpiderStarter:
             await self.alert.alert(message=message, level=level)
         else:
             logger.debug("Менеджер сообщение не передан.")
+
+    @property
+    def all_work(self) -> bool:
+        return any(self.spiders.values())

@@ -1,147 +1,235 @@
+/* Общие стили для тёмной темы */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-body {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #f0f0f0;
-    padding: 20px;
 }
 
 main {
-    background: rgba(255, 255, 255, 0.08);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border-radius: 20px;
     padding: 40px;
     width: 100%;
-    max-width: 800px; /* Увеличим максимальную ширину */
+    max-width: 80%; /* Увеличим максимальную ширину */
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    align-items: center;
+    margin: 0 auto;
 }
 
-.status {
-    text-align: center;
-    margin-bottom: 40px;
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
     padding: 20px;
-    background: rgba(0, 0, 0, 0.3);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* новое правило */
+}
+
+/* Контейнер для списка пауков */
+.spiders {
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+/* Заглушка, когда пауков нет */
+.spiders strong {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-size: 1.2rem;
+    color: #888;
+    padding: 40px;
+    background-color: #1e1e1e;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    min-height: 80px; /* Минимальная высота */
-    max-height: 400px; /* Максимальная высота для скролла */
-    overflow-y: auto; /* Вертикальный скролл при необходимости */
+    border: 1px dashed #444;
 }
 
-.status h1 {
-    font-size: 28px;
-    font-weight: 600;
-    background: linear-gradient(90deg, #00dbde, #fc00ff);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+/* Карточка паука */
+.spider {
+    background-color: #1e1e1e;
+    border-radius: 16px;
+    padding: 20px;
+    width: 300px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+    border: 1px solid #333;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-/* Стили для списка статусов */
-.status ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+.spider:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.7);
+    border-color: #555;
 }
 
-.status li {
-    background: rgba(255, 255, 255, 0.05);
-    margin-bottom: 10px;
-    padding: 12px 15px;
+/* Имя паука */
+.spider h1 {
+    font-size: 1.5rem;
+    color: #bb86fc;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 8px;
+    word-break: break-word;
+}
+
+/* Статус */
+.spider p {
+    font-size: 1rem;
+    background-color: #2a2a2a;
+    padding: 6px 12px;
+    border-radius: 20px;
+    display: inline-block;
+    align-self: flex-start;
+    font-weight: 500;
+}
+
+/* Сообщение */
+.spider b {
+    font-size: 0.95rem;
+    color: #cfcfcf;
+    background-color: #2d2d2d;
+    padding: 8px 12px;
     border-radius: 8px;
-    border-left: 4px solid #00dbde;
-    transition: all 0.3s ease;
-    word-break: break-word; /* Перенос длинных слов */
-    overflow-wrap: break-word; /* Перенос длинных слов */
+    border-left: 4px solid #bb86fc;
+    word-break: break-word;
 }
 
-.status li:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateX(5px);
+/* Поле ввода номера страницы */
+.spider input[type="number"] {
+    background-color: #2d2d2d;
+    border: 1px solid #444;
+    color: #e0e0e0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    width: 100%;
+    transition: border 0.2s, box-shadow 0.2s;
 }
 
-/* Для h1 внутри li - другие стили */
-.status li h1 {
-    font-size: 16px; /* Уменьшаем размер шрифта */
-    font-weight: normal;
-    background: none;
-    -webkit-text-fill-color: #f0f0f0;
-    color: #f0f0f0;
-    text-shadow: none;
-    margin: 0;
-    text-align: left;
-    line-height: 1.4;
+.spider input[type="number"]:focus {
+    outline: none;
+    border-color: #bb86fc;
+    box-shadow: 0 0 0 2px rgba(187, 134, 252, 0.3);
 }
 
-/* Стили для жирного текста внутри статуса */
-.status li h1 b {
+/* Кнопка в карточке */
+.spider button {
+    background-color: #bb86fc;
+    color: #121212;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 1rem;
     font-weight: 600;
-    color: #00dbde; /* Цвет для выделенных частей */
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    margin-top: 4px;
 }
 
-.parsing-management {
+.spider button:hover {
+    background-color: #a370e0;
+}
+
+.spider button:active {
+    transform: scale(0.98);
+}
+
+/* Кнопки "Начать полное сканирование" и "Остановить сканирование" */
+.full-buttons {
+    width: 100%;
+    max-width: 1200px;
+    margin: 30px auto;
     display: flex;
     gap: 20px;
     justify-content: center;
     flex-wrap: wrap;
 }
 
-button {
-    padding: 16px 32px;
-    font-size: 18px;
+.full-buttons button {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    padding: 14px 28px;
+    border-radius: 40px;
+    font-size: 1.1rem;
     font-weight: 600;
-    border: none;
-    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 180px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    min-width: 250px;
 }
 
-#StartParsingButton {
-    background: linear-gradient(90deg, #00b09b, #96c93d);
-    color: white;
+.full-buttons button:hover {
+    background-color: #3d3d3d;
+    border-color: #bb86fc;
+    box-shadow: 0 4px 12px rgba(187, 134, 252, 0.2);
 }
 
-#StartParsingButton:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(0, 176, 155, 0.3);
+.full-buttons button:active {
+    transform: translateY(2px);
 }
 
-#StartParsingButton:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: linear-gradient(90deg, #555, #777);
+/* Индивидуальный стиль для кнопки остановки */
+#StopButton {
+    border-color: #cf6679;
+    color: #cf6679;
 }
 
-#StopParsingButton {
-    background: linear-gradient(90deg, #ff416c, #ff4b2b);
-    color: white;
+#StopButton:hover {
+    background-color: #3d2a2e;
+    border-color: #cf6679;
+    box-shadow: 0 4px 12px rgba(207, 102, 121, 0.2);
 }
 
-#StopParsingButton:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(255, 65, 108, 0.3);
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .spider {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .full-buttons button {
+        width: 100%;
+        min-width: auto;
+    }
 }
 
-button:active {
-    transform: translateY(0);
+/* Стили для скроллбара */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
 }
 
-/* Контейнер для сообщений */
+::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ---------- СИСТЕМА АЛЕРТОВ (тёмная тема) ---------- */
 .messages {
     position: fixed;
     top: 20px;
@@ -152,53 +240,50 @@ button:active {
     max-width: 400px;
     width: 100%;
     z-index: 1000;
+    pointer-events: none; /* чтобы клики проходили сквозь контейнер, но не сквозь сами сообщения */
 }
 
-/* Стили для отдельных сообщений */
 .message {
-    padding: 15px 20px;
+    pointer-events: auto; /* сообщения можно закрывать или взаимодействовать */
+    padding: 16px 20px;
     border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    animation: slideIn 0.5s ease, fadeOut 0.5s ease 3.5s forwards;
+    background-color: #1e1e1e;
     border-left: 6px solid;
-    opacity: 1;
-    transform: translateX(0);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    color: #e0e0e0;
+    animation: slideIn 0.3s ease, fadeOut 0.5s ease 3.5s forwards;
+    transform-origin: right;
+    border: 1px solid #333;
 }
 
 .message h1 {
-    font-size: 16px;
+    font-size: 1rem;
     font-weight: 500;
+    margin: 0;
+    color: inherit;
 }
 
-/* Цвета статусов */
 .message.info {
-    background-color: #ffffff;
     border-left-color: #2196f3;
-    color: #1a1a2e;
+    background-color: #1a2a3a;
 }
 
 .message.warning {
-    background-color: #fff3cd;
-    border-left-color: #ffc107;
-    color: #856404;
+    border-left-color: #ff9800;
+    background-color: #3a2e1a;
 }
 
 .message.error {
-    background-color: #f8d7da;
-    border-left-color: #dc3545;
-    color: #721c24;
+    border-left-color: #f44336;
+    background-color: #3a1a1a;
 }
 
 .message.success {
-    background-color: #d4edda;
-    border-left-color: #28a745;
-    color: #155724;
+    border-left-color: #4caf50;
+    background-color: #1a3a1a;
 }
 
-.hide {
-    display: none !important;
-}
-
+/* Анимации */
 @keyframes slideIn {
     from {
         transform: translateX(100%);
@@ -213,84 +298,10 @@ button:active {
 @keyframes fadeOut {
     from {
         opacity: 1;
+        transform: translateX(0);
     }
     to {
         opacity: 0;
+        transform: translateX(100%);
     }
-}
-
-/* Полоса прокрутки для контейнера статуса */
-.status::-webkit-scrollbar {
-    width: 8px;
-}
-
-.status::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-}
-
-.status::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #00dbde, #fc00ff);
-    border-radius: 4px;
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-    main {
-        padding: 25px;
-        max-width: 95%;
-    }
-    
-    .status {
-        padding: 15px;
-        max-height: 300px;
-    }
-    
-    .status li h1 {
-        font-size: 14px;
-    }
-    
-    .parsing-management {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    button {
-        width: 100%;
-        padding: 14px 28px;
-        font-size: 16px;
-    }
-    
-    .messages {
-        left: 20px;
-        right: 20px;
-        max-width: none;
-    }
-}
-
-/* Для очень маленьких экранов */
-@media (max-width: 480px) {
-    .status li {
-        padding: 10px 12px;
-    }
-    
-    .status li h1 {
-        font-size: 13px;
-    }
-}
-
-main {
-    flex: 1 0 auto;
-    width: 100%;
-    height: 100%;
-    max-height: 1200px;
-    max-width: 1200px;
-    margin: 0 auto;
-    
-    padding: 20px;
-    
-    background-color: var(--background-color);
-    color: var(--text-color);
-
-    border: 2px solid var(--background-color);
 }

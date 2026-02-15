@@ -100,6 +100,7 @@ class BaseMangaSpider(BaseSpider):
             logger.info(f"Обнаружено всего страниц: {total}")
 
             start = start_page or self.START_PAGE
+            self._processed_pages = start
             if start > total:
                 logger.info("Начальная страница больше максимальной. Парсинг завершён.")
                 return

@@ -128,13 +128,29 @@ class BaseSpider(ABC):
         if self.manager is None:
             raise AttributeError("Менеджер не был передан, функция 'run' не работает")
 
-        async for manga in self.pages_full(start_page = start_page):
-            try:
-                await self.manager.add_manga(manga)
-            except IntegrityError as error:
-                logger.error(
-                    f"Ошибка во время добваления манги (manga={manga}, message={error})"
-                )
+        async for manga_batch in self.pages(start_page=start_page):
+            tasks: list[Awaitable[Optional[MangaSchema]]] = []
+            for manga in manga_batch:
+                if await self.manager.in_database(manga):
+                    logger.debug(f"Манга уже существует в базе данных: {manga.sku}")
+                    continue
+                tasks.append(asyncio.create_task(self.get(str(manga.url))))
+
+            async for manga in asyncio.as_completed(tasks):
+                result = await manga
+                if result is None:
+                    continue
+
+                if not result.gallery:
+                    logger.warning(f"Манга {result.sku} не содержит галлереи")
+                    continue
+
+                try:
+                    await self.manager.add_manga(result)
+                except IntegrityError as error:
+                    logger.error(
+                        f"Ошибка во время добваления манги (manga={manga}, message={error})"
+                    )
 
     async def pages_full(
         self, start_page: int | None = None
@@ -142,11 +158,11 @@ class BaseSpider(ABC):
         """Метод который получает полную информацию об манге.
 
         Args:
-            start_page (int | None, optional): Стартовая страница для парсинга.: 
+            start_page (int | None, optional): Стартовая страница для парсинга.
 
         Yields:
             Iterator[AsyncGenerator[MangaSchema, Any]]: Возращает итератор манги.
-            
+
         Warning:
             Если во время получении манги, манга вернёт None он будет пропущен, либо если gallery окажется пустым.
         """
@@ -154,17 +170,18 @@ class BaseSpider(ABC):
             tasks: list[Awaitable[Optional[MangaSchema]]] = []
             for page in page_batch:
                 tasks.append(asyncio.create_task(self.get(str(page.url))))
-            
+
             async for manga in asyncio.as_completed(tasks):
                 result = await manga
                 if result is None:
                     continue
-                
+
                 if not result.gallery:
                     logger.warning(
                         f"Не удалось получить галерею (url={result.url}, title={result.title})"
                     )
-                
+                    continue
+
                 yield result
 
     @abstractmethod

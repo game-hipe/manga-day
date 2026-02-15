@@ -43,6 +43,12 @@ async def set_command(bot: Bot):
             BotCommand(command="help", description="Помощь"),
             BotCommand(command="start_parsing", description="Запустить парсинг"),
             BotCommand(command="stop_parsing", description="Остановить парсинг"),
+            BotCommand(
+                command="stop_spider", description="Остановить парсинг выбранного паука"
+            ),
+            BotCommand(
+                command="start_spider", description="Запустить парсинг выбранного паука"
+            ),
             BotCommand(command="status", description="Статус парсинга"),
         ]
     )
@@ -84,7 +90,7 @@ async def setup_bot(**kwargs: Unpack[BotConfig]):
             logger.info("Инициализация бота...")
             await set_command(bot)
 
-            spider.add_alert(BotAlert(bot))
+            spider.alert.add_alert(BotAlert(bot))
             handler = CommandsHandler(spider_manager=spider)
 
             dp.include_routers(handler.router)
@@ -98,7 +104,7 @@ async def setup_bot(**kwargs: Unpack[BotConfig]):
                 await dp.stop_polling()
             except RuntimeError:
                 pass
-        await spider.alert("<b>Бот прекратил свою работу</b>", "warning")
+        await spider.alert.alert("<b>Бот прекратил свою работу</b>", "warning")
         logger.info("Бот остановлен")
 
 

@@ -100,7 +100,7 @@ async def setup_user(**kwargs: Unpack[BotConfig]):
             except RuntimeError:
                 pass
 
-        await alert.alert("<b>Бот прекратил свою работу</b>", "warning")
+        await alert.alert("<b>USER - Бот прекратил свою работу</b>", "warning")
         logger.info("USER - Бот остановлен")
 
 
