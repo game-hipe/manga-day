@@ -9,9 +9,10 @@ from loguru import logger
 
 from ...core import config
 from ...core.manager.spider import SpiderManager
+from .._alert import BotAlert
+from .._tools import get_router
 from .handlers.commands import CommandsHandler
 from .middleware.admins import AdminMiddleware
-from .._alert import BotAlert
 
 
 class BotConfig(TypedDict):
@@ -93,7 +94,7 @@ async def setup_bot(**kwargs: Unpack[BotConfig]):
             spider.alert.add_alert(BotAlert(bot))
             handler = CommandsHandler(spider_manager=spider)
 
-            dp.include_routers(handler.router)
+            dp.include_routers(handler.router, get_router())
             dp.message.middleware(AdminMiddleware(config.bot.admins))
 
             logger.info("Бот инициализирован")

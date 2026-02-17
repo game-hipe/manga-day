@@ -77,6 +77,7 @@ class CommandsHandler:
         return manga
 
     async def download_manga(self, manga: OutputMangaSchema, message: Message):
+        file = None
         try:
             if manga.pdf_id:
                 await message.answer_document(
@@ -120,4 +121,5 @@ class CommandsHandler:
             )
         finally:
             await message.delete()
-            os.remove(file.path)
+            if file:
+                os.remove(file.path)

@@ -1,3 +1,4 @@
+import io
 import asyncio
 
 from concurrent.futures import ThreadPoolExecutor
@@ -5,11 +6,10 @@ from typing import overload, Unpack
 from pathlib import Path
 
 import aiohttp
-import aiofiles
 
 from loguru import logger
 from PIL import Image
-from PIL.Image import Image as IMG
+from PIL.ImageFile import ImageFile
 
 from ..abstract.request import RequestItem
 from ..entities.schemas import MangaSchema, OutputMangaSchema
@@ -49,6 +49,10 @@ class PDFService:
         max_workers: int | None = None,
         **kwargs,
     ) -> None:
+        kwargs["maxsize"] = kwargs.get(
+            "maxsize", 1
+        )  # Число 1 выбрано так-как кэш может "Съесть" всю память
+
         if isinstance(session, RequestManager):
             self.session = session
         else:
@@ -61,90 +65,97 @@ class PDFService:
     async def download(
         self, gallery: list[str] | MangaSchema | OutputMangaSchema, path: str | Path
     ) -> Path | None:
-        """Метод для скачивание фоток в PDF
-
-        Args:
-            gallery (list[str] | MangaSchema): URL-ы фоток или схема манги
-            path (Path | None): путь для сохраниение (пример "manga.pdf"), если не удалось создать PDF возращаеи None
         """
-        if isinstance(gallery, MangaSchema):
-            gallery = [str(x) for x in gallery.gallery]
-        elif isinstance(gallery, list):
-            gallery = gallery
-        else:
-            raise TypeError(f"Не поддерживаемый тип ({type(gallery).__name__})")
+        Основной метод для скачивания изображений и сохранения в PDF.
+        """
+        try:
+            urls = await self._prepare_gallery(gallery)
 
+            image_bytes_list = await self._fetch_images(urls)
+            if not image_bytes_list:
+                logger.warning("Не удалось скачать ни одно изображение.")
+                return None
+
+            images = await self._process_images(image_bytes_list)
+
+            final_path = self._ensure_pdf_extension(path)
+            return await self._save_as_pdf(images, final_path)
+
+        except Exception as e:
+            logger.error(f"Ошибка в процессе скачивания или генерации PDF: {e}")
+            return None
+
+    async def _prepare_gallery(
+        self, gallery: list[str] | MangaSchema | OutputMangaSchema
+    ) -> list[str]:
+        """Преобразует входные данные в список URL."""
+        if isinstance(gallery, MangaSchema) or isinstance(gallery, OutputMangaSchema):
+            return [str(img_url) for img_url in gallery.gallery]
+        elif isinstance(gallery, list):
+            return gallery
+        else:
+            raise TypeError(f"Неподдерживаемый тип: {type(gallery).__name__}")
+
+    def _ensure_pdf_extension(self, path: str | Path) -> Path:
+        """Гарантирует, что путь заканчивается на .pdf."""
         path = Path(path)
         if path.suffix.lower() != ".pdf":
             path = path.with_suffix(".pdf")
-            logger.warning(
-                f"Расширение не было указано, будет использован PDF файл (path={path})"
-            )
-
-        async with aiofiles.tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
-
-            saved_images: list[Path] = []
-            tasks: list[asyncio.Task[bool]] = []
-
-            for indx, url in enumerate(gallery):
-                webp = tmp_path / f"{indx}.webp"
-                tasks.append(asyncio.create_task(self._write(webp, url)))
-                saved_images.append(webp)
-
-            for task in asyncio.as_completed(tasks):
-                result = await task
-                if not result:
-                    logger.warning("Не удалось скачать изображение")
-                    return None
-
-            images = await self._convert(saved_images)
-            await self._build_pdf(images, path)
-
         return path
 
-    async def _build_pdf(self, images: list[IMG], path: str | Path):
-        """Создаёт PDF файл, в указанной директории
+    async def _fetch_images(self, urls: list[str]) -> list[io.BytesIO | None]:
+        """Скачивает все изображения асинхронно."""
+        tasks = [self._download_image(url, index) for index, url in enumerate(urls)]
+        results = []
 
-        Args:
-            images (list[IMG]): фотки
-            path (str | Path): путь для сохраниение
-        """
-        loop = asyncio.get_event_loop()
-        img = images.pop(0)
-        await loop.run_in_executor(
-            self.executer, lambda: img.save(path, save_all=True, append_images=images)
+        for coro in asyncio.as_completed(tasks):
+            response, index = await coro
+            results.append((response, index))
+
+        sorted_results = sorted(results, key=lambda x: x[1])
+        return [res[0] for res in sorted_results]
+
+    async def _process_images(
+        self, buffers: list[io.BytesIO | None]
+    ) -> list[ImageFile]:
+        """Конвертирует байты в объекты PIL.Image в пуле потоков."""
+        loop = asyncio.get_running_loop()
+        valid_buffers = [buf for buf in buffers if buf is not None]
+
+        if not valid_buffers:
+            return []
+
+        images = await loop.run_in_executor(
+            self.executer,
+            lambda: [self._create_image(buffer) for buffer in valid_buffers],
         )
+        return images
 
-    async def _write(self, path: str, url: str) -> bool:
-        """Записывает webp в файл
+    async def _save_as_pdf(self, images: list[ImageFile], path: Path) -> Path | None:
+        """Сохраняет изображения в виде PDF."""
+        if not images:
+            logger.warning("Нет изображений для сохранения в PDF.")
+            return None
 
-        Args:
-            path (str): путь для сохраниение
-            url (str): URL фотки
-        """
-        async with aiofiles.open(path, "wb") as file:
-            response = await self.session.get(url, "read")
-            if response is None:
-                return False
-
-            await file.write(response)
-            return True
-
-    async def _convert(self, images: list[str | Path]) -> list[IMG]:
-        """Преобразует WEBP в PNG
-
-        Args:
-            images (list[str | Path]): фотки
-
-        Returns:
-            list[IMG]: фотки
-        """
-
-        def _convert(save_path: str | Path):
-            return Image.open(save_path).convert("RGB")
-
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
-            self.executer, lambda: [_convert(image) for image in images]
+            self.executer, lambda: self._build_pdf(images, path)
         )
+
+    async def _download_image(
+        self, url: str, index: int
+    ) -> tuple[io.BytesIO | None, int]:
+        response = await self.session.get(url, "read")
+        if response:
+            return io.BytesIO(response), index
+        return None, index
+
+    def _create_image(self, buffer: io.BytesIO) -> ImageFile:
+        return Image.open(buffer)
+
+    def _build_pdf(self, images: list[ImageFile], path: Path | str) -> Path | None:
+        try:
+            images[0].save(path, save_all=True, append_images=images[1:])
+            return Path(path)
+        except Exception as e:
+            logger.error(f"Произошла ошибка во время генерации PDF (error={e})")

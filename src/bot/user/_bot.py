@@ -10,6 +10,7 @@ from loguru import logger
 from ...core import config
 from ...core.manager import MangaManager, AlertManager
 from ...core.service import PDFService
+from .._tools import get_router
 from .handler import CommandsHandler
 
 
@@ -43,6 +44,7 @@ async def set_command(bot: Bot):
         commands=[
             BotCommand(command="start", description="Запустить бота"),
             BotCommand(command="help", description="Помощь"),
+            BotCommand(command="download", description="Скачивает мангу по SKU"),
         ]
     )
 
@@ -89,7 +91,7 @@ async def setup_user(**kwargs: Unpack[BotConfig]):
 
             handler = CommandsHandler(manager=manager, pdf=pdf, save_path=save_path)
 
-            dp.include_routers(handler.router)
+            dp.include_routers(handler.router, get_router())
 
             logger.info("Бот инициализирован")
             yield bot, dp
