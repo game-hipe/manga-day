@@ -151,9 +151,11 @@ function UpdateSpider(spider: SpiderMessage): void {
                 newDiv.appendChild(newB);
 
                 // Поле для номера страницы (может быть полезно)
-                const pageInput = document.createElement("input");
-                pageInput.setAttribute("type", "number");
-                newDiv.appendChild(pageInput);
+                if (spiderStatus === "not_running") {
+                    const pageInput = document.createElement("input");
+                    // pageInput.setAttribute("type", "number");
+                    newDiv.appendChild(pageInput);
+                }
 
                 // Кнопка с data-атрибутом (без обработчика)
                 const newButton = document.createElement("button");
@@ -186,9 +188,11 @@ function UpdateSpider(spider: SpiderMessage): void {
         b.textContent = spiderMessage;
         divSpider.appendChild(b);
 
-        const page = document.createElement("input");
-        page.setAttribute("type", "number");
-        divSpider.appendChild(page);
+        if (spiderStatus === "not_running") {
+            const pageInput = document.createElement("input");
+            // pageInput.setAttribute("type", "number");
+            divSpider.appendChild(pageInput);
+        }
 
         const button = document.createElement("button");
         button.textContent = spiderStatus === "not_running" ? "Начать парсинг" : "Остановить парсинг";
@@ -257,6 +261,7 @@ document.addEventListener("DOMContentLoaded", () => {
         spiderBox.addEventListener("click", (event) => {
             const target = event.target as HTMLElement;
             const button = target.closest("button");
+
             if (!button) return; // клик не по кнопке
 
             const spiderDiv = button.closest(".spider");
@@ -265,11 +270,22 @@ document.addEventListener("DOMContentLoaded", () => {
             const spiderName = button.dataset.spider;
             const spiderInput = spiderDiv.querySelector("input") as HTMLInputElement | null;
             
+            if (!spiderInput) {
+                OnAlert("Не удалось получить Input", "error");
+                return
+            }
+
             var intPage: number | null = null
-            var stringPage: string | undefined = spiderInput?.value;
-            if (stringPage) {
+            var stringPage: string | undefined = spiderInput.value.trim();
+
+            if (stringPage !== "" && stringPage !== undefined) {
                 intPage = parseInt(stringPage);
-            }            
+                if (isNaN(intPage) || intPage <= 0) {
+                    OnAlert("Число должно быть положительным целым числом!", "warning");
+                    spiderInput.value = "";
+                    return;
+                }
+            }
 
             if (!spiderName) return; // нет data-атрибута
 
@@ -283,9 +299,49 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+    const spiderBox = document.getElementById("Spiders");
+    if (spiderBox && !spiderBox.hasAttribute('data-listener-enter')) {
+        spiderBox.setAttribute('data-listener-enter', 'true');
+        spiderBox.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter") return;
+            const target = event.target;
+            if (!(target instanceof HTMLInputElement)) return;
+
+            const spiderDiv = target.closest(".spider");
+            if (!spiderDiv) return;
+
+            // Кнопка «Начать» в этой карточке
+            const startButton = Array.from(spiderDiv.querySelectorAll('button'))
+                .find(btn => btn.textContent?.includes('Начать'));
+            if (!startButton) return;
+
+            const spiderName = startButton.dataset.spider;
+            if (!spiderName) return;
+
+            const spiderInput = target;
+            let intPage = null;
+            const stringPage = spiderInput.value.trim();
+
+            if (stringPage !== "") {
+                intPage = parseInt(stringPage);
+                if (isNaN(intPage) || intPage <= 0) {
+                    OnAlert("Число должно быть положительным целым числом!", "warning");
+                    spiderInput.value = "";
+                    return;
+                }
+                // Если число корректное, intPage > 0, продолжаем
+            } // иначе intPage остаётся null (без ограничения страниц)
+
+            event.preventDefault(); // важно для input, чтобы не было лишних действий
+            StartSpider(spiderName, intPage);
+        });
+    }
+});
+
+
 websocket.onmessage = function (event: MessageEvent): void {
     let answer: BaseResponse = JSON.parse(event.data);
-    console.log(answer);
 
     if (answer.signal === "alert") {
         let result = answer.result as AlertMessage;

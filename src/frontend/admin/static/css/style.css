@@ -108,7 +108,7 @@ body {
 }
 
 /* Поле ввода номера страницы */
-.spider input[type="number"] {
+.spider input {
     background-color: #2d2d2d;
     border: 1px solid #444;
     color: #e0e0e0;
@@ -119,7 +119,7 @@ body {
     transition: border 0.2s, box-shadow 0.2s;
 }
 
-.spider input[type="number"]:focus {
+.spider input:focus {
     outline: none;
     border-color: #bb86fc;
     box-shadow: 0 0 0 2px rgba(187, 134, 252, 0.3);
