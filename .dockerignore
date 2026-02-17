@@ -20,3 +20,7 @@ optional-requirements.txt
 env.example
 config-example.yaml
 dist
+tsconfig.json
+
+src\manga-day\src\core\migrations
+src\manga-day\alembic.ini
