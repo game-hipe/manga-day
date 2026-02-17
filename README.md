@@ -1,40 +1,15 @@
-![logo](https://raw.githubusercontent.com/game-hipe/manga-day/refs/heads/main/src/frontend/user/static/images/logo.png)
+# Manga-Day + AmneziaWG - Гибрид для бесплатного VPN!
+В чём "Прикол"? Прикол в том что я как и любой школьник не имею пассивного дохода, а требовать денег у родителей лень, и не хочется поэтому я подумал. **Почему-бы не обьеденить AmneziaWG, и мой проект?** На этом и решили!
 
-# Manga-Day Новая манга в 2 клика!
-В чём суть проекта? У меня есть много сайтов, где манга выходит не каждый день, но следит за ними нужно, поэтому я подумал почему-бы не просто создать пауков, и ТГ админку? Вот на этом и решили!
-
-## На будущее!
-Стоит улучшить API, для полноценности проекта, так-же улучшить Бота на стороне пользователя!
-
-## Как запустить проект?
+## Как запустить?
+1. Скопировать данный репозиторий `git clone ...`
+2. Засунуть свой конфиг в и переименовать в `awg0.conf` (Пример конфига в **awg0.conf.example**)
+3. Настроить `.env` (Пример конфига в **env.example**)
+4. Настроить `src\manga-day\config.yaml` (пример **src\manga-day\config-example.yaml**)
+5. Сборка Docker-а, и запуск
 ```bash
-git clone https://github.com/game-hipe/manga-day.git
-cd manga-day
-
-cp env.example .env
-cp config-example.yaml config.yaml
-
-nano config.yaml # Если имеются прокси вставтье данные, при отсутствии таковых, удалите поле proxy.
-nano .env
-
-docker-compose build --no-cache
-docker-compose up -d
+docker-compose build --no-cache # Собриаем образ
+docker-compose up -d # Запускаем образ
 ```
 
-## 2 Способ через прямой python (python3.14.X+)
-```bash
-git clone https://github.com/game-hipe/manga-day.git
-cd manga-day
-cp config-example.yaml config.yaml
-
-nano config.yaml # Если имеются прокси вставтье данные, при отсутствии таковых, удалите поле proxy.
-nano .env
-pip install -r requirements.txt
-python main.py
-```
-
-> [!WARNING]
-> Донор данных hitomi, была добавлена защита Cloudflare, поэтому на данный момента паук "hitomi" не доступен.
-
-> [!WARNING]
-> Проект является просто демонстрацие своих сил в BackEnd, и в ТГ ботах, поэтому не бейте тапком
+## Бон апетит! Наш бот готов!
