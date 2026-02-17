@@ -21,6 +21,6 @@ env.example
 config-example.yaml
 dist
 tsconfig.json
+alembic.ini
 
-src\manga-day\src\core\migrations
-src\manga-day\alembic.ini
+src/core/migrations
