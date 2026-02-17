@@ -21,6 +21,23 @@ async function StartAllSpider() {
     }
 }
 async function StopAllSpider() {
+    const SpiderBox = document.getElementById("Spiders");
+    if (!SpiderBox) {
+        console.warn("Элемент 'Spiders' не найден.");
+        return;
+    }
+    var stoppedSpider = 0;
+    var spiders = SpiderBox.querySelectorAll(".spider p");
+    for (let index = 0; index < spiders.length; index++) {
+        const element = spiders[index];
+        if (element.textContent === "not_running") {
+            stoppedSpider++;
+        }
+    }
+    if (stoppedSpider === spiders.length) {
+        OnAlert("Все пауки уже остановлены!", "warning");
+        return;
+    }
     try {
         await fetch("/admin/command", {
             method: "POST",
@@ -38,6 +55,23 @@ async function StopAllSpider() {
     }
 }
 async function StartSpider(spiderName, page) {
+    const SpiderBox = document.getElementById("Spiders");
+    if (!SpiderBox) {
+        console.warn("Элемент 'Spiders' не найден.");
+        return;
+    }
+    var workSpider = 0;
+    var spiders = SpiderBox.querySelectorAll(".spider p");
+    for (let index = 0; index < spiders.length; index++) {
+        const element = spiders[index];
+        if (element.textContent != "not_running") {
+            workSpider++;
+        }
+    }
+    if (workSpider === spiders.length) {
+        OnAlert("Все пауки уже остановлены!", "warning");
+        return;
+    }
     try {
         await fetch("/admin/command", {
             method: "POST",
@@ -214,21 +248,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 return; // кнопка не внутри карточки паука
             const spiderName = button.dataset.spider;
             const spiderInput = spiderDiv.querySelector("input");
-            if (!spiderInput) {
-                OnAlert("Не удалось получить Input", "error");
-                return;
-            }
             var intPage = null;
-            var stringPage = spiderInput.value.trim();
+            var stringPage = spiderInput === null || spiderInput === void 0 ? void 0 : spiderInput.value.trim();
             if (stringPage !== "" && stringPage !== undefined) {
                 intPage = parseInt(stringPage);
                 if (isNaN(intPage) || intPage <= 0) {
                     OnAlert("Число должно быть положительным целым числом!", "warning");
-                    spiderInput.value = "";
+                    if (spiderInput) {
+                        spiderInput.value = "";
+                    }
                     return;
                 }
-                // Если число корректное, intPage > 0, продолжаем
-            } // иначе intPage остаётся null (без ограничения страниц)
+            }
             if (!spiderName)
                 return; // нет data-атрибута
             // Определяем действие по тексту кнопки
@@ -291,4 +322,7 @@ websocket.onmessage = function (event) {
             UpdateSpider(element);
         }
     }
+};
+websocket.onclose = () => {
+    OnAlert("Соединение с сервером разорвано!", "critical");
 };
