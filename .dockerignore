@@ -21,6 +21,3 @@ env.example
 config-example.yaml
 dist
 tsconfig.json
-alembic.ini
-
-src/core/migrations
