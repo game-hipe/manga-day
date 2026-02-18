@@ -14,6 +14,17 @@ load_dotenv()
 CONFIG_FILE = os.getenv("CONFIG_FILE", "config.yaml")
 
 
+class RequestConfig(BaseModel):
+    max_concurrents: int = Field(5)
+    max_retries: int = Field(5)
+    sleep_time: float = Field(2)
+    use_random: bool = Field(True)
+    maxsize: int = Field(100)
+    ttl: float = Field(300)
+    max_chance: int = Field(3)
+    ban_proxy: bool = Field(True)
+
+
 class ParserConfig(BaseModel):
     features: str = Field("lxml")
     proxy: list[str] = Field(default_factory=list)
@@ -70,6 +81,7 @@ class Config(BaseModel):
     api: ApiConfig
     pdf: PDFConfig
     parsing: ParserConfig
+    request: RequestConfig
 
 
 def load_config():

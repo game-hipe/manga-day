@@ -38,11 +38,12 @@ async def main():
             manager=manager,
             features=config.parsing.features,
             proxy=proxy,
+            **config.request.model_dump(),
         )
         scheduler = SpiderScheduler(spider)
 
         find = FindService(manager)
-        pdf = PDFService(session, proxy=proxy)
+        pdf = PDFService(session, proxy=proxy, **config.request.model_dump())
 
         try:
             await asyncio.gather(

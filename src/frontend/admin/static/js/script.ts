@@ -32,6 +32,26 @@ interface AlertResponse extends BaseResponse<AlertMessage> {}
 interface SpiderResponse extends BaseResponse<SpiderMessage> {}
 
 async function StartAllSpider() {
+    const SpiderBox = document.getElementById("Spiders");
+    if (!SpiderBox) {
+        console.warn("Элемент 'Spiders' не найден.");
+        return;
+    }
+
+    var workSpider = 0
+    var spiders = SpiderBox.querySelectorAll(".spider p");
+
+    for (let index = 0; index < spiders.length; index++) {
+        const element = spiders[index];
+        if (element.textContent != "not_running") {
+            workSpider++
+        }
+    }
+
+    if (workSpider === spiders.length) {
+        OnAlert("Все пауки уже работают!", "warning");
+        return;
+    }
     try {
         await fetch("/admin/command", {
             method: "POST",
@@ -87,27 +107,6 @@ async function StopAllSpider(): Promise<void> {
 }
 
 async function StartSpider(spiderName: string, page: number | null): Promise<void> {
-    const SpiderBox = document.getElementById("Spiders");
-    if (!SpiderBox) {
-        console.warn("Элемент 'Spiders' не найден.");
-        return;
-    }
-
-    var workSpider = 0
-    var spiders = SpiderBox.querySelectorAll(".spider p");
-
-    for (let index = 0; index < spiders.length; index++) {
-        const element = spiders[index];
-        if (element.textContent != "not_running") {
-            workSpider++
-        }
-    }
-
-    if (workSpider === spiders.length) {
-        OnAlert("Все пауки уже остановлены!", "warning");
-        return;
-    }
-
     try {
         await fetch("/admin/command", {
             method: "POST",
@@ -195,7 +194,7 @@ function UpdateSpider(spider: SpiderMessage): void {
                 // Поле для номера страницы (может быть полезно)
                 if (spiderStatus === "not_running") {
                     const pageInput = document.createElement("input");
-                    // pageInput.setAttribute("type", "number");
+                    pageInput.setAttribute("placeholder", "Начальная страница (необязательно)");
                     newDiv.appendChild(pageInput);
                 }
 
@@ -232,7 +231,7 @@ function UpdateSpider(spider: SpiderMessage): void {
 
         if (spiderStatus === "not_running") {
             const pageInput = document.createElement("input");
-            // pageInput.setAttribute("type", "number");
+            pageInput.setAttribute("placeholder", "Начальная страница (необязательно)");
             divSpider.appendChild(pageInput);
         }
 

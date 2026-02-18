@@ -4,6 +4,23 @@ var spiderStatus;
 var alertLevel;
 let activeMessages = [];
 async function StartAllSpider() {
+    const SpiderBox = document.getElementById("Spiders");
+    if (!SpiderBox) {
+        console.warn("Элемент 'Spiders' не найден.");
+        return;
+    }
+    var workSpider = 0;
+    var spiders = SpiderBox.querySelectorAll(".spider p");
+    for (let index = 0; index < spiders.length; index++) {
+        const element = spiders[index];
+        if (element.textContent != "not_running") {
+            workSpider++;
+        }
+    }
+    if (workSpider === spiders.length) {
+        OnAlert("Все пауки уже работают!", "warning");
+        return;
+    }
     try {
         await fetch("/admin/command", {
             method: "POST",
@@ -55,23 +72,6 @@ async function StopAllSpider() {
     }
 }
 async function StartSpider(spiderName, page) {
-    const SpiderBox = document.getElementById("Spiders");
-    if (!SpiderBox) {
-        console.warn("Элемент 'Spiders' не найден.");
-        return;
-    }
-    var workSpider = 0;
-    var spiders = SpiderBox.querySelectorAll(".spider p");
-    for (let index = 0; index < spiders.length; index++) {
-        const element = spiders[index];
-        if (element.textContent != "not_running") {
-            workSpider++;
-        }
-    }
-    if (workSpider === spiders.length) {
-        OnAlert("Все пауки уже остановлены!", "warning");
-        return;
-    }
     try {
         await fetch("/admin/command", {
             method: "POST",
@@ -149,7 +149,7 @@ function UpdateSpider(spider) {
                 // Поле для номера страницы (может быть полезно)
                 if (spiderStatus === "not_running") {
                     const pageInput = document.createElement("input");
-                    // pageInput.setAttribute("type", "number");
+                    pageInput.setAttribute("placeholder", "Начальная страница (необязательно)");
                     newDiv.appendChild(pageInput);
                 }
                 // Кнопка с data-атрибутом (без обработчика)
@@ -179,7 +179,7 @@ function UpdateSpider(spider) {
         divSpider.appendChild(b);
         if (spiderStatus === "not_running") {
             const pageInput = document.createElement("input");
-            // pageInput.setAttribute("type", "number");
+            pageInput.setAttribute("placeholder", "Начальная страница (необязательно)");
             divSpider.appendChild(pageInput);
         }
         const button = document.createElement("button");

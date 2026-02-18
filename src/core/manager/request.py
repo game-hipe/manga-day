@@ -199,6 +199,7 @@ class RequestManager(BaseRequestManager[ClientSession]):
                             f"Ошибка: [Errno 104] Connection reset by peer (url={url}, method={method}, error={error})"
                         )
                     else:
+                        self.wrong_response(proxy)
                         logger.error(
                             f"Ошибка сети: разрыв соединения или недоступность сервера. (error={error})"
                         )
