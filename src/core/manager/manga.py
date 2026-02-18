@@ -304,6 +304,14 @@ class MangaManager:
             )
 
     async def in_database(self, manga: BaseManga) -> bool:
+        """Проверяет наличие манги в базе данных
+
+        Args:
+            manga (BaseManga): непосредственно сама манга
+
+        Returns:
+            bool: True если манга уже есть в базе данных, иначе False
+        """
         async with self.Session() as session:
             db_manga = None
             try:
@@ -320,6 +328,7 @@ class MangaManager:
                     await session.commit()
 
     async def get_total(self) -> int:
+        """Получить общее количество манги в базе данных"""
         async with self.Session() as session:
             total = await session.scalar(select(func.count()).select_from(Manga))
             return total or 0

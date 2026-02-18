@@ -11,7 +11,14 @@ class AlertManager:
         self._alerts.extend(alert)
 
     def add_alert(self, alert: BaseAlert) -> None:
-        """Добавить уведомление."""
+        """Добавить новый обработчик сообщений
+
+        Args:
+            alert (BaseAlert): Обработчик сообщений, который должен быть наследником BaseAlert
+
+        Raises:
+            TypeError: Если alert не является наследником BaseAlert
+        """
         if not isinstance(alert, BaseAlert):
             logger.warning(
                 "Не удалось добавить обработчик так-как он не наследуется от BaseAlert"
@@ -28,8 +35,17 @@ class AlertManager:
                 f"Обработчик уведомлений {alert.__class__.__name__} уже существует"
             )
 
-    async def alert(self, message: str, level: LEVEL):
-        """Уведомить всех о событии."""
+    async def alert(self, message: str, level: LEVEL) -> None:
+        """Отправить уведомление всем обработчикам
+
+        Args:
+            message (str): Сообшение
+            level (LEVEL): Уровень сообщение, подробнее в LEVEL
+
+        Warning:
+            Если event-loop закрыт, то уведомление не будет отправлено и будет выведено предупреждение в лог
+            Так-же если при отправки уведомления возникла ошибка, то обработчик будет удален из списка и будет выведено сообщение об ошибке в лог
+        """
         try:
             asyncio.get_running_loop()
         except RuntimeError:
@@ -54,7 +70,11 @@ class AlertManager:
         await asyncio.gather(*[_send(message, alert) for alert in self._alerts])
 
     def remove_alert(self, alert: BaseAlert) -> None:
-        """Удалить уведомление."""
+        """Удаляет обработчик сообщений из списка
+
+        Args:
+            alert (BaseAlert): Обработчик сообщений, который должен быть наследником BaseAlert
+        """
         if alert in self._alerts:
             self._alerts.remove(alert)
             logger.debug(

@@ -116,30 +116,34 @@ class SpiderManager:
         Raises:
             AttributeError: Если менеджер не был передан
         """
+        tasks = []
         if not self._manager:
             raise AttributeError(
                 "Менеджер не был передан. Убедитесь, что менеджер передан перед запуском парсинга."
             )
-        if all([x.status == SpiderStatusEnum.RUNNING for x in self.status]):
+
+        if all(x.status == SpiderStatusEnum.RUNNING for x in self.status):
             await self.starter._alert(
                 "Все пауки уже запущены, перезапуск не требуется.", "INFO"
             )
             return
-        tasks = []
+
         for spider in self.spiders:
             tasks.append(asyncio.create_task(self._starter.start_spider(spider)))
         try:
             await asyncio.shield(asyncio.gather(*tasks, return_exceptions=True))
         finally:
-            await asyncio.shield(self.stop_all_spider())
+            if not all(x.status == SpiderStatusEnum.NOT_RUNNING for x in self.status):
+                await asyncio.shield(self.stop_all_spider())
 
     async def stop_all_spider(self) -> None:
         """Останавливает все пауки."""
         tasks = []
         for spider in self.spiders:
-            tasks.append(asyncio.create_task(self._starter.stop_spider(spider)))
-
-        await asyncio.gather(*tasks, return_exceptions=True)
+            if self.get_spider_status(spider).status != SpiderStatusEnum.NOT_RUNNING:
+                tasks.append(asyncio.create_task(self._starter.stop_spider(spider)))
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     @property
     def status(self) -> list[SpiderStatus]:

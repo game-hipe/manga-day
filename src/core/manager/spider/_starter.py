@@ -94,7 +94,7 @@ class SpiderStarter:
             logger.info(
                 f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском."
             )
-            await self.alert(
+            await self._alert(
                 f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском."
             )
             return SpiderStatus(
