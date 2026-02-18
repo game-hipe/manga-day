@@ -25,8 +25,9 @@ api:
 
 pdf:
   save_path: "var/pdf" # Путь сохранения PDF файлов
-
-proxy:
-  [
-    "http://ip:port@login:password" # Прокси
-  ]
+parsing:
+  features: "html.parser"
+  proxy:
+    [
+      "http://ip:port@login:password" # Прокси
+    ]

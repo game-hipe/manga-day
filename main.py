@@ -31,9 +31,13 @@ async def main():
         alert = AlertManager()
         manager = MangaManager(engine)
 
-        proxy = [ProxySchema.create(x) for x in config.proxy]
+        proxy = [ProxySchema.create(x) for x in config.parsing.proxy]
         spider = SpiderManager(
-            session, alert, manager=manager, features="lxml", proxy=proxy
+            session,
+            alert,
+            manager=manager,
+            features=config.parsing.features,
+            proxy=proxy,
         )
         scheduler = SpiderScheduler(spider)
 

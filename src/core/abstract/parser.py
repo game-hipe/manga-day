@@ -3,11 +3,15 @@ from abc import ABC, abstractmethod
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, _IncomingMarkup
+from bs4.exceptions import FeatureNotFound
+from loguru import logger
 
 from ..entities.schemas import MangaSchema, BaseManga
 
 SITUATION = Literal["html", "json"]
 _T = TypeVar("_T")
+
+EXAMPLE_HTML = """<!DOCTYPE html><html><body><h1>Example</h1></body></html>"""
 
 
 class BaseParser(Generic[_T], ABC):
@@ -42,6 +46,14 @@ class BaseParser(Generic[_T], ABC):
 
         if self.situation not in SITUATION.__args__:
             raise ValueError(f"Неподдерживаемый тип разметки: {situation}")
+
+        try:
+            BeautifulSoup(EXAMPLE_HTML, self.features)
+        except FeatureNotFound:
+            logger.error(
+                f"Невозможно загрузить парсер {self.__class__.__name__} так-как движок для парсинга {features} не загружен"
+            )
+            raise
 
     @overload
     def parse(

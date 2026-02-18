@@ -9,9 +9,14 @@ from dotenv import load_dotenv
 
 __all__ = ["config"]
 
-CONFIG_FILE = "config.yaml"
-
 load_dotenv()
+
+CONFIG_FILE = os.getenv("CONFIG_FILE", "config.yaml")
+
+
+class ParserConfig(BaseModel):
+    features: str = Field("lxml")
+    proxy: list[str] = Field(default_factory=list)
 
 
 class PDFConfig(BaseModel):
@@ -64,7 +69,7 @@ class Config(BaseModel):
     database: DataBaseConfig = Field(default_factory=DataBaseConfig)
     api: ApiConfig
     pdf: PDFConfig
-    proxy: list[str] = Field(default_factory=list)
+    parsing: ParserConfig
 
 
 def load_config():
