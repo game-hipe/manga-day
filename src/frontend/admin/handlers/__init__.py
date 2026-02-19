@@ -72,6 +72,14 @@ class AdminHandler:
         return self.spider.status
 
     async def status_socket(self, websocket: WebSocket) -> NoReturn:
+        """Сокет для получение данных в реальном времени
+
+        Args:
+            websocket (WebSocket): Websocket соединение
+
+        Returns:
+            NoReturn: Не возвращает данные, так как работает в бесконечном цикле
+        """
         await websocket.accept()
         alert = AdminAlert(websocket)
         self.spider.alert.add_alert(alert)
@@ -117,6 +125,14 @@ class AdminHandler:
     async def spider_starter(
         self, signal: ParsingSignal
     ) -> SpiderStatus | list[SpiderStatus]:
+        """Начаинает парсинг, принимает на вход сигнал, пример (start:all)
+
+        Args:
+            signal (ParsingSignal): Сигнал для начала парсинга, содержит в себе действие (start/stop), имя спайдера и таймаут для ожидания результата
+
+        Returns:
+            SpiderStatus | list[SpiderStatus]: Возращает статус спайдера, если был указан конкретный спайдер, иначе возращает статус всех спайдеров
+        """
         if signal.signal == "start":
             if signal.spider == "all":
                 asyncio.create_task(self.spider.start_full_parsing())

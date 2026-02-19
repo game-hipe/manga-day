@@ -136,7 +136,7 @@ class SpiderStarter:
             )
             self.spiders[spider] = None
             await self._alert(
-                f"Паук {self._get_spider_name(spider)}, закончил свою работу.",
+                f"Паук {self._get_spider_name(spider)}, закончил свою работу. На странице {spider._processed_pages if hasattr(spider, '_processed_pages') else 'N/A'}.",
                 "success",
             )
 
