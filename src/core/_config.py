@@ -26,7 +26,9 @@ class RequestConfig(BaseModel):
 
 
 class ParserConfig(BaseModel):
-    features: str = Field("lxml")
+    features: str = Field(
+        "html.parser"
+    )  # Рекемендуется использовать "lxml" для лучшей производительности, но он требует установки дополнительной библиотеки.
     proxy: list[str] = Field(default_factory=list)
 
 
@@ -73,15 +75,15 @@ class AdminBotConfig(BaseModel):
 
 
 class Config(BaseModel):
-    logging: LoggingConfig
-    update: UpdateConfig
+    logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    update: UpdateConfig = Field(default_factory=UpdateConfig)
     bot: AdminBotConfig
     user_bot: BotConfig
     database: DataBaseConfig = Field(default_factory=DataBaseConfig)
-    api: ApiConfig
-    pdf: PDFConfig
-    parsing: ParserConfig
-    request: RequestConfig
+    api: ApiConfig = Field(default_factory=ApiConfig)
+    pdf: PDFConfig = Field(default_factory=PDFConfig)
+    parsing: ParserConfig = Field(default_factory=ParserConfig)
+    request: RequestConfig = Field(default_factory=RequestConfig)
 
 
 def load_config():
@@ -98,6 +100,11 @@ def load_config():
     logger.add(sys.stderr, level=config.logging.level, format=config.logging.format)
 
     logger.info("Конфигурация успешно загружена!")
+
+    if config.parsing.features != "lxml":
+        logger.warning(
+            "Вы используете парсер 'html.parser', который может работать медленнее, чем 'lxml'. Рекомендуется установить 'lxml' для лучшей производительности."
+        )
 
     try:
         os.mkdir(config.pdf.save_path)

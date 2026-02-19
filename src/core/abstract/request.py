@@ -85,11 +85,6 @@ class BaseRequestManager(Generic[_T]):
 
         Args:
             session (_T): Сессия для работы с запросами.
-            max_concurrents (int, None, optional): Максимальное количество запросов.
-            max_retries (int, None, optional): Максимальное количество попыток.
-            sleep_time (int, None, optional): Время сна после запроса. Обычное значени SLEEP_TIME.
-            use_random (bool, optional): Использовать ли рандом во время ожидания. Обычное значени USE_RANDOM.
-            proxy (list[ProxySchema], optional): Прокси. Обычное значение [].
         """
         self.session = session
         self.max_concurrents = kw.get("max_concurrents") or self.MAX_CONCURRENTS
@@ -110,11 +105,21 @@ class BaseRequestManager(Generic[_T]):
         )
 
     async def sleep(self, time: float | None = None):
+        """Асинхронный сон, который учитывает использование рандома и базовое время сна
+
+        Args:
+            time (float | None, optional): Время сна. Если None, то будет использовано базовое время сна.
+        """
         await asyncio.sleep(
             (time or self.sleep_time) * (random.uniform(0, 1) if self.use_random else 1)
         )
 
     def get_proxy(self) -> ProxySchema | None:
+        """Получает рандомно прокси
+
+        Returns:
+            ProxySchema | None: Прокси или None, если прокси не найдено
+        """
         if not self.proxy:
             return None
 
@@ -126,12 +131,26 @@ class BaseRequestManager(Generic[_T]):
         proxy = random.choice(work_proxy)
         return proxy
 
-    def wrong_response(self, proxy: ProxySchema):
+    def wrong_response(self, proxy: ProxySchema) -> None:
+        """Неправильный ответ от прокси, по истечению максимального количество попыток прокси будет заблокирован
+
+        Args:
+            proxy (ProxySchema): Схема прокси
+        """
         logger.debug(f"Ошибка у прокси (proxy={proxy.proxy})")
         self.proxy[proxy]["total"] += 1
         if self.proxy[proxy]["total"] >= self.max_chance:
             self.ban_proxy(proxy)
 
-    def ban_proxy(self, proxy: ProxySchema):
+    def ban_proxy(self, proxy: ProxySchema) -> None:
+        """Банит прокси и помечает его нерабочим
+
+        Args:
+            proxy (ProxySchema): Схема прокси
+        """
         if self._ban_proxy:
             self.proxy[proxy]["status"] = False
+        else:
+            logger.debug(
+                f"Прокси (proxy={proxy.proxy}) не отвечает, но бан отключен, поэтому он будет использоваться дальше."
+            )
