@@ -31,7 +31,6 @@ main {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Обложка манги */
 #cover {
     flex: 0 0 250px;
     max-width: 100%;
@@ -49,7 +48,6 @@ main {
     transform: scale(1.02);
 }
 
-/* Заголовок и ссылка */
 #info > h1 {
     flex: 1;
     min-width: 300px;
@@ -166,7 +164,7 @@ main {
     transform: scale(1.03);
 }
 
-/* ===== Модальное окно для увеличения изображений ===== */
+/* ===== Модальное окно ===== */
 .modal {
     display: none;
     position: fixed;
@@ -267,110 +265,7 @@ main {
     font-weight: 500;
 }
 
-/* ===== Адаптивность ===== */
-@media (max-width: 992px) {
-    #info > h1 {
-        font-size: 1.8rem;
-    }
-    
-    .tags {
-        flex-direction: column;
-        gap: 20px;
-    }
-    
-    .tag {
-        min-width: 100%;
-    }
-}
-
-@media (max-width: 768px) {
-    main {
-        padding: 20px 15px;
-    }
-    
-    #info {
-        flex-direction: column;
-        gap: 20px;
-        padding: 20px;
-    }
-    
-    #cover {
-        flex: 0 0 auto;
-        max-width: 250px;
-        margin: 0 auto;
-    }
-    
-    #info > h1 {
-        text-align: center;
-        min-width: 100%;
-    }
-    
-    #info > a {
-        align-self: center;
-    }
-    
-    #gallery h2 {
-        font-size: 1.5rem;
-    }
-    
-    .nav-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
-    }
-    
-    .close-modal {
-        font-size: 35px;
-        width: 45px;
-        height: 45px;
-    }
-}
-
-@media (max-width: 480px) {
-    #info {
-        padding: 15px;
-    }
-    
-    #cover {
-        max-width: 200px;
-    }
-    
-    #info > h1 {
-        font-size: 1.5rem;
-    }
-    
-    .tag {
-        padding: 15px;
-    }
-    
-    .tag h2 {
-        font-size: 1.1rem;
-    }
-    
-    .nav-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
-    }
-    
-    .prev-btn {
-        left: 15px;
-    }
-    
-    .next-btn {
-        right: 15px;
-    }
-    
-    .close-modal {
-        font-size: 30px;
-        width: 40px;
-        height: 40px;
-        top: 15px;
-        right: 20px;
-    }
-}
-
-/* Добавьте в manga.css */
+/* Дополнительные стили (из исходного) */
 .container-gallery {
     position: relative;
     min-height: 300px;
@@ -439,4 +334,163 @@ main {
 .copy-notification.show {
     opacity: 1;
     visibility: visible;
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+@media (max-width: 1100px) {
+    #info > h1 {
+        font-size: 2rem;
+    }
+    
+    .tags {
+        gap: 20px;
+    }
+}
+
+@media (max-width: 992px) {
+    #info > h1 {
+        font-size: 1.8rem;
+        min-width: 100%;
+        text-align: center;
+    }
+    
+    #info > a {
+        align-self: center;
+    }
+    
+    .tags {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .tag {
+        min-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    main {
+        padding: 20px 15px;
+    }
+    
+    #info {
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+    }
+    
+    #cover {
+        flex: 0 0 auto;
+        max-width: 250px;
+        margin: 0 auto;
+    }
+    
+    #info > h1 {
+        font-size: 1.6rem;
+    }
+    
+    #gallery h2 {
+        font-size: 1.5rem;
+    }
+    
+    .nav-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+    
+    .close-modal {
+        font-size: 35px;
+        width: 45px;
+        height: 45px;
+    }
+}
+
+@media (max-width: 480px) {
+    #info {
+        padding: 15px;
+    }
+    
+    #cover {
+        max-width: 200px;
+    }
+    
+    #info > h1 {
+        font-size: 1.4rem;
+    }
+    
+    .tag {
+        padding: 15px;
+    }
+    
+    .tag h2 {
+        font-size: 1.1rem;
+    }
+    
+    .nav-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .prev-btn {
+        left: 15px;
+    }
+    
+    .next-btn {
+        right: 15px;
+    }
+    
+    .close-modal {
+        font-size: 30px;
+        width: 40px;
+        height: 40px;
+        top: 15px;
+        right: 20px;
+    }
+    
+    .modal-counter {
+        font-size: 1rem;
+        bottom: 15px;
+    }
+}
+
+@media (max-width: 360px) {
+    #info > h1 {
+        font-size: 1.2rem;
+    }
+    
+    #info > a {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        width: 100%;
+        text-align: center;
+    }
+    
+    #cover {
+        max-width: 160px;
+    }
+    
+    .nav-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+    }
+    
+    .close-modal {
+        font-size: 28px;
+        width: 35px;
+        height: 35px;
+        top: 10px;
+        right: 15px;
+    }
+    
+    .modal-counter {
+        font-size: 0.9rem;
+    }
+    
+    .sku-btn {
+        font-size: 0.85rem;
+        padding: 1px 4px;
+    }
 }

@@ -36,6 +36,7 @@
     text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
     position: relative;
     display: inline-block;
+    animation: pulse 3s infinite ease-in-out;
 }
 
 .error-message-not-found h2::after {
@@ -88,11 +89,28 @@
     }
 }
 
-.error-message-not-found h2 {
-    animation: pulse 3s infinite ease-in-out;
+/* ========== АДАПТИВНОСТЬ ========== */
+@media (max-width: 992px) {
+    .error-message-not-found {
+        min-height: calc(100vh - 190px);
+        padding: 35px 18px;
+    }
+    
+    .error-message-not-found img {
+        max-height: 350px;
+        margin-bottom: 35px;
+    }
+    
+    .error-message-not-found h1 {
+        font-size: 2rem;
+    }
+    
+    .error-message-not-found h2 {
+        font-size: 5rem;
+        margin: 25px 0 35px;
+    }
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
     .error-message-not-found {
         min-height: calc(100vh - 180px);
@@ -153,17 +171,33 @@
 }
 
 /* Для очень маленьких экранов */
-@media (max-width: 320px) {
+@media (max-width: 360px) {
     .error-message-not-found h1 {
         font-size: 1.3rem;
     }
     
     .error-message-not-found h2 {
-        font-size: 2.8rem;
+        font-size: 3rem;
     }
     
     .error-message-not-found button {
         width: 100%;
-        max-width: 250px;
+        max-width: 280px;
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .error-message-not-found h1 {
+        font-size: 1.2rem;
+    }
+    
+    .error-message-not-found h2 {
+        font-size: 2.5rem;
+    }
+    
+    .error-message-not-found button {
+        max-width: 240px;
     }
 }
