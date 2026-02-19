@@ -15,7 +15,7 @@ from .parser import MangaHentaiEraParser, PageHentaiEraParser
 
 class HentaiEraSpider(BaseMangaSpider):
     MAX_PAGE_SELECTOR = "ul.pagination a.page-link"
-    SITE_TIMEOUT = 10
+    SITE_TIMEOUT = 30
     BASE_URL = "https://hentaiera.com"
     READ_URL = "/view/{id}/1/"
     PAGE_URL = "/?page={page}"
