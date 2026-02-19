@@ -11,7 +11,7 @@ main {
     border-radius: 20px;
     padding: 40px;
     width: 100%;
-    max-width: 80%; /* Увеличим максимальную ширину */
+    max-width: 80%;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.1);
     align-items: center;
@@ -28,7 +28,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; /* новое правило */
+    justify-content: center;
 }
 
 /* Контейнер для списка пауков */
@@ -193,23 +193,6 @@ body {
     box-shadow: 0 4px 12px rgba(207, 102, 121, 0.2);
 }
 
-/* Адаптивность для мобильных устройств */
-@media (max-width: 768px) {
-    body {
-        padding: 10px;
-    }
-
-    .spider {
-        width: 100%;
-        max-width: 400px;
-    }
-
-    .full-buttons button {
-        width: 100%;
-        min-width: auto;
-    }
-}
-
 /* Стили для скроллбара */
 ::-webkit-scrollbar {
     width: 10px;
@@ -240,11 +223,11 @@ body {
     max-width: 400px;
     width: 100%;
     z-index: 1000;
-    pointer-events: none; /* чтобы клики проходили сквозь контейнер, но не сквозь сами сообщения */
+    pointer-events: none;
 }
 
 .message {
-    pointer-events: auto; /* сообщения можно закрывать или взаимодействовать */
+    pointer-events: auto;
     padding: 16px 20px;
     border-radius: 12px;
     background-color: #1e1e1e;
@@ -308,5 +291,161 @@ body {
     to {
         opacity: 0;
         transform: translateX(100%);
+    }
+}
+
+/* ========== УЛУЧШЕННАЯ АДАПТИВНОСТЬ ========== */
+
+/* Планшеты и небольшие ноутбуки */
+@media (max-width: 992px) {
+    main {
+        max-width: 90%;
+        padding: 30px;
+    }
+
+    .spider {
+        width: 280px; /* чуть уже, чтобы помещалось больше карточек */
+    }
+}
+
+/* Мобильные устройства (ландшафт и крупные телефоны) */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    main {
+        padding: 20px;
+        max-width: 100%;
+        border-radius: 16px;
+    }
+
+    .spiders {
+        gap: 15px;
+    }
+
+    .spider {
+        width: 100%;
+        max-width: 450px; /* для больших телефонов */
+    }
+
+    .full-buttons button {
+        width: 100%;
+        min-width: auto;
+        padding: 12px 20px;
+        font-size: 1rem;
+    }
+
+    /* Алерты на мобильных: растягиваем почти на всю ширину */
+    .messages {
+        max-width: none;
+        left: 10px;
+        right: 10px;
+        top: 10px;
+    }
+
+    .message {
+        padding: 14px 16px;
+        font-size: 0.95rem;
+    }
+
+    .message h1 {
+        font-size: 0.95rem;
+    }
+}
+
+/* Маленькие телефоны (до 480px) */
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+
+    main {
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .spider {
+        padding: 15px;
+        max-width: 100%;
+    }
+
+    .spider h1 {
+        font-size: 1.3rem;
+    }
+
+    .spider p,
+    .spider b,
+    .spider input,
+    .spider button {
+        font-size: 0.9rem;
+    }
+
+    .spider button {
+        padding: 10px 14px;
+    }
+
+    .full-buttons {
+        margin: 20px auto;
+        gap: 10px;
+    }
+
+    .full-buttons button {
+        padding: 10px 16px;
+        font-size: 0.95rem;
+        border-radius: 30px;
+    }
+
+    /* Убираем hover-эффекты для тач-устройств, чтобы не было «залипания» */
+    .spider:hover {
+        transform: none;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        border-color: #333;
+    }
+
+    .full-buttons button:hover {
+        background-color: #2d2d2d;
+        border-color: #444;
+        box-shadow: none;
+    }
+
+    #StopButton:hover {
+        background-color: #2d2d2d;
+        border-color: #cf6679;
+    }
+
+    /* Алерты ещё более компактные */
+    .messages {
+        left: 5px;
+        right: 5px;
+        top: 5px;
+    }
+
+    .message {
+        padding: 12px 14px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Для очень маленьких экранов (до 360px) */
+@media (max-width: 360px) {
+    .spider h1 {
+        font-size: 1.2rem;
+    }
+
+    .spider p,
+    .spider b,
+    .spider input,
+    .spider button {
+        font-size: 0.85rem;
+    }
+
+    .spider button {
+        padding: 8px 12px;
+    }
+
+    .full-buttons button {
+        padding: 8px 12px;
+        font-size: 0.9rem;
     }
 }
