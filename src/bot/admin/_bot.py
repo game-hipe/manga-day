@@ -26,7 +26,7 @@ class AdminBot(BasicBot[AdminBotConfig]):
 
     @alert_wraps(
         "Административная часть бота успешно запущена!",
-        "Пользовательская часть бота прекратила свою работу",
+        "Административная часть бота прекратила свою работу",
     )
     async def run(self):
         bot = self.bot
@@ -35,7 +35,7 @@ class AdminBot(BasicBot[AdminBotConfig]):
 
         dispatcher.include_router(handler.router)
         dispatcher.message.middleware(
-            AdminMiddleware(self.config.get("admin_ids") or config)
+            AdminMiddleware(self.config.get("admin_ids") or config.bot.admins)
         )
 
         await dispatcher.start_polling(bot)
@@ -70,12 +70,30 @@ class AdminBot(BasicBot[AdminBotConfig]):
         ]
 
 
-async def setup_admin(spider: SpiderManager, **config: Unpack[BaseBotConfig]):
+async def setup_admin(
+    spider: SpiderManager, **config: Unpack[BaseBotConfig]
+) -> AdminBot:
+    """Инцилизация админки возращает экземпляр класса AdminBot
+
+    Args:
+        spider (SpiderManager): Менеджер пауков.
+
+    Returns:
+        AdminBot: Админка бота.
+    """
     bot = AdminBot(spider, **config)
     await bot.set_command()
     return bot
 
 
-async def start_admin(spider: SpiderManager, **config: Unpack[BaseBotConfig]):
-    bot = await setup_admin(spider, **config)
-    await bot.run()
+async def start_admin(spider: SpiderManager, **config: Unpack[BaseBotConfig]) -> None:
+    """Инцилизация админки, и дальнейший запуск.
+
+    Args:
+        spider (SpiderManager): Менеджер пауков.
+    """
+    try:
+        bot = await setup_admin(spider, **config)
+        await bot.run()
+    finally:
+        await bot.bot.session.close()

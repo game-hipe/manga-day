@@ -80,7 +80,17 @@ async def setup_user(
     pdf_service: PDFService,
     alert: AlertManager,
     **config: Unpack[UserBotConfig],
-):
+) -> UserBot:
+    """Инцилизация клиентской части бота
+
+    Args:
+        manager (MangaManager): Менеджнр манги.
+        pdf_service (PDFService): Сервис для генерации PDF
+        alert (AlertManager): Система алёртов.
+
+    Returns:
+        UserBot: Класс для управление ботом.
+    """
     bot = UserBot(manager, pdf_service, alert, **config)
     await bot.set_command()
     return bot
@@ -92,5 +102,15 @@ async def start_user(
     alert: AlertManager,
     **config: Unpack[UserBotConfig],
 ):
-    bot = await setup_user(manager, pdf_service, alert, **config)
-    await bot.run()
+    """Инцилизация клиентской части бота, и дальнейший её запуск
+
+    Args:
+        manager (MangaManager): Менеджнр манги.
+        pdf_service (PDFService): Сервис для генерации PDF
+        alert (AlertManager): Система алёртов.
+    """
+    try:
+        bot = await setup_user(manager, pdf_service, alert, **config)
+        await bot.run()
+    finally:
+        await bot.bot.session.close()
