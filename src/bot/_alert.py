@@ -1,11 +1,20 @@
 import asyncio
 
+from typing import Protocol
+from functools import wraps
+
 from aiogram import Bot
 from aiogram.exceptions import TelegramNotFound
 from loguru import logger
 
+from ..core.manager import AlertManager
 from ..core.abstract.alert import BaseAlert, LEVEL
 from ..core import config
+
+
+class HasAlertManager(Protocol):
+    @property
+    def alert(self) -> AlertManager | None: ...
 
 
 class BotAlert(BaseAlert):
@@ -33,3 +42,22 @@ class BotAlert(BaseAlert):
         )
 
         return True
+
+
+def alert_wraps(on_start: str, on_stop: str):
+    def wrapper(func):
+        @wraps(func)
+        async def inner(self: HasAlertManager, *args, **kwargs):
+            if self.alert:
+                logger.warning(on_start)
+                await self.alert.alert(on_start, "info")
+            try:
+                return await func(self, *args, **kwargs)
+            finally:
+                if self.alert:
+                    logger.warning(on_stop)
+                    await self.alert.alert(on_stop, "warning")
+
+        return inner
+
+    return wrapper

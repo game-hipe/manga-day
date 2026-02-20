@@ -1,119 +1,96 @@
-from typing import TypedDict, Unpack
-from contextlib import asynccontextmanager
+from typing import Unpack
 
-from aiogram import Bot, Dispatcher
-from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.client.session.aiohttp import AiohttpSession
-from loguru import logger
 
-from ...core import config
-from ...core.manager import MangaManager, AlertManager
+from .handler.commands import CommandsHandler
+from .._bot import BasicBot, BaseBotConfig
+from .._tools import AiogramProxy
+from .._alert import alert_wraps
 from ...core.service import PDFService
-from .._tools import get_router, AiogramProxy
-from .handler import CommandsHandler
+from ...core.manager import MangaManager, AlertManager
+from ...core import config
 
 
-class BotConfig(TypedDict):
+class UserBotConfig(BaseBotConfig):
     """Конфигурация для инициализации бота.
 
     Args:
-        manager (MangaManager): Экземпляр менеджера манги.
-        pdf_service (PDFService): Экземпляр для работы с PDF.
-        alert (AlertManager): Экземпляр менеджера оповещений.
         save_path (str | None, optional): Путь для хранение PDF - файлов
         token (str | None, optional): Токен Telegram-бота. По умолчанию берётся из конфига.
     """
 
-    manager: MangaManager
-    pdf_service: PDFService
-    alert: AlertManager
     save_path: str | None
     token: str | None
 
 
-async def set_command(bot: Bot):
-    """Регистрирует список команд бота в интерфейсе Telegram.
+class UserBot(BasicBot[UserBotConfig]):
+    def __init__(
+        self,
+        manager: MangaManager,
+        pdf_service: PDFService,
+        alert: AlertManager,
+        **config: Unpack[UserBotConfig],
+    ) -> None:
+        self.manager = manager
+        self.pdf_service = pdf_service
+        self._alert = alert
+        super().__init__(**config)
 
-    Отображает пользователю доступные команды с описаниями.
+    @alert_wraps(
+        "Пользовательская часть бота успешно запущена!",
+        "Пользовательская часть бота прекратила свою работу",
+    )
+    async def run(self):
+        bot = self.bot
+        dispatcher = self.dispatcher
+        handler = CommandsHandler(
+            self.manager, self.pdf_service, self.config.get("save_path")
+        )
 
-    Args:
-        bot (Bot): Экземпляр Telegram-бота.
-    """
-    await bot.set_my_commands(
-        commands=[
+        dispatcher.include_router(handler.router)
+        await dispatcher.start_polling(bot)
+
+    @property
+    def token(self):
+        return config.user_bot.api_key
+
+    @property
+    def proxy(self):
+        return (
+            AiogramProxy.create(config.user_bot.proxy)
+            if config.user_bot.proxy
+            else None
+        )
+
+    @property
+    def alert(self):
+        return self._alert
+
+    @property
+    def commands(self):
+        return [
             BotCommand(command="start", description="Запустить бота"),
             BotCommand(command="help", description="Помощь"),
             BotCommand(command="download", description="Скачивает мангу по SKU"),
         ]
-    )
 
 
-@asynccontextmanager
-async def setup_user(**kwargs: Unpack[BotConfig]):
-    """Асинхронный контекстный менеджер для настройки и запуска Telegram-бота.
-
-    Инициализирует бота, диспетчер, регистрирует обработчики и мидлвари.
-    При выходе из контекста корректно завершает работу бота.
-
-    Args:
-        **kwargs: Параметры конфигурации, см. BotConfig.
-
-    Yields:
-        tuple[Bot, Dispatcher]: Экземпляры бота и диспетчера.
-
-    Raises:
-        AttributeError: Если не передан manager.
-        TypeError: Если manager не является экземпляром MangaManager.
-    """
-    alert = kwargs.get("alert")
-    pdf = kwargs.get("pdf_service")
-    save_path = kwargs.get("save_path")
-
-    manager = kwargs.get("manager")
-    token = kwargs.get("token") or config.user_bot.api_key
-
-    if manager is None:
-        raise AttributeError("MangaManager не указан")
-    elif not isinstance(manager, MangaManager):
-        raise TypeError("MangaManager должен быть экземпляром MangaManager")
-
-    dp = None
-    try:
-        storage = MemoryStorage()
-        dp = Dispatcher(storage=storage)
-        print(AiogramProxy.create(config.user_bot.proxy).auth())
-        session = AiohttpSession(
-            proxy=AiogramProxy.create(config.user_bot.proxy).auth()
-        )
-
-        async with Bot(
-            token=token,
-            default=DefaultBotProperties(parse_mode="HTML"),
-            session=session,
-        ) as bot:
-            logger.info("Инициализация бота...")
-            await set_command(bot)
-
-            handler = CommandsHandler(manager=manager, pdf=pdf, save_path=save_path)
-
-            dp.include_routers(handler.router, get_router())
-
-            logger.info("Бот инициализирован")
-            yield bot, dp
-    finally:
-        if dp is not None:
-            try:
-                await dp.stop_polling()
-            except RuntimeError:
-                pass
-
-        await alert.alert("<b>USER - Бот прекратил свою работу</b>", "warning")
-        logger.info("USER - Бот остановлен")
+async def setup_user(
+    manager: MangaManager,
+    pdf_service: PDFService,
+    alert: AlertManager,
+    **config: Unpack[UserBotConfig],
+):
+    bot = UserBot(manager, pdf_service, alert, **config)
+    await bot.set_command()
+    return bot
 
 
-async def start_user(**kwargs: Unpack[BotConfig]):
-    async with setup_user(**kwargs) as (bot, dp):
-        logger.success(f"{await bot.get_my_name()} - Бот запущен")
-        await dp.start_polling(bot)
+async def start_user(
+    manager: MangaManager,
+    pdf_service: PDFService,
+    alert: AlertManager,
+    **config: Unpack[UserBotConfig],
+):
+    bot = await setup_user(manager, pdf_service, alert, **config)
+    await bot.run()

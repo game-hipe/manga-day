@@ -1,48 +1,63 @@
-from typing import TypedDict, Unpack
-from contextlib import asynccontextmanager
+from typing import Unpack
 
-from aiogram import Bot, Dispatcher
-from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.client.session.aiohttp import AiohttpSession
-from loguru import logger
 
+from .handler.commands import CommandsHandler
+from .middleware.admins import AdminMiddleware
+from .._bot import BasicBot, BaseBotConfig
+from .._tools import AiogramProxy
+from .._alert import alert_wraps
 from ...core.manager import SpiderManager
 from ...core import config
-from .._alert import BotAlert
-from .._tools import get_router, AiogramProxy
-from .handlers.commands import CommandsHandler
-from .middleware.admins import AdminMiddleware
 
 
-class BotConfig(TypedDict):
-    """Конфигурация для инициализации бота.
-
-    Args:
-        spider (SpiderManager): Экземпляр менеджера парсинга.
-        token (str | None, optional): Токен Telegram-бота. По умолчанию берётся из конфига.
-    """
-
-    spider: SpiderManager
-    token: str | None
+class AdminBotConfig(BaseBotConfig):
+    admin_ids: list[int] | None = None
 
 
-async def set_command(bot: Bot):
-    """Регистрирует список команд бота в интерфейсе Telegram.
+class AdminBot(BasicBot[AdminBotConfig]):
+    def __init__(
+        self,
+        spider: SpiderManager,
+        **config: Unpack[AdminBotConfig],
+    ) -> None:
+        self.spider = spider
+        super().__init__(**config)
 
-    Отображает пользователю доступные команды с описаниями.
+    @alert_wraps(
+        "Административная часть бота успешно запущена!",
+        "Пользовательская часть бота прекратила свою работу",
+    )
+    async def run(self):
+        bot = self.bot
+        dispatcher = self.dispatcher
+        handler = CommandsHandler(self.spider)
 
-    Args:
-        bot (Bot): Экземпляр Telegram-бота.
+        dispatcher.include_router(handler.router)
+        dispatcher.message.middleware(
+            AdminMiddleware(self.config.get("admin_ids") or config)
+        )
 
-    Returns:
-        None
-    """
-    await bot.set_my_commands(
-        commands=[
+        await dispatcher.start_polling(bot)
+
+    @property
+    def token(self):
+        return config.bot.api_key
+
+    @property
+    def proxy(self):
+        return AiogramProxy.create(config.bot.proxy) if config.bot.proxy else None
+
+    @property
+    def alert(self):
+        return self.spider.alert
+
+    @property
+    def commands(self):
+        return [
             BotCommand(command="start", description="Запустить бота"),
             BotCommand(command="help", description="Помощь"),
+            BotCommand(command="download", description="Скачивает мангу по SKU"),
             BotCommand(command="start_parsing", description="Запустить парсинг"),
             BotCommand(command="stop_parsing", description="Остановить парсинг"),
             BotCommand(
@@ -53,82 +68,14 @@ async def set_command(bot: Bot):
             ),
             BotCommand(command="status", description="Статус парсинга"),
         ]
-    )
 
 
-@asynccontextmanager
-async def setup_bot(**kwargs: Unpack[BotConfig]):
-    """Асинхронный контекстный менеджер для настройки и запуска Telegram-бота.
-
-    Инициализирует бота, диспетчер, регистрирует обработчики и мидлвари.
-    При выходе из контекста корректно завершает работу бота.
-
-    Args:
-        **kwargs: Параметры конфигурации, см. BotConfig.
-
-    Yields:
-        tuple[Bot, Dispatcher]: Экземпляры бота и диспетчера.
-
-    Raises:
-        AttributeError: Если не передан spider.
-        TypeError: Если spider не является экземпляром SpiderManager.
-    """
-    spider = kwargs.get("spider")
-    token = kwargs.get("token") or config.bot.api_key
-
-    if spider is None:
-        raise AttributeError("SpiderManager не указан")
-    elif not isinstance(spider, SpiderManager):
-        raise TypeError("SpiderManager должен быть экземпляром SpiderManager")
-
-    dp = None
-    try:
-        storage = MemoryStorage()
-        dp = Dispatcher(storage=storage)
-        session = AiohttpSession(
-            proxy=AiogramProxy.create(proxy=config.bot.proxy).auth()
-        )
-        async with Bot(
-            token=token,
-            default=DefaultBotProperties(parse_mode="HTML"),
-            session=session,
-        ) as bot:
-            logger.info("Инициализация бота...")
-            await set_command(bot)
-
-            spider.alert.add_alert(BotAlert(bot))
-            handler = CommandsHandler(spider_manager=spider)
-
-            dp.include_routers(handler.router, get_router())
-            dp.message.middleware(AdminMiddleware(config.bot.admins))
-
-            logger.info("Бот инициализирован")
-            yield bot, dp
-    finally:
-        if dp is not None:
-            try:
-                await dp.stop_polling()
-            except RuntimeError:
-                pass
-        await spider.alert.alert("<b>Бот прекратил свою работу</b>", "warning")
-        logger.info("Бот остановлен")
+async def setup_admin(spider: SpiderManager, **config: Unpack[BaseBotConfig]):
+    bot = AdminBot(spider, **config)
+    await bot.set_command()
+    return bot
 
 
-async def start_bot(**kwargs: Unpack[BotConfig]):
-    """Запускает бота в режиме long polling.
-
-    Использует контекстный менеджер setup_bot для инициализации.
-    После запуска начинает получать обновления от Telegram.
-
-    Args:
-        **kwargs: Параметры конфигурации, см. BotConfig.
-
-    Returns:
-        None
-
-    Raises:
-        Исключения могут быть выброшены setup_bot или при работе dp.start_polling().
-    """
-    async with setup_bot(**kwargs) as (bot, dp):
-        logger.success(f"{await bot.get_my_name()} - Бот запущен")
-        await dp.start_polling(bot)
+async def start_admin(spider: SpiderManager, **config: Unpack[BaseBotConfig]):
+    bot = await setup_admin(spider, **config)
+    await bot.run()

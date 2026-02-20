@@ -1,3 +1,7 @@
-from ._bot import start_bot, setup_bot, BotConfig
+from ._bot import setup_admin, start_admin, AdminBotConfig
 
-__all__ = ["start_bot", "setup_bot", "BotConfig"]
+__all__ = [
+    "setup_admin",
+    "start_admin",
+    "AdminBotConfig",
+]
