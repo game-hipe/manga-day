@@ -5,12 +5,13 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.client.session.aiohttp import AiohttpSession
 from loguru import logger
 
 from ...core import config
 from ...core.manager import MangaManager, AlertManager
 from ...core.service import PDFService
-from .._tools import get_router
+from .._tools import get_router, AiogramProxy
 from .handler import CommandsHandler
 
 
@@ -82,9 +83,15 @@ async def setup_user(**kwargs: Unpack[BotConfig]):
     try:
         storage = MemoryStorage()
         dp = Dispatcher(storage=storage)
+        print(AiogramProxy.create(config.user_bot.proxy).auth())
+        session = AiohttpSession(
+            proxy=AiogramProxy.create(config.user_bot.proxy).auth()
+        )
 
         async with Bot(
-            token=token, default=DefaultBotProperties(parse_mode="HTML")
+            token=token,
+            default=DefaultBotProperties(parse_mode="HTML"),
+            session=session,
         ) as bot:
             logger.info("Инициализация бота...")
             await set_command(bot)

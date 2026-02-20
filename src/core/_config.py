@@ -66,11 +66,13 @@ class UpdateConfig(BaseModel):
 
 class BotConfig(BaseModel):
     api_key: str = Field(os.getenv("USER_TOKEN"))
+    proxy: str | None = Field(default=None)
     url: str
 
 
 class AdminBotConfig(BaseModel):
     api_key: str = Field(os.getenv("ADMIN_TOKEN"))
+    proxy: str | None = Field(default=None)
     admins: list[int]
 
 
