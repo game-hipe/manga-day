@@ -12,9 +12,11 @@ update:
 
 bot:
   admins: [12345] # Админы бота
+  proxy: "http://ip:port@login:password"
 
 user_bot:
   url: "https://t.me/example_bot"
+  proxy: "http://ip:port@login:password"
 
 api:
   frontend_port: 8000 # Порт фронтенда
