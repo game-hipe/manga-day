@@ -5,8 +5,8 @@ from aiogram.types import BotCommand
 from .handler.commands import CommandsHandler
 from .middleware.admins import AdminMiddleware
 from .._bot import BasicBot, BaseBotConfig
-from .._tools import AiogramProxy
-from .._alert import alert_wraps
+from .._tools import AiogramProxy, get_router
+from .._alert import BotAlert, alert_wraps
 from ...core.manager import SpiderManager
 from ...core import config
 
@@ -23,6 +23,8 @@ class AdminBot(BasicBot[AdminBotConfig]):
     ) -> None:
         self.spider = spider
         super().__init__(**config)
+        if self.alert:
+            self.alert.add_alert(BotAlert(self.bot))
 
     @alert_wraps(
         "Административная часть бота успешно запущена!",
@@ -34,6 +36,7 @@ class AdminBot(BasicBot[AdminBotConfig]):
         handler = CommandsHandler(self.spider)
 
         dispatcher.include_router(handler.router)
+        dispatcher.include_router(get_router())
         dispatcher.message.middleware(
             AdminMiddleware(self.config.get("admin_ids") or config.bot.admins)
         )

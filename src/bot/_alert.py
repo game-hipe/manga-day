@@ -1,6 +1,6 @@
 import asyncio
 
-from typing import Protocol
+from typing import Protocol, Literal
 from functools import wraps
 
 from aiogram import Bot
@@ -23,8 +23,16 @@ class BotAlert(BaseAlert):
     def __init__(self, bot: Bot):
         self.bot = bot
 
-    async def alert(self, message: str, level: LEVEL):
-        """Отправляет сообщение в чаты администраторов бота"""
+    async def alert(self, message: str, level: LEVEL) -> Literal[True]:
+        """Отправляет сообщение в чаты администраторов бота
+
+        Args:
+            message (str): Сообщение которое будет отправлено администраторам
+            level (LEVEL): Уровень сообщения
+
+        Returns:
+            Literal[True]: Всегда возвращает True
+        """
         message += f"\n\nУровень: <b>{level}</b>"
 
         async def send(chat_id: int):
@@ -45,11 +53,18 @@ class BotAlert(BaseAlert):
 
 
 def alert_wraps(on_start: str, on_stop: str):
+    """Декоратор, что-бы в конце функции вывести уведомить.
+
+    Args:
+        on_start (str): Сообщение, которое будет отправлено при начале выполнения функции
+        on_stop (str): Сообщение, которое будет отправлено при завершении выполнения функции
+    """
+
     def wrapper(func):
         @wraps(func)
         async def inner(self: HasAlertManager, *args, **kwargs):
             if self.alert:
-                logger.warning(on_start)
+                logger.info(on_start)
                 await self.alert.alert(on_start, "info")
             try:
                 return await func(self, *args, **kwargs)

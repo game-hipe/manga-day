@@ -4,7 +4,7 @@ from aiogram.types import BotCommand
 
 from .handler.commands import CommandsHandler
 from .._bot import BasicBot, BaseBotConfig
-from .._tools import AiogramProxy
+from .._tools import AiogramProxy, get_router
 from .._alert import alert_wraps
 from ...core.service import PDFService
 from ...core.manager import MangaManager, AlertManager
@@ -48,6 +48,7 @@ class UserBot(BasicBot[UserBotConfig]):
         )
 
         dispatcher.include_router(handler.router)
+        dispatcher.include_router(get_router())
         await dispatcher.start_polling(bot)
 
     @property

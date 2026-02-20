@@ -12,7 +12,6 @@ from aiogram.types import BotCommand
 from loguru import logger
 
 from ._tools import AiogramProxy
-from ._alert import BotAlert
 from ..core.manager import AlertManager
 
 
@@ -37,11 +36,13 @@ class BasicBot(ABC, Generic[_T]):
         self._bot: Bot | None = None
         self._dispatcher: Dispatcher | None = None
 
-        self.alert.add_alert(BotAlert(self.bot))
+    @abstractmethod
+    async def run(self) -> None:
+        """Запуск бота.
 
-    async def run(self):
-        """Запуск бота"""
-        await self.set_command()
+        Абстрактный метод, который должен быть реализован в подклассах.
+        Отвечает за инициализацию и запуск диспетчера бота.
+        """
 
     async def set_command(self, bot: Bot | None = None) -> None:
         """Установить команды боту.

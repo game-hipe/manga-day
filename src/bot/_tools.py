@@ -6,6 +6,7 @@ from ..core.entities.schemas import AiohttpProxy
 
 
 def get_router() -> Router:
+    """Роутер для обработки неизвестных команд."""
     router = Router()
 
     @router.message()
