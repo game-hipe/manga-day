@@ -10,6 +10,11 @@ update:
   start_time: "7:00 AM EVERY 7 DAYS" # Время запуска бота
   zone: "Europe/Moscow" # Часовой пояс
 
+admin:
+  username: "admin" # Логин для доступа к админ панели
+  password: "admin" # Пароль для доступа к админ панели
+  solt: "admin" # Соль для хеширования пароля
+
 bot:
   admins: [12345] # Админы бота
   proxy: "http://ip:port@login:password"

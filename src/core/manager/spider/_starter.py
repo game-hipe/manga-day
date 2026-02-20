@@ -95,7 +95,8 @@ class SpiderStarter:
                 f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском."
             )
             await self._alert(
-                f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском."
+                f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском.",
+                "warning",
             )
             return SpiderStatus(
                 name=self._get_spider_name(spider),

@@ -5,6 +5,7 @@ from typing import NoReturn
 
 from loguru import logger
 from fastapi import APIRouter, Request, HTTPException
+from fastapi import Cookie
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.websockets import WebSocket, WebSocketDisconnect, WebSocketState
@@ -46,6 +47,13 @@ class AdminHandler:
         )
 
         self.router.add_api_route(
+            "/login",
+            self.auth,
+            methods=["POST"],
+            tags=["admin"],
+        )
+
+        self.router.add_api_route(
             "/static/{path:path}",
             self.get_static,
             methods=["GET"],
@@ -63,10 +71,26 @@ class AdminHandler:
 
         self.router.add_api_websocket_route("/ws", self.status_socket)
 
-    async def index(self, request: Request):
-        return self.templates.TemplateResponse(
-            "index.html", context={"request": request, "port": config.api.frontend_port}
-        )
+    async def index(self, request: Request, token: str | None = Cookie(None)):
+        if not token or config.admin.create_hash() != token:
+            return self.templates.TemplateResponse(
+                "login.html", context={"request": request}
+            )
+
+        else:
+            return self.templates.TemplateResponse(
+                "index.html", context={"request": request}
+            )
+
+    async def auth(
+        self, username: str, password: str
+    ):  # TODO: Сделать нормальную авторизацию, с сессиями и т.д. Так-же добавить Бан при нескольких неудачных попытках входа
+        if config.admin.username != username:
+            raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+        elif config.admin.create_hash(password) != config.admin.create_hash():
+            raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+        else:
+            return {"token": config.admin.create_hash(password)}
 
     async def get_spiders(self) -> list[SpiderStatus]:
         return self.spider.status
@@ -123,7 +147,7 @@ class AdminHandler:
             self.spider.alert.remove_alert(alert)
 
     async def spider_starter(
-        self, signal: ParsingSignal
+        self, signal: ParsingSignal, token: str | None = Cookie(None)
     ) -> SpiderStatus | list[SpiderStatus]:
         """Начаинает парсинг, принимает на вход сигнал, пример (start:all)
 
@@ -133,6 +157,9 @@ class AdminHandler:
         Returns:
             SpiderStatus | list[SpiderStatus]: Возращает статус спайдера, если был указан конкретный спайдер, иначе возращает статус всех спайдеров
         """
+        if not token or config.admin.create_hash() != token:
+            raise HTTPException(status_code=401, detail="Неверный токен")
+
         if signal.signal == "start":
             if signal.spider == "all":
                 asyncio.create_task(self.spider.start_full_parsing())

@@ -1,26 +1,283 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Панель управление Manga-Day авторизация</title>
+    <title>Панель управления Manga-Day — авторизация</title>
     <link rel="icon" href="/static/images/icon.ico" type="image/x-icon">
+    <!-- Основные стили админки (тёмная тема) -->
     <link rel="stylesheet" href="/admin/static/css/style.css">
+    <!-- Улучшенные стили только для страницы входа -->
+    <style>
+        /* Центрирование и стилизация карточки входа */
+        .login-main {
+            max-width: 420px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2.5rem;
+            background: rgba(30, 30, 30, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .login-main:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 28px 56px rgba(0, 0, 0, 0.8);
+        }
+
+        .login-main h1 {
+            font-size: 2.2rem;
+            color: #bb86fc;
+            text-align: center;
+            margin-bottom: 1.75rem;
+            border-bottom: 2px solid #333;
+            padding-bottom: 0.75rem;
+            letter-spacing: 1px;
+            font-weight: 600;
+            text-shadow: 0 2px 5px rgba(187, 134, 252, 0.2);
+        }
+
+        #loginForm {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        #loginForm label {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #ccc;
+            letter-spacing: 0.3px;
+            margin-left: 0.25rem;
+        }
+
+        #loginForm input {
+            background-color: #2d2d2d;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 0.9rem 1.2rem;
+            border-radius: 16px;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.2s ease;
+            outline: none;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #loginForm input:focus {
+            border-color: #bb86fc;
+            box-shadow: 0 0 0 4px rgba(187, 134, 252, 0.25), inset 0 2px 5px rgba(0, 0, 0, 0.3);
+            background-color: #333;
+        }
+
+        #loginForm input::placeholder {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        #loginForm button {
+            background: linear-gradient(145deg, #bb86fc, #a370e0);
+            color: #121212;
+            border: none;
+            padding: 1rem 1.5rem;
+            border-radius: 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            box-shadow: 0 8px 20px rgba(187, 134, 252, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #loginForm button:hover {
+            background: linear-gradient(145deg, #a370e0, #9b64d4);
+            box-shadow: 0 12px 28px rgba(187, 134, 252, 0.5);
+            transform: scale(1.02);
+        }
+
+        #loginForm button:active {
+            transform: scale(0.98);
+            box-shadow: 0 4px 12px rgba(187, 134, 252, 0.4);
+        }
+
+        /* Стилизованное сообщение об ошибке */
+        #errorMessage {
+            margin-top: 1.5rem;
+            padding: 1rem 1.25rem;
+            border-radius: 16px;
+            background-color: #2d1a1a;
+            border-left: 6px solid #f44336;
+            color: #ffb4b4;
+            font-size: 0.95rem;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: none;
+            animation: slideIn 0.3s ease;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        #errorMessage.show {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Адаптация для мобильных устройств */
+        @media (max-width: 480px) {
+            .login-main {
+                padding: 2rem 1.5rem;
+                max-width: 92%;
+                border-radius: 24px;
+            }
+
+            .login-main h1 {
+                font-size: 1.9rem;
+                margin-bottom: 1.5rem;
+            }
+
+            #loginForm input {
+                padding: 0.8rem 1rem;
+                border-radius: 14px;
+            }
+
+            #loginForm button {
+                padding: 0.9rem 1.2rem;
+                font-size: 1.1rem;
+                border-radius: 36px;
+            }
+
+            #errorMessage {
+                padding: 0.9rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Дополнительный контейнер для центрирования на маленьких экранах */
+        @media (max-width: 360px) {
+            .login-main {
+                padding: 1.5rem 1rem;
+            }
+            .login-main h1 {
+                font-size: 1.7rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <main>
-        <div>
-            <h1>Авторизация</h1>
-            <form method="post" action="/admin/login">
-                <label for="username">Имя пользователя:</label>
-                <input type="text" id="username" name="username" required>
+    <main class="login-main">
+        <h1>Авторизация</h1>
+        <form id="loginForm" method="post" action="/admin/login">
+            <div class="input-group">
+                <label for="username">Имя пользователя</label>
+                <input type="text" id="username" name="username" placeholder="Введите логин" required autofocus>
+            </div>
 
-                <label for="password">Пароль:</label>
-                <input type="password" id="password" name="password" required>
+            <div class="input-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" placeholder="Введите пароль" required>
+            </div>
 
-                <button type="submit">Войти</button>
-            </form>
-        </div>
+            <button type="submit">Войти</button>
+        </form>
+        <div id="errorMessage"></div>
     </main>
+
+    <script>
+        (function() {
+            const form = document.getElementById('loginForm');
+            const errorDiv = document.getElementById('errorMessage');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+
+            // Сброс сообщения об ошибке при фокусе на любом поле
+            const clearError = () => {
+                errorDiv.classList.remove('show');
+                errorDiv.textContent = '';
+            };
+
+            usernameInput.addEventListener('focus', clearError);
+            passwordInput.addEventListener('focus', clearError);
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault(); // Отмена стандартной отправки
+
+                // Очищаем предыдущее сообщение об ошибке
+                errorDiv.classList.remove('show');
+                errorDiv.textContent = '';
+
+                // Получаем значения полей
+                const username = usernameInput.value.trim();
+                const password = passwordInput.value;
+
+                // Формируем URL с query-параметрами (как в curl-примере)
+                const url = new URL('/admin/login', window.location.origin);
+                url.searchParams.append('username', username);
+                url.searchParams.append('password', password);
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        let errorText;
+                        try {
+                            // Пытаемся получить JSON с описанием ошибки
+                            const errorData = await response.json();
+                            errorText = errorData.message || errorData.error || `Ошибка ${response.status}`;
+                        } catch {
+                            // Если не JSON, берём текст
+                            errorText = await response.text() || `Ошибка ${response.status}`;
+                        }
+                        throw new Error(errorText);
+                    }
+
+                    const data = await response.json();
+                    const token = data.token; // предполагаем, что ответ содержит поле "token"
+
+                    if (!token) {
+                        throw new Error('Токен не получен');
+                    }
+
+                    // Сохраняем токен в cookie (как в оригинале)
+                    document.cookie = `token=${token}; path=/;`;
+
+                    // Перенаправляем на защищённую страницу админ-панели
+                    window.location.href = '/admin';
+
+                } catch (error) {
+                    console.error('Ошибка авторизации:', error);
+                    errorDiv.textContent = ' ' + error.message; // пробел для красивого отступа
+                    errorDiv.classList.add('show');
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

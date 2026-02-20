@@ -1,6 +1,8 @@
 import os
 import sys
 
+from hashlib import sha256
+
 from loguru import logger
 from pydantic import BaseModel, Field
 from yaml import full_load
@@ -12,6 +14,16 @@ __all__ = ["config"]
 load_dotenv()
 
 CONFIG_FILE = os.getenv("CONFIG_FILE", "config.yaml")
+
+
+class AdminConfig(BaseModel):
+    username: str = Field("admin")
+    password: str = Field("admin")
+    solt: str = Field("admin")
+
+    def create_hash(self, password: str | None = None) -> str:
+        hash_input = (self.solt + (password or self.password)).encode()
+        return sha256(hash_input).hexdigest()
 
 
 class RequestConfig(BaseModel):
@@ -86,6 +98,7 @@ class Config(BaseModel):
     pdf: PDFConfig = Field(default_factory=PDFConfig)
     parsing: ParserConfig = Field(default_factory=ParserConfig)
     request: RequestConfig = Field(default_factory=RequestConfig)
+    admin: AdminConfig = Field(default_factory=AdminConfig)
 
 
 def load_config():
