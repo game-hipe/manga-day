@@ -20,6 +20,9 @@ class HitomiSpider(BaseMangaSpider):
     MANGA = "/spa/manga/{id}/read"
     """URL - для получение галлереи"""
 
+    SUFFIX: str = "si"
+    """Суффикс для идентификации манги в URL. Например: https://hitomi.si/reader/si12345, где 12345 - это ID манги, а 'si' - суффикс."""
+
     PAGE_PARSER = HitomiPageParser
     MANGA_PARSER = HitomiMangaParser
 
@@ -72,7 +75,7 @@ class HitomiSpider(BaseMangaSpider):
             return self._total_pages or 1
 
     async def get(self, url: str, **kwargs):
-        parser = HitomiMangaParser(self.BASE_URL, self.features)
+        parser = self.MANGA_PARSER(self.BASE_URL, self.features)
 
         markup = await self.http.get(url, "read")
         if markup is None:
@@ -81,7 +84,7 @@ class HitomiSpider(BaseMangaSpider):
 
         base_manga = parser.parse(markup, features=self.features, situation="html")
 
-        id = url.split("/")[-1].replace("si", "")
+        id = url.split("/")[-1].replace(self.SUFFIX, "")
         gallery = await self.http.get(self.urljoin(self.MANGA.format(id=id)), "json")
         if gallery is None:
             logger.error(f"Не удалось получить галлерею: {url}")

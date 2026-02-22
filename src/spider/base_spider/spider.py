@@ -17,7 +17,7 @@ class BaseMangaSpider(BaseSpider):
 
     MAX_PAGE_SELECTOR = "section.pagination a"
     PAGE_URL = "/page/{page}/"
-    START_PAGE = 2
+    START_PAGE = 1
     MANGA_PARSER: type[GlobalMangaParser]
     PAGE_PARSER: type[GlobalPageParser]
 
@@ -87,7 +87,7 @@ class BaseMangaSpider(BaseSpider):
         Генератор, возвращающий разметку каждой страницы пагинации.
 
         Args:
-            start_page (int | None): Номер страницы, с которой начать. По умолчанию — 2.
+            start_page (int | None): Номер страницы, с которой начать. По умолчанию — 1.
 
         Yields:
             BeautifulSoup: Объект soup для каждой страницы.

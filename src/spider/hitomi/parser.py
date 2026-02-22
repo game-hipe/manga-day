@@ -8,15 +8,19 @@ from ...core.entities.schemas import MangaSchema, BaseManga
 
 
 class HitomiMangaParser(BaseMangaParser):
+    GENRES_TAG = "标签"
+    AUTHOR_TAG = "作者"
+    LANGUAGE_TAG = "语言"
+
     def _parse_html(self, soup):
         logger.debug("Парсинг данных тип (HTML)")
         title = soup.select_one("h1")
         url = soup.select_one('link[rel="canonical"]')
         poster = soup.select_one("div.img-holder img")
 
-        genres = self.extract_tags(soup, "标签")
-        author = self.extract_tags(soup, "作者")
-        language = self.extract_tags(soup, "语言")
+        genres = self.extract_tags(soup, self.GENRES_TAG)
+        author = self.extract_tags(soup, self.AUTHOR_TAG)
+        language = self.extract_tags(soup, self.LANGUAGE_TAG)
 
         if all([title, poster, url]):
             title = title.get_text(strip=True)
