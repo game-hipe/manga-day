@@ -11,6 +11,7 @@ from src.spider.hmanga import HmangaSpider
 from src.spider.multi_manga import MultiMangaSpider
 from src.spider.hitomi import HitomiSpider
 from src.spider.hentaiera import HentaiEraSpider
+from src.spider.moeimg.spider import MoeImgSpider
 
 CACHE = TTLCache(128, 300)
 
@@ -274,6 +275,71 @@ class TestSpiderHentaiEra(BaseSpiderTest):
             pytest.skip("Сайт добавил Cloudfare")
 
         return HentaiEraSpider(session)
+
+    @pytest.mark.asyncio
+    async def test_spider_get_manga(self, manga_data):
+        assert manga_data is not None
+
+    @pytest.mark.asyncio
+    async def test_spider_get_title(self, manga_data):
+        assert manga_data.title == self.EXPECTED_TITLE
+
+    @pytest.mark.asyncio
+    async def test_spider_get_genres(self, manga_data):
+        for tag in self.TAGS:
+            assert tag in manga_data.genres
+
+    @pytest.mark.asyncio
+    async def test_spider_get_language(self, manga_data):
+        assert manga_data.language == self.EXPECTED_LANGUAGE
+
+    @pytest.mark.asyncio
+    async def test_spider_get_poster(self, manga_data):
+        assert self.EXPECTED_POSTER in str(manga_data.poster)
+
+    @pytest.mark.asyncio
+    async def test_spider_get_gallery(self, manga_data):
+        assert len(manga_data.gallery) == self.EXPECTED_GALLERY_COUNT
+
+    @pytest.mark.asyncio
+    async def test_spider_get_author(self, manga_data):
+        assert manga_data.author == self.EXPECTED_AUTHOR
+
+    @pytest.mark.asyncio
+    async def test_spider_run(self, spider):
+        with pytest.raises(AttributeError):
+            await spider.run()
+
+
+class TestSpiderMoeImg(BaseSpiderTest):
+    BASE_URL = "https://moeimg.fan"
+    TEST_URL = "https://moeimg.fan/post/fa240945"
+
+    EXPECTED_TITLE = "[hinosaki] Komari-chan [Chinese] [零克文个人汉化]"
+
+    TAGS = [
+        "footjob",
+        "sole female",
+        "smell",
+        "schoolgirl uniform",
+        "sister",
+        "full color",
+        "inseki",
+        "incest",
+        "foot licking",
+    ]
+
+    EXPECTED_LANGUAGE = "chinese"
+    EXPECTED_POSTER = "240945-240945-1960x1869.webp"
+    EXPECTED_GALLERY_COUNT = 17
+    EXPECTED_AUTHOR = "hinosaki"
+
+    @pytest_asyncio.fixture
+    async def spider(self, session):
+        if MoeImgSpider.HAS_CLOUDFARE:
+            pytest.skip("Сайт добавил Cloudfare")
+
+        return MoeImgSpider(session)
 
     @pytest.mark.asyncio
     async def test_spider_get_manga(self, manga_data):

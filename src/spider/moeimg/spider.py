@@ -4,6 +4,7 @@ from ..hitomi.spider import HitomiSpider
 
 
 class MoeImgSpider(HitomiSpider):
+    HAS_CLOUDFARE = False
     START_PAGE = 1
 
     MANGA_PARSER = MoeImgParser
