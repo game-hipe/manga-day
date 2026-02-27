@@ -1,3 +1,5 @@
+"""API - сайта, базовые команды для работы"""
+
 from ._api import setup_api, start_api
 
 

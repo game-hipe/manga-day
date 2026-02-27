@@ -8,13 +8,13 @@ from ..core import config
 
 
 def setup_api(manager: MangaManager) -> FastAPI:
-    """Инцилизация API
+    """Инициализация API
 
     Args:
         manager (MangaManager): Менеджер манги
 
     Returns:
-        FastAPI: Обьект FastAPI
+        FastAPI: Объект FastAPI
     """
     app = FastAPI(title="Manga-Day API")
 

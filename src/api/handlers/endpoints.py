@@ -16,7 +16,7 @@ class Endpoints:
     """Эндпоинты для API манги."""
 
     def __init__(self, manga_manager: MangaManager):
-        """Иницилизация Endpoints
+        """Инициализация Endpoints
 
         Args:
             manga_manager (MangaManager): Менеджер манги.
@@ -82,7 +82,7 @@ class Endpoints:
             page (int): Номер страницы
 
         Returns:
-            CountResponse[list[BaseManga] | None]: Результат даннных, с количеством страниц
+            CountResponse[list[BaseManga] | None]: Результат данных, с количеством страниц
         """
         total, result = await self.manga_manager.get_manga_pages(page)
         try:
@@ -141,7 +141,7 @@ class Endpoints:
             manga (MangaSchema): Схема манги
 
         Returns:
-            BaseResponse[OutputMangaSchema | None]: Возращает мангу с ID
+            BaseResponse[OutputMangaSchema | None]: Возвращает мангу с ID
         """
         try:
             result = await self.manga_manager.add_manga(manga)
