@@ -18,6 +18,6 @@ HELP = (
     "/start_parsing - Начать парсинг\n"
     "/stop_parsing - Остановить парсинг (Принудительно останавливает парсинг)\n"
     "/stop_spider - Остановить парсинг выбранного паука (Пример: <code>/stop_spider HitomiSpider</code>)\n"
-    "/start_spider - Запустрить Запустить парсинг выбранного паука (Пример: <code>/start_spider HitomiSpider</code>)\n"
+    "/start_spider - Запустить Запустить парсинг выбранного паука (Пример: <code>/start_spider HitomiSpider</code>)\n"
     "/status - Статус парсинга, так-же можно получить список рабочих пауков"
 )

@@ -1,6 +1,7 @@
 from typing import Unpack
 
 from aiogram.types import BotCommand
+from loguru import logger
 
 from .handler.commands import CommandsHandler
 from .middleware.admins import AdminMiddleware
@@ -76,7 +77,7 @@ class AdminBot(BasicBot[AdminBotConfig]):
 async def setup_admin(
     spider: SpiderManager, **config: Unpack[BaseBotConfig]
 ) -> AdminBot:
-    """Инцилизация админки возращает экземпляр класса AdminBot
+    """Инициализация админки возвращает экземпляр класса AdminBot
 
     Args:
         spider (SpiderManager): Менеджер пауков.
@@ -90,13 +91,20 @@ async def setup_admin(
 
 
 async def start_admin(spider: SpiderManager, **config: Unpack[BaseBotConfig]) -> None:
-    """Инцилизация админки, и дальнейший запуск.
+    """Инициализация админки, и дальнейший запуск.
 
     Args:
         spider (SpiderManager): Менеджер пауков.
     """
+    bot = None
     try:
         bot = await setup_admin(spider, **config)
         await bot.run()
     finally:
         await bot.bot.session.close()
+        if bot is not None:
+            await bot.bot.session.close()
+            logger.debug("Сессия закрыта")
+
+        else:
+            logger.warning("Инициализация не удалась (bot='UserBot')")

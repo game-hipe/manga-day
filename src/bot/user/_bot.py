@@ -1,6 +1,7 @@
 from typing import Unpack
 
 from aiogram.types import BotCommand
+from loguru import logger
 
 from .handler.commands import CommandsHandler
 from .._bot import BasicBot, BaseBotConfig
@@ -82,12 +83,12 @@ async def setup_user(
     alert: AlertManager,
     **config: Unpack[UserBotConfig],
 ) -> UserBot:
-    """Инцилизация клиентской части бота
+    """Инициализация клиентской части бота
 
     Args:
-        manager (MangaManager): Менеджнр манги.
+        manager (MangaManager): Менеджер манги.
         pdf_service (PDFService): Сервис для генерации PDF
-        alert (AlertManager): Система алёртов.
+        alert (AlertManager): Система уведомлений.
 
     Returns:
         UserBot: Класс для управление ботом.
@@ -103,15 +104,21 @@ async def start_user(
     alert: AlertManager,
     **config: Unpack[UserBotConfig],
 ):
-    """Инцилизация клиентской части бота, и дальнейший её запуск
+    """Инициализация клиентской части бота, и дальнейший её запуск
 
     Args:
-        manager (MangaManager): Менеджнр манги.
+        manager (MangaManager): Менеджер манги.
         pdf_service (PDFService): Сервис для генерации PDF
-        alert (AlertManager): Система алёртов.
+        alert (AlertManager): Система уведомлений.
     """
+    bot = None
     try:
         bot = await setup_user(manager, pdf_service, alert, **config)
         await bot.run()
     finally:
-        await bot.bot.session.close()
+        if bot is not None:
+            await bot.bot.session.close()
+            logger.debug("Сессия закрыта")
+
+        else:
+            logger.warning("Инициализация не удалась (bot='UserBot')")

@@ -102,7 +102,7 @@ class BasicBot(ABC, Generic[_T]):
         Returns:
             Bot: Экземпляр бота.
         """
-        logger.debug("Инцилизация бота бота.")
+        logger.debug("Инициализация бота бота.")
         session = AiohttpSession(proxy=self.proxy.auth() if self.proxy else None)
 
         return Bot(
@@ -114,7 +114,7 @@ class BasicBot(ABC, Generic[_T]):
     def _create_dispatcher(
         self, storage: BaseStorage | None = None, bot: Bot | None = None
     ) -> Dispatcher:
-        """Возращает экземпляр диспетчера.
+        """Возвращает экземпляр диспетчера.
 
         Args:
             storage (BaseStorage | None, optional): Место где будут храниться все состоянии. Обычное состояние None.
@@ -123,5 +123,5 @@ class BasicBot(ABC, Generic[_T]):
         Returns:
             Dispatcher: Экземпляр диспетчера.
         """
-        logger.debug("Инцилизация диспетчера.")
+        logger.debug("Инициализация диспетчера.")
         return Dispatcher(storage=storage or MemoryStorage(), bot=bot or self.bot)
