@@ -67,7 +67,7 @@ class BaseSpider(ABC):
             manager (MangaManager): Менеджер для обработки и хранения данных о манге. Если менеджер является None то функция "run" перестает работать. (по умолчанию None).
             features (str): Парсер, используемый для разбора HTML (по умолчанию 'html.parser').
             batch (int): Размер пачки для парсинга (по умолчанию 10).
-            max_concurrents (int, опционально): Максимальное количество одновременных запросов.
+            max_concurrent (int, опционально): Максимальное количество одновременных запросов.
             max_retries (int, опционально): Максимальное количество попыток повтора запроса.
             sleep_time (int, опционально): Время задержки между запросами.
             use_random (bool, опционально): Использовать ли случайную задержку.
@@ -113,7 +113,7 @@ class BaseSpider(ABC):
         self.manager = manager
 
         self._args_test()
-        logger.debug(f"Инцилизирован класс {self.__class__.__name__}")
+        logger.debug(f"Инициализирован класс {self.__class__.__name__}")
 
     async def run(self, start_page: int | None = None) -> None:
         """
@@ -142,14 +142,14 @@ class BaseSpider(ABC):
                     continue
 
                 if not result.gallery:
-                    logger.warning(f"Манга {result.sku} не содержит галлереи")
+                    logger.warning(f"Манга {result.sku} не содержит галереи")
                     continue
 
                 try:
                     await self.manager.add_manga(result)
                 except IntegrityError as error:
                     logger.error(
-                        f"Ошибка во время добваления манги (manga={manga}, message={error})"
+                        f"Ошибка во время добавления манги (manga={manga}, message={error})"
                     )
 
     async def pages_full(
@@ -161,7 +161,7 @@ class BaseSpider(ABC):
             start_page (int | None, optional): Стартовая страница для парсинга.
 
         Yields:
-            Iterator[AsyncGenerator[MangaSchema, Any]]: Возращает итератор манги.
+            Iterator[AsyncGenerator[MangaSchema, Any]]: Возвращает итератор манги.
 
         Warning:
             Если во время получении манги, манга вернёт None он будет пропущен, либо если gallery окажется пустым.
@@ -207,7 +207,7 @@ class BaseSpider(ABC):
             start_page (int): Стартовая страница для парсинга.
 
         Returns:
-            Асинхронный генератор, выдающий списки базовйх манг (BaseManga).
+            Асинхронный генератор, выдающий списки базовых манг (BaseManga).
         """
         yield []
 

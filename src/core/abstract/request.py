@@ -22,7 +22,7 @@ class ProxyStatus(TypedDict):
 class RequestItem(TypedDict):
     """Аргументы для запросов"""
 
-    max_concurrents: int | None = (None,)
+    max_concurrent: int | None = (None,)
     """Максимальное количество запросов одновременно."""
 
     max_retries: int | None = (None,)
@@ -59,7 +59,7 @@ class BaseRequestManager(Generic[_T]):
     USE_RANDOM: int = True
     """Базовое значение, использование рандома при ожидании"""
 
-    MAX_CONCURRENTS: int = 5
+    MAX_CONCURRENT: int = 5
     """Базовое значение, количество запросов одновременно"""
 
     MAX_RETRIES: int = 5
@@ -81,20 +81,20 @@ class BaseRequestManager(Generic[_T]):
     """Базовое значение, если прокси не отвечает"""
 
     def __init__(self, session: _T, **kw: Unpack[RequestItem]):
-        """Ицилизация RequestManager
+        """Инициализация RequestManager
 
         Args:
             session (_T): Сессия для работы с запросами.
         """
         self.session = session
-        self.max_concurrents = kw.get("max_concurrents") or self.MAX_CONCURRENTS
+        self.max_concurrent = kw.get("max_concurrent") or self.MAX_CONCURRENT
         self.max_retries = kw.get("max_retries") or self.MAX_RETRIES
         self.sleep_time = kw.get("sleep_time") or self.SLEEP_TIME
         self.use_random = kw.get("use_random") or self.USE_RANDOM
         self.max_chance = kw.get("max_chance") or self.MAX_CHANCE
         self._ban_proxy = kw.get("ban_proxy") or self.BAN_PROXY
 
-        self.semaphore = asyncio.Semaphore(self.max_concurrents)
+        self.semaphore = asyncio.Semaphore(self.max_concurrent)
         self.proxy: dict[ProxySchema, ProxyStatus] = {
             self.BASE_PROXY.model_validate(x.model_dump()): {"status": True, "total": 0}
             for x in kw.get("proxy") or []
