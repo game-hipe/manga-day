@@ -27,7 +27,7 @@ class AdminConfig(BaseModel):
 
 
 class RequestConfig(BaseModel):
-    max_concurrents: int = Field(5)
+    max_concurrent: int = Field(5)
     max_retries: int = Field(5)
     sleep_time: float = Field(2)
     use_random: bool = Field(True)
@@ -40,7 +40,7 @@ class RequestConfig(BaseModel):
 class ParserConfig(BaseModel):
     features: str = Field(
         "html.parser"
-    )  # Рекемендуется использовать "lxml" для лучшей производительности, но он требует установки дополнительной библиотеки.
+    )  # Рекомендуется использовать "lxml" для лучшей производительности, но он требует установки дополнительной библиотеки.
     proxy: list[str] = Field(default_factory=list)
 
 

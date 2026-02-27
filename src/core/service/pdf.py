@@ -18,7 +18,7 @@ from ..manager.request import RequestManager
 
 class PDFService:
     """
-    Класс для преоброзование фоток в PDF
+    Класс для преобразование фоток в PDF
 
     Основной метод:
         download(gallery, path) - Скачивает фотки, и сохраняет в виде PDF
