@@ -39,7 +39,7 @@ class AlertManager:
         """Отправить уведомление всем обработчикам
 
         Args:
-            message (str): Сообшение
+            message (str): Сообщение
             level (LEVEL): Уровень сообщение, подробнее в LEVEL
 
         Warning:

@@ -37,7 +37,7 @@ class SpiderManager:
             batch (int | None, optional): Размер пачки для парсинга. Обычное состояние None
 
         Returns:
-            list[BaseSpider]: Инцилизированные пауки.
+            list[BaseSpider]: Инициализированные пауки.
 
         Warning:
             Если manager не будет указан функция run, перестанет работать.
@@ -65,7 +65,7 @@ class SpiderManager:
             batch (int | None, optional): Размер пачки для парсинга. Обычное состояние None
 
         Returns:
-            list[BaseSpider]: Инцилизированные пауки.
+            list[BaseSpider]: Инициализированные пауки.
 
         Warning:
             Если manager не будет указан функция run, перестанет работать.
@@ -92,7 +92,7 @@ class SpiderManager:
             batch (int | None, optional): Размер пачки для парсинга. Обычное состояние None
 
         Returns:
-            list[BaseSpider]: Инцилизированные пауки.
+            list[BaseSpider]: Инициализированные пауки.
 
         Warning:
             Если manager не будет указан функция start_full_parsing, перестанет работать.
@@ -155,7 +155,7 @@ class SpiderManager:
 
     @property
     def starter(self) -> SpiderStarter:
-        """Возращает стартер пауков
+        """Возвращает стартер пауков
 
         Returns:
             SpiderStarter: старте паука.
@@ -182,10 +182,10 @@ class SpiderManager:
 
     @staticmethod
     def _convert_status(task: asyncio.Task | None) -> SpiderStatusEnum:
-        """Вспомогательная функция что-бы возращать тип
+        """Вспомогательная функция что-бы возвращать тип
 
         Args:
-            task (asyncio.Task | None): Задачаm или None
+            task (asyncio.Task | None): Задача или None
 
         Returns:
             SpiderStatusEnum: Статус задачи

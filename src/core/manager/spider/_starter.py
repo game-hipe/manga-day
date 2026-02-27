@@ -1,4 +1,4 @@
-"""Включение/выключние пауков"""
+"""Включение/выключение пауков"""
 
 import asyncio
 
@@ -13,7 +13,7 @@ from ...abstract.spider import BaseSpider
 
 class SpiderStarter:
     def __init__(self, spiders: list[BaseSpider], alert: AlertManager | None = None):
-        """Инцилизация системы старта пауков.
+        """Инициализация системы старта пауков.
 
         Args:
             spiders (list[BaseSpider]): Пауки которых можно запустить

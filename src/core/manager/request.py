@@ -33,10 +33,10 @@ class RequestManager(BaseRequestManager[ClientSession]):
         Args:
             method (str): Метод, для получение страницы (GET, POST, и т п.)
             url (str): Путь к интернет странице
-            type (Literal["text"]): Возращает текст страницы
+            type (Literal["text"]): Возвращает текст страницы
 
         Returns:
-            str | None: Возращает текст страницы
+            str | None: Возвращает текст страницы
         """
 
     @overload
@@ -52,10 +52,10 @@ class RequestManager(BaseRequestManager[ClientSession]):
         Attributes:
             method (str): Метод, для получение страницы (GET, POST, и т п.)
             url (str): Путь к интернет странице
-            type (Literal["read"]): Возращает бинарные данные
+            type (Literal["read"]): Возвращает бинарные данные
 
         Returns:
-            bytes | None: Возращает данные с страницы
+            bytes | None: Возвращает данные с страницы
         """
 
     @overload
@@ -66,10 +66,10 @@ class RequestManager(BaseRequestManager[ClientSession]):
 
         Attributes:
             url (str): Путь к интернет странице
-            type (Literal["text"]): Возращает текст страницы
+            type (Literal["text"]): Возвращает текст страницы
 
         Returns:
-            str | None: Возращает текст страницы
+            str | None: Возвращает текст страницы
         """
 
     @overload
@@ -80,10 +80,10 @@ class RequestManager(BaseRequestManager[ClientSession]):
 
         Attributes:
             url (str): Путь к интернет странице
-            type (Literal["read"]): Возращает бинарные данные
+            type (Literal["read"]): Возвращает бинарные данные
 
         Returns:
-            bytes | None: Возращает данные с страницы
+            bytes | None: Возвращает данные с страницы
         """
 
     @overload
@@ -94,10 +94,10 @@ class RequestManager(BaseRequestManager[ClientSession]):
 
         Attributes:
             url (str): Путь к интернет странице
-            type (Literal["text"]): Возращает текст страницы
+            type (Literal["text"]): Возвращает текст страницы
 
         Returns:
-            str | None: Возращает текст страницы
+            str | None: Возвращает текст страницы
         """
 
     @overload
@@ -108,10 +108,10 @@ class RequestManager(BaseRequestManager[ClientSession]):
 
         Attributes:
             url (str): Путь к интернет странице
-            type (Literal["read"]): Возращает бинарные данные
+            type (Literal["read"]): Возвращает бинарные данные
 
         Returns:
-            bytes | None: Возращает данные с страницы
+            bytes | None: Возвращает данные с страницы
         """
 
     async def request(
@@ -122,10 +122,10 @@ class RequestManager(BaseRequestManager[ClientSession]):
         Attributes:
             method (str): Метод, для получение страницы (GET, POST, и т п.)
             url (str): Путь к интернет странице
-            type (str): тип возращаемых данных
+            type (str): тип возвращаемых данных
 
         Returns:
-            str | bytes | None: Возращает данные с страницы
+            str | bytes | None: Возвращает данные с страницы
         """
         if f"{method}{url}" in self.cache:
             logger.info(f"Используется кэш (url={url}, method={method})")

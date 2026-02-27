@@ -16,11 +16,9 @@ from ..manga import MangaManager
 ERROR_ALL_NOT_FOUND = "Не удалось загрузить список доступных парсеров. Пожалуйста, проверьте наличие файла __all__ в модуле spider."
 ERROR_SPIDER_NOT_FOUND = "Паук {spider} не найден. Пожалуйста, проверьте наличие файла __all__ в модуле spider."
 WARNING_SPIDER_CLOUDFARE = (
-    "Парсер {spider} использует CloudFare. Парсер будет пропущен при инцилизации"
+    "Парсер {spider} использует CloudFare. Парсер будет пропущен при инициализации"
 )
-WARNING_SPIDER_BANNED = (
-    "Парсер {spider} указан как заблокированный. Парсер будет пропущен при инцилизации"
-)
+WARNING_SPIDER_BANNED = "Парсер {spider} указан как заблокированный. Парсер будет пропущен при инициализации"
 
 
 @overload
@@ -41,7 +39,7 @@ def load_spiders(
         batch (int | None, optional): Размер пачки для парсинга. Обычное состояние None
 
     Returns:
-        list[BaseSpider]: Инцилизированные пауки.
+        list[BaseSpider]: Инициализированные пауки.
 
     Warning:
         Если manager не будет указан функция run, перестанет работать.
@@ -67,7 +65,7 @@ def load_spiders(
         batch (int | None, optional): Размер пачки для парсинга. Обычное состояние None
 
     Returns:
-        list[BaseSpider]: Инцилизированные пауки.
+        list[BaseSpider]: Инициализированные пауки.
 
     Warning:
         Если manager не будет указан функция run, перестанет работать.
@@ -92,7 +90,7 @@ def load_spiders(
         batch (int | None, optional): Размер пачки для парсинга. Обычное состояние None
 
     Returns:
-        list[BaseSpider]: Инцилизированные пауки.
+        list[BaseSpider]: Инициализированные пауки.
 
     Warning:
         Если manager не будет указан функция run, перестанет работать.

@@ -18,8 +18,13 @@ class SpiderStatusEnum(Enum):
 
 class SpiderStatus(BaseModel):
     name: str
+    """Название паука"""
+
     status: SpiderStatusEnum
+    """Статус паука"""
+
     message: str | None
+    """Сопровождаемое сообщение"""
 
     def __str__(self) -> str:
         return (
