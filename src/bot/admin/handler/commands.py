@@ -228,7 +228,7 @@ class CommandsHandler:
     def _create_spider_keyboard(self) -> list[list[InlineKeyboardButton]]:
         keyboard: list[list[InlineKeyboardButton]] = []
         for status in self.spider_manager.status:
-            if status == SpiderStatusEnum.NOT_RUNNING:
+            if status.status == SpiderStatusEnum.NOT_RUNNING:
                 keyboard.append(
                     [
                         InlineKeyboardButton(
