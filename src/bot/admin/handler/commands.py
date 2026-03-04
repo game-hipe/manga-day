@@ -63,10 +63,10 @@ class CommandsHandler:
         self.router.message.register(self.status, Command("status"))
 
         self.router.callback_query.register(
-            self.start_spider_call, F.command.text.startswith("start:")
+            self.start_spider_call, F.data.startswith("start:")
         )
         self.router.callback_query.register(
-            self.stop_spider_call, F.command.text.startswith("stop:")
+            self.stop_spider_call, F.data.startswith("stop:")
         )
 
     async def start(self, message: Message):
@@ -166,7 +166,7 @@ class CommandsHandler:
             call (CallbackQuery): Входящий запроса от пользователя.
         """
         try:
-            _, spider_name = call.message.text.split(":", 1)
+            _, spider_name = call.data.split(":", 1)
             await self._start_spider(spider_name, call)
         except ValueError:
             await call.message.answer(
@@ -180,7 +180,7 @@ class CommandsHandler:
             call (CallbackQuery): Входящий запроса от пользователя.
         """
         try:
-            _, spider_name = call.message.text.split(":", 1)
+            _, spider_name = call.data.split(":", 1)
             await self.spider_manager.starter.stop_spider(spider_name)
         except ValueError:
             await call.message.answer(
@@ -232,7 +232,7 @@ class CommandsHandler:
                 keyboard.append(
                     [
                         InlineKeyboardButton(
-                            text="Запуск", callback_data=f"start:{status.name}"
+                            text=f"Запуск {status.name}", callback_data=f"start:{status.name}"
                         )
                     ]
                 )
@@ -240,7 +240,7 @@ class CommandsHandler:
                 keyboard.append(
                     [
                         InlineKeyboardButton(
-                            text="Остановка", callback_data=f"stop:{status.name}"
+                            text=f"Остановка {status.name}", callback_data=f"stop:{status.name}"
                         )
                     ]
                 )
