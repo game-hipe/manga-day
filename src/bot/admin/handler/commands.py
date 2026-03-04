@@ -181,7 +181,7 @@ class CommandsHandler:
         """
         try:
             _, spider_name = call.data.split(":", 1)
-            await self.spider_manager.starter.stop_spider(spider_name)
+            await self._stop_spider(spider_name, call)
         except ValueError:
             await call.message.answer(
                 "Неверный формат команды. Используйте: /stop_spider [spider_name]"
