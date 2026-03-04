@@ -1,9 +1,19 @@
-from aiogram import Router
-from aiogram.types import Message
+from typing import TypeAlias
+
+from aiogram import Router, F
+from aiogram.types import (
+    Message,
+    CallbackQuery,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+)
 from aiogram.filters import Command
 
 from ....core.manager.spider import SpiderManager
+from ....core.manager.spider._status import SpiderStatusEnum
 from .._text import GREETING, HELP
+
+CommandCallback: TypeAlias = CallbackQuery | Message
 
 
 class CommandsHandler:
@@ -52,6 +62,13 @@ class CommandsHandler:
         self.router.message.register(self.start_spider, Command("start_spider"))
         self.router.message.register(self.status, Command("status"))
 
+        self.router.callback_query.register(
+            self.start_spider_call, F.command.text.startswith("start:")
+        )
+        self.router.callback_query.register(
+            self.stop_spider_call, F.command.text.startswith("stop:")
+        )
+
     async def start(self, message: Message):
         """Отправляет приветственное сообщение при получении команды /start.
 
@@ -99,34 +116,28 @@ class CommandsHandler:
         await self.spider_manager.stop_all_spider()
 
     async def stop_spider(self, message: Message):
-        """Останавливает спайдера по команде /stop [spider_name].
+        """Останавливает спайдера по команде /stop_spider [spider_name].
 
         Args:
             message (Message): Входящее сообщение от пользователя.
         """
         try:
             _, spider_name = message.text.split()
-            try:
-                await self.spider_manager.starter.stop_spider(spider_name)
-            except KeyError:
-                await message.answer(f"Спайдер {spider_name} не найден.")
+            await self._stop_spider(spider_name, message)
         except ValueError:
             await message.answer(
                 "Неверный формат команды. Используйте: /stop_spider [spider_name]"
             )
 
     async def start_spider(self, message: Message):
-        """Запускает спайдер по команде /start [spider_name].
+        """Запускает спайдер по команде /start_spider [spider_name].
 
         Args:
             message (Message): Входящее сообщение от пользователя.
         """
         try:
             _, spider_name = message.text.split()
-            try:
-                await self.spider_manager.starter.start_spider(spider_name)
-            except KeyError:
-                await message.answer("Спайдер не найден.")
+            await self._start_spider(spider_name, message)
         except ValueError:
             await message.answer(
                 "Неверный формат команды. Используйте: /start_spider [spider_name]"
@@ -141,4 +152,103 @@ class CommandsHandler:
         Raises:
             AttributeError: Если spider_manager не имеет атрибута status.
         """
-        await message.answer("\n".join(str(x) for x in self.spider_manager.status))
+        keyboard = self._create_spider_keyboard()
+        text = "\n".join(str(x) for x in self.spider_manager.status)
+
+        await message.answer(
+            text=text, reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard)
+        )
+
+    async def start_spider_call(self, call: CallbackQuery):
+        """Получает команду на старт парсера
+
+        Args:
+            call (CallbackQuery): Входящий запроса от пользователя.
+        """
+        try:
+            _, spider_name = call.message.text.split(":", 1)
+            await self._start_spider(spider_name, call)
+        except ValueError:
+            await call.message.answer(
+                "Неверный формат команды. Используйте: /start_spider [spider_name]"
+            )
+
+    async def stop_spider_call(self, call: CallbackQuery):
+        """Получает команду на остановку парсера
+
+        Args:
+            call (CallbackQuery): Входящий запроса от пользователя.
+        """
+        try:
+            _, spider_name = call.message.text.split(":", 1)
+            await self.spider_manager.starter.stop_spider(spider_name)
+        except ValueError:
+            await call.message.answer(
+                "Неверный формат команды. Используйте: /stop_spider [spider_name]"
+            )
+
+    async def _start_spider(self, spider_name: str, query: CommandCallback):
+        """Начинает работу паука
+
+        Args:
+            spider_name (str): Название паука
+            query (CommandCallback): Message или CallbackQuery
+        """
+        message = self._get_message(query)
+        try:
+            if (
+                self.spider_manager.get_spider_status(spider_name)
+                == SpiderStatusEnum.RUNNING
+            ):
+                await message.answer(f"Спайдер {spider_name} уже запущен")
+                return
+            await self.spider_manager.starter.start_spider(spider_name)
+        except KeyError:
+            await message.answer("Спайдер не найден.")
+
+    async def _stop_spider(self, spider_name: str, query: CommandCallback):
+        """Остонваливает работу паука
+
+        Args:
+            spider_name (str): Название паука
+            query (CommandCallback): Message или CallbackQuery
+        """
+        message = self._get_message(query)
+        try:
+            if (
+                self.spider_manager.get_spider_status(spider_name)
+                == SpiderStatusEnum.NOT_RUNNING
+            ):
+                await message.answer(f"Спайдер {spider_name} уже остановлен")
+                return
+            await self.spider_manager.starter.stop_spider(spider_name)
+        except KeyError:
+            await message.answer("Спайдер не найден.")
+
+    def _create_spider_keyboard(self) -> list[list[InlineKeyboardButton]]:
+        keyboard: list[list[InlineKeyboardButton]] = []
+        for status in self.spider_manager.status:
+            if status == SpiderStatusEnum.NOT_RUNNING:
+                keyboard.append(
+                    [
+                        InlineKeyboardButton(
+                            text="Запуск", callback_data=f"start:{status.name}"
+                        )
+                    ]
+                )
+            else:
+                keyboard.append(
+                    [
+                        InlineKeyboardButton(
+                            text="Остановка", callback_data=f"stop:{status.name}"
+                        )
+                    ]
+                )
+
+        return keyboard
+
+    @staticmethod
+    def _get_message(query: CommandCallback) -> Message:
+        if isinstance(query, CallbackQuery):
+            return query.message
+        return query
