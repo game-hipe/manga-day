@@ -101,8 +101,8 @@ async def start_admin(spider: SpiderManager, **config: Unpack[BaseBotConfig]) ->
         bot = await setup_admin(spider, **config)
         await bot.run()
     finally:
-        await bot.bot.session.close()
         if bot is not None:
+            await bot.bot.session.close()
             await bot.bot.session.close()
             logger.debug("Сессия закрыта")
 

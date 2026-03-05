@@ -4,6 +4,8 @@ import asyncio
 
 from typing import overload
 
+from bs4 import FeatureNotFound
+
 from loguru import logger
 
 from ._status import SpiderStatus, SpiderStatusEnum
@@ -112,12 +114,13 @@ class SpiderStarter:
                 spider.run(start_page=start_page)
             )
             await self.spiders[spider]
+        except FeatureNotFound:
+            await self._alert(
+                f"Невозможно загрузить парсер так-как движок для парсинга не загружен",
+                "error"
+            )
 
         except (KeyboardInterrupt, asyncio.CancelledError):
-            if task := self.spiders[spider]:
-                if not task.done():
-                    task.cancel()
-
             logger.warning(
                 f"Паук {self._get_spider_name(spider)}, был остановлен пользователем."
             )
@@ -132,13 +135,17 @@ class SpiderStarter:
             )
 
         finally:
+            if task := self.spiders[spider]:
+                if not task.done():
+                    task.cancel()
+
             logger.success(
                 f"Паук {self._get_spider_name(spider)}, закончил свою работу."
             )
             self.spiders[spider] = None
             await self._alert(
                 f"Паук {self._get_spider_name(spider)}, закончил свою работу.",
-                "success",
+                "info",
             )
 
     async def stop_spider(self, spider: str | BaseSpider | type[BaseSpider]) -> None:

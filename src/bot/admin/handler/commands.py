@@ -1,3 +1,5 @@
+import asyncio
+
 from typing import TypeAlias
 
 from aiogram import Router, F
@@ -29,6 +31,9 @@ class CommandsHandler:
         router (Router): Маршрутизатор aiogram для регистрации обработчиков сообщений.
         spider_manager (SpiderManager): Ссылка на менеджер парсинга.
     """
+
+    TIME_FOR_START = 1
+    """Время отведённое для старта паука"""
 
     def __init__(self, spider_manager: SpiderManager):
         """Инициализация обработчика команд.
@@ -167,7 +172,12 @@ class CommandsHandler:
         """
         try:
             _, spider_name = call.data.split(":", 1)
-            await self._start_spider(spider_name, call)
+            asyncio.create_task(self._start_spider(spider_name, call))
+            await asyncio.sleep(self.TIME_FOR_START)
+
+            await call.message.edit_reply_markup(
+                reply_markup = self._create_spider_keyboard()
+            )
         except ValueError:
             await call.message.answer(
                 "Неверный формат команды. Используйте: /start_spider [spider_name]"
@@ -181,7 +191,12 @@ class CommandsHandler:
         """
         try:
             _, spider_name = call.data.split(":", 1)
-            await self._stop_spider(spider_name, call)
+            asyncio.create_task(self._stop_spider(spider_name, call))
+            await asyncio.sleep(self.TIME_FOR_START)
+
+            await call.message.edit_reply_markup(
+                reply_markup = self._create_spider_keyboard()
+            )
         except ValueError:
             await call.message.answer(
                 "Неверный формат команды. Используйте: /stop_spider [spider_name]"
@@ -196,6 +211,9 @@ class CommandsHandler:
         """
         message = self._get_message(query)
         try:
+            if spider_name == "all":
+                await self.spider_manager.start_full_parsing()
+                return
             if (
                 self.spider_manager.get_spider_status(spider_name)
                 == SpiderStatusEnum.RUNNING
@@ -215,6 +233,9 @@ class CommandsHandler:
         """
         message = self._get_message(query)
         try:
+            if spider_name == "all":
+                await self.spider_manager.stop_all_spider()
+                return
             if (
                 self.spider_manager.get_spider_status(spider_name)
                 == SpiderStatusEnum.NOT_RUNNING
@@ -244,6 +265,22 @@ class CommandsHandler:
                         )
                     ]
                 )
+        
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    text="Начать полный парсинг", callback_data="start:all"
+                    )
+            ]
+        )
+
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    text = "Остановить полный парсинг", callback_data = "stop:all"
+                )
+            ]
+        )
 
         return keyboard
 
