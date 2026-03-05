@@ -116,8 +116,8 @@ class SpiderStarter:
             await self.spiders[spider]
         except FeatureNotFound:
             await self._alert(
-                f"Невозможно загрузить парсер так-как движок для парсинга не загружен",
-                "error"
+                "Невозможно загрузить парсер так-как движок для парсинга не загружен",
+                "error",
             )
 
         except (KeyboardInterrupt, asyncio.CancelledError):

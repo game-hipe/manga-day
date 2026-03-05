@@ -1,6 +1,4 @@
-import asyncio
-
-from typing import TypeAlias
+from typing import Any, Callable, TypeAlias, Awaitable
 
 from aiogram import Router, F
 from aiogram.types import (
@@ -31,9 +29,6 @@ class CommandsHandler:
         router (Router): Маршрутизатор aiogram для регистрации обработчиков сообщений.
         spider_manager (SpiderManager): Ссылка на менеджер парсинга.
     """
-
-    TIME_FOR_START = 1
-    """Время отведённое для старта паука"""
 
     def __init__(self, spider_manager: SpiderManager):
         """Инициализация обработчика команд.
@@ -170,18 +165,11 @@ class CommandsHandler:
         Args:
             call (CallbackQuery): Входящий запроса от пользователя.
         """
-        try:
-            _, spider_name = call.data.split(":", 1)
-            asyncio.create_task(self._start_spider(spider_name, call))
-            await asyncio.sleep(self.TIME_FOR_START)
-
-            await call.message.edit_reply_markup(
-                reply_markup = self._create_spider_keyboard()
-            )
-        except ValueError:
-            await call.message.answer(
-                "Неверный формат команды. Используйте: /start_spider [spider_name]"
-            )
+        await self._run_spider(
+            call,
+            self._start_spider,
+            "Неверный формат команды. Используйте: /start_spider [spider_name]",
+        )
 
     async def stop_spider_call(self, call: CallbackQuery):
         """Получает команду на остановку парсера
@@ -189,18 +177,11 @@ class CommandsHandler:
         Args:
             call (CallbackQuery): Входящий запроса от пользователя.
         """
-        try:
-            _, spider_name = call.data.split(":", 1)
-            asyncio.create_task(self._stop_spider(spider_name, call))
-            await asyncio.sleep(self.TIME_FOR_START)
-
-            await call.message.edit_reply_markup(
-                reply_markup = self._create_spider_keyboard()
-            )
-        except ValueError:
-            await call.message.answer(
-                "Неверный формат команды. Используйте: /stop_spider [spider_name]"
-            )
+        await self._run_spider(
+            call,
+            self._stop_spider,
+            "Неверный формат команды. Используйте: /stop_spider [spider_name]",
+        )
 
     async def _start_spider(self, spider_name: str, query: CommandCallback):
         """Начинает работу паука
@@ -253,7 +234,8 @@ class CommandsHandler:
                 keyboard.append(
                     [
                         InlineKeyboardButton(
-                            text=f"Запуск {status.name}", callback_data=f"start:{status.name}"
+                            text=f"Запуск {status.name}",
+                            callback_data=f"start:{status.name}",
                         )
                     ]
                 )
@@ -261,23 +243,24 @@ class CommandsHandler:
                 keyboard.append(
                     [
                         InlineKeyboardButton(
-                            text=f"Остановка {status.name}", callback_data=f"stop:{status.name}"
+                            text=f"Остановка {status.name}",
+                            callback_data=f"stop:{status.name}",
                         )
                     ]
                 )
-        
+
         keyboard.append(
             [
                 InlineKeyboardButton(
                     text="Начать полный парсинг", callback_data="start:all"
-                    )
+                )
             ]
         )
 
         keyboard.append(
             [
                 InlineKeyboardButton(
-                    text = "Остановить полный парсинг", callback_data = "stop:all"
+                    text="Остановить полный парсинг", callback_data="stop:all"
                 )
             ]
         )
@@ -289,3 +272,16 @@ class CommandsHandler:
         if isinstance(query, CallbackQuery):
             return query.message
         return query
+
+    async def _run_spider(
+        self,
+        call: CallbackQuery,
+        func: Callable[[str], Awaitable[Any]],
+        on_error: str,
+    ):
+        try:
+            _, spider_name = call.data.split(":", 1)
+            await func(spider_name, call)
+
+        except ValueError:
+            await call.message.answer(on_error)
