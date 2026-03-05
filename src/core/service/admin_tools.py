@@ -22,7 +22,9 @@ class AdminTools:
 
         self._last_count: int | None = None
 
-    async def get_count(self) -> AsyncIterable[int, None]: # TODO: Нужно это доделать, это пока прототип
+    async def get_count(
+        self,
+    ) -> AsyncIterable[int, None]:  # TODO: Нужно это доделать, это пока прототип
         """Получает количество манги в базе данных и возращает их в реальном времени.
 
         Returns:
