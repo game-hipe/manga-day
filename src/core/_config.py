@@ -120,6 +120,17 @@ def load_config():
         logger.warning(
             "Вы используете парсер 'html.parser', который может работать медленнее, чем 'lxml'. Рекомендуется установить 'lxml' для лучшей производительности."
         )
+    else:
+        try:
+            import lxml
+        except ImportError:
+            logger.error(
+                "Вы используете парсер 'lxml', который требует установки дополнительной библиотеки. Пожалуйста устоновите все зависимости из `requirements.txt` либо устоновите через `pip install lxml`" # noqa
+            )
+            config.parsing.features = "html.parser"
+            logger.warning(
+                "Используется парсер 'html.parser' вместо 'lxml'."
+            )
 
     try:
         os.mkdir(config.pdf.save_path)
