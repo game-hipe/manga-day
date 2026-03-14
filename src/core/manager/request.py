@@ -132,7 +132,7 @@ class RequestManager(BaseRequestManager[ClientSession]):
             return self.cache[f"{method}{url}"]
 
         async with self.semaphore:
-            logger.info(f"Попытка получить страницу (url={url}, method={method})")
+            logger.debug(f"Попытка получить страницу (url={url}, method={method})")
             for _ in range(self.max_retries):
                 proxy = self.get_proxy()
                 templates = {}
@@ -149,7 +149,7 @@ class RequestManager(BaseRequestManager[ClientSession]):
                     ) as response:
                         response.raise_for_status()
                         result = await getattr(response, type)()
-                        logger.info(
+                        logger.debug(
                             f"Удалось получить страницу (url={url}, method={method}, result_len={len(result)})"
                         )
                         self.cache[f"{method}{url}"] = result

@@ -46,18 +46,31 @@ async def main():
         pdf = PDFService(session, proxy=proxy)
 
         try:
-            await asyncio.gather(
-                start_admin(spider=spider),
-                start_api(manager=manager),
-                start_frontend(manager=manager, find=find, spider=spider),
-                start_user(
-                    manager=manager,
-                    alert=alert,
-                    pdf_service=pdf,
-                    save_path=config.pdf.save_path,
-                ),
-                scheduler.start(),
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(start_admin(spider=spider))
+                tg.create_task(start_api(manager=manager))
+                tg.create_task(
+                    start_frontend(manager=manager, find=find, spider=spider)
+                )
+                tg.create_task(
+                    start_user(
+                        manager=manager,
+                        alert=alert,
+                        pdf_service=pdf,
+                        save_path=config.pdf.save_path,
+                    )
+                )
+                tg.create_task(scheduler.start())
+
+        except* Exception as e:
+            logger.critical(
+                "Критическая ошибка в основном цикле программы", exc_info=True
             )
+            logger.critical(f"Детали: {e}")
+            for task in asyncio.all_tasks():
+                if task is not asyncio.current_task() and not task.done():
+                    task.cancel()
+
         finally:
             await engine.dispose()
 

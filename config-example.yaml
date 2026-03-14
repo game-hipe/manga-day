@@ -33,7 +33,7 @@ api:
 pdf:
   save_path: "var/pdf" # Путь сохранения PDF файлов
 parsing:
-  features: "html.parser"
+  features: "lxml"
   proxy:
     [
       "http://ip:port@login:password" # Прокси
