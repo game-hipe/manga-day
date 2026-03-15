@@ -73,7 +73,7 @@ class DataBaseConfig(BaseModel):
 
 class UpdateConfig(BaseModel):
     start_time: str = Field("7:00 AM")
-    zone: str = Field(default="Asia/Yakutsk")
+    zone: str = Field(default="Europe/Moscow")
 
 
 class BotConfig(BaseModel):
