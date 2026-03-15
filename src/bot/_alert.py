@@ -63,14 +63,14 @@ def alert_wraps(on_start: str, on_stop: str):
     def wrapper(func):
         @wraps(func)
         async def inner(self: HasAlertManager, *args, **kwargs):
+            logger.info(on_start)
             if self.alert:
-                logger.info(on_start)
                 await self.alert.alert(on_start, "info")
             try:
                 return await func(self, *args, **kwargs)
             finally:
+                logger.warning(on_stop)
                 if self.alert:
-                    logger.warning(on_stop)
                     await self.alert.alert(on_stop, "warning")
 
         return inner
