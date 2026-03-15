@@ -7,7 +7,6 @@ from loguru import logger
 
 from src.core import config
 from src.core.entities.schemas import ProxySchema
-from src.core.entities.models import Base
 from src.core.manager import MangaManager, SpiderManager, AlertManager
 
 from src.frontend import start_frontend
@@ -24,9 +23,6 @@ from src.core.service import FindService
 async def main():
     async with aiohttp.ClientSession() as session:
         engine = create_async_engine(config.database.db)
-
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
 
         alert = AlertManager()
         manager = MangaManager(engine)

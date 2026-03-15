@@ -122,15 +122,13 @@ def load_config():
         )
     else:
         try:
-            import lxml
+            import lxml  # noqa
         except ImportError:
             logger.error(
-                "Вы используете парсер 'lxml', который требует установки дополнительной библиотеки. Пожалуйста устоновите все зависимости из `requirements.txt` либо устоновите через `pip install lxml`" # noqa
+                "Вы используете парсер 'lxml', который требует установки дополнительной библиотеки. Пожалуйста устоновите все зависимости из `requirements.txt` либо устоновите через `pip install lxml`"  # noqa
             )
             config.parsing.features = "html.parser"
-            logger.warning(
-                "Используется парсер 'html.parser' вместо 'lxml'."
-            )
+            logger.warning("Используется парсер 'html.parser' вместо 'lxml'.")
 
     try:
         os.mkdir(config.pdf.save_path)

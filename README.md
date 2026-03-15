@@ -14,12 +14,15 @@ cd manga-day
 cp env.example .env
 cp config-example.yaml config.yaml
 
-nano config.yaml # Если имеются прокси вставтье данные, при отсутствии таковых, удалите поле proxy.
-nano .env
+nano config.yaml # Если имеются прокси вставтье данные, при отсутствии таковых, удалите поле proxy. 
+nano .env 
 
 docker-compose build --no-cache
 docker-compose up -d
 ```
+
+> [!WARNING]
+> Использование прямого python, для тестирование в остальных случаях рекомендуется использовать Docker
 
 ## 2 Способ через прямой python (python3.14.X+)
 ```bash
@@ -29,7 +32,11 @@ cp config-example.yaml config.yaml
 
 nano config.yaml # Если имеются прокси вставтье данные, при отсутствии таковых, удалите поле proxy.
 nano .env
+
 pip install -r requirements.txt
+
+alembic upgrade head # Если БД уже создана
+
 python main.py
 ```
 
