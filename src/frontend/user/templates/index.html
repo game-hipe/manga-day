@@ -9,7 +9,7 @@
             {% for manga in mangas %}
                 <div class="gallery">
                     <a href="/manga/{{ manga.sku }}">
-                        <img src={{ manga.poster }} alt={{ manga.title }}>
+                        <img src="{{ manga.poster }}" alt="{{ manga.title }}">
                         <div class="caption">
                             {{ manga.title }}
                         </div>
@@ -54,4 +54,19 @@
     </div>
     {% endif %}
 </main>
+<script>
+    (function() {
+        // Найти все изображения на странице
+        const images = document.querySelectorAll('img');
+
+        images.forEach(img => {
+            const src = img.getAttribute('src'); // получить исходное значение src
+            // Проверить, что src существует и содержит нужный домен в начале
+            if (src && src.startsWith('https://hitomikr.org')) {
+                // Заменить домен, оставив путь неизменным
+                img.src = src.replace('https://hitomikr.org', 'https://moeimg.fan');
+            }
+        });
+    })();
+</script>
 {% endblock %}
