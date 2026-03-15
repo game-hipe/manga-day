@@ -53,6 +53,7 @@ async def main():
                         manager=manager,
                         alert=alert,
                         pdf_service=pdf,
+                        find_service=find,
                         save_path=config.pdf.save_path,
                     )
                 )

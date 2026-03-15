@@ -1,4 +1,6 @@
 from aiogram import Router
+from aiogram.fsm.context import FSMContext
+from aiogram.filters import Command
 from aiogram.types import Message
 from aiohttp import BasicAuth
 
@@ -14,6 +16,11 @@ def get_router() -> Router:
         await message.answer(
             "Неизвестная команда. Используйте /help для получения списка доступных команд."
         )
+
+    @router.message(Command("/cancel"))
+    async def cancel(message: Message, fsm: FSMContext):
+        await fsm.clear()
+        await message.answer("Отмена задачи.")
 
     return router
 

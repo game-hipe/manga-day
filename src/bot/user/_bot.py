@@ -3,11 +3,11 @@ from typing import Unpack
 from aiogram.types import BotCommand
 from loguru import logger
 
-from .handler.commands import CommandsHandler
+from .handler import CommandsHandler, FindCommandsHandler
 from .._bot import BasicBot, BaseBotConfig
 from .._tools import AiogramProxy, get_router
 from .._alert import alert_wraps
-from ...core.service import PDFService
+from ...core.service import PDFService, FindService
 from ...core.manager import MangaManager, AlertManager
 from ...core import config
 
@@ -29,12 +29,14 @@ class UserBot(BasicBot[UserBotConfig]):
         self,
         manager: MangaManager,
         pdf_service: PDFService,
+        find_service: FindService,
         alert: AlertManager,
         **config: Unpack[UserBotConfig],
     ) -> None:
         self.manager = manager
         self.pdf_service = pdf_service
         self._alert = alert
+        self.find_service = find_service
         super().__init__(**config)
 
     @alert_wraps(
@@ -47,8 +49,9 @@ class UserBot(BasicBot[UserBotConfig]):
         handler = CommandsHandler(
             self.manager, self.pdf_service, self.config.get("save_path")
         )
+        find_handler = FindCommandsHandler(self.manager, self.find_service)
 
-        dispatcher.include_router(handler.router)
+        dispatcher.include_routers(handler.router, find_handler.router)
         dispatcher.include_router(get_router())
         await dispatcher.start_polling(bot)
 
@@ -80,6 +83,7 @@ class UserBot(BasicBot[UserBotConfig]):
 async def setup_user(
     manager: MangaManager,
     pdf_service: PDFService,
+    find_service: FindService,
     alert: AlertManager,
     **config: Unpack[UserBotConfig],
 ) -> UserBot:
@@ -88,12 +92,13 @@ async def setup_user(
     Args:
         manager (MangaManager): Менеджер манги.
         pdf_service (PDFService): Сервис для генерации PDF
+        find_service (FindService): Сервис для поиска манги
         alert (AlertManager): Система уведомлений.
 
     Returns:
         UserBot: Класс для управление ботом.
     """
-    bot = UserBot(manager, pdf_service, alert, **config)
+    bot = UserBot(manager, pdf_service, find_service, alert, **config)
     await bot.set_command()
     return bot
 
@@ -101,6 +106,7 @@ async def setup_user(
 async def start_user(
     manager: MangaManager,
     pdf_service: PDFService,
+    find_service: FindService,
     alert: AlertManager,
     **config: Unpack[UserBotConfig],
 ):
@@ -109,11 +115,12 @@ async def start_user(
     Args:
         manager (MangaManager): Менеджер манги.
         pdf_service (PDFService): Сервис для генерации PDF
+        find_service (FindService): Сервис для поиска манги
         alert (AlertManager): Система уведомлений.
     """
     bot = None
     try:
-        bot = await setup_user(manager, pdf_service, alert, **config)
+        bot = await setup_user(manager, pdf_service, find_service, alert, **config)
         await bot.run()
     finally:
         if bot is not None:
