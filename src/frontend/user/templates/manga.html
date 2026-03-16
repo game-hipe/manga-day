@@ -127,25 +127,26 @@ document.addEventListener('DOMContentLoaded', function() {
         // Используем data-src если есть, иначе обычный src
         const lazyImg = galleryImages[currentImageIndex];
         const imageSrc = lazyImg.getAttribute('data-src') || lazyImg.src;
-        
+
         modalContent.src = imageSrc;
         modalContent.alt = lazyImg.alt;
         counter.textContent = `${currentImageIndex + 1} / ${galleryImages.length}`;
         
         // Если было lazy-изображение, загружаем оригинал
         if (lazyImg.getAttribute('data-src')) {
-            lazyImg.src = imageSrc;
-            lazyImg.removeAttribute('data-src');
-            lazyImg.classList.remove('lazy');
+            console.log(lazyImg);
+            lazyImg.setAttribute("src", imageSrc);
+            lazyImg.setAttribute('class', 'eager');
+            lazyImg.setAttribute('lazy', 'eager');
         }
     }
-    
+
     // Закрытие модального окна
     function closeModal() {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
     }
-    
+
     // Переключение между изображениями
     function prevImage() {
         currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;

@@ -29,6 +29,7 @@ class PDFService:
 
     BASE_PATH: str = "."
     BASE_MAX_WORKER: int = 5
+    BASE_MAX_IMAGES: int = 100
 
     @overload
     def __init__(
@@ -70,7 +71,11 @@ class PDFService:
         """
         try:
             urls = await self._prepare_gallery(gallery)
-
+            if len(urls) > self.BASE_MAX_IMAGES:
+                logger.error(
+                    f"Слишком много изображений для конвертации в PDF. Максимум: {self.BASE_MAX_IMAGES}"
+                )
+                return
             image_bytes_list = await self._fetch_images(urls)
             if not image_bytes_list:
                 logger.warning("Не удалось скачать ни одно изображение.")

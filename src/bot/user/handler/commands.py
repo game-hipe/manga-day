@@ -94,6 +94,14 @@ class CommandsHandler:
                 )
                 return
 
+            if (
+                len(manga.gallery) > self.pdf.BASE_MAX_IMAGES
+            ):  # Добавлено ограничение, так-как бесмысленно генерировать то что невозможно будет отправить
+                await message.answer(
+                    f"Манга {manga.title} слишком большая, поэтому я не могу ее скачать..."
+                )
+                return
+
             path = await self.pdf.download(manga, self.save_path / manga.sku)
             if path is None:
                 await message.answer(f"Не удалось скачать мангу {manga.title} (ﾉД`)")
