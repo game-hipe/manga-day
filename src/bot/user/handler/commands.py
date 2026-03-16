@@ -2,9 +2,9 @@ import os
 
 from pathlib import Path
 
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.filters import Command, CommandObject
-from aiogram.types import Message, FSInputFile
+from aiogram.types import Message, FSInputFile, CallbackQuery
 
 from ....core.entities.schemas import OutputMangaSchema
 from ....core.service import PDFService
@@ -28,6 +28,7 @@ class CommandsHandler:
         self.router.message.register(self.start, Command("start"))
         self.router.message.register(self.help, Command("help"))
         self.router.message.register(self.download, Command("download"))
+        self.router.callback_query.register(self.call_download, F.data.startswith("pdf"))
 
     async def start(self, message: Message, command: CommandObject):
         if command.args:
@@ -49,6 +50,18 @@ class CommandsHandler:
     async def help(self, message: Message):
         await message.answer(HELP)
 
+    async def call_download(self, call: CallbackQuery):
+        _, sku = call.data.split(":", maxsplit=1)
+        manga = await self._get_manga(sku)
+        if manga is None:
+            await call.message.answer(f"Не найдена манга по запросу {sku} (ﾉД`)")
+            return
+
+        msg = await call.message.answer(
+            f"Манга {manga.title} Найдена! Пожалуйста подождите..."
+        )
+        await self.download_manga(manga, msg)
+
     async def download(self, message: Message):
         try:
             command, query = message.text.split()
@@ -68,7 +81,15 @@ class CommandsHandler:
                 "Пожалуйста введите данные в виде <code>/download [АРТИКУЛ или URL]</code>"
             )
 
-    async def _get_manga(self, query: str):
+    async def _get_manga(self, query: str) -> OutputMangaSchema | None:
+        """Получает мангу по SKU, или URL
+
+        Args:
+            query (str): URL или SKU
+
+        Returns:
+            OutputMangaSchema | None: Найденная манга из БД, иначе None
+        """
         if query.startswith("http://") or query.startswith("https://"):
             manga = await self.manager.get_manga_by_url(query)
         else:
@@ -77,6 +98,12 @@ class CommandsHandler:
         return manga
 
     async def download_manga(self, manga: OutputMangaSchema, message: Message):
+        """Скачивает мангу, и присылает пользователю
+
+        Args:
+            manga (OutputMangaSchema): Манга из БД
+            message (Message): Сообщение от пользователя
+        """
         file = None
         try:
             if manga.pdf_id:

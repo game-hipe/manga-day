@@ -2,12 +2,14 @@ from typing import TypedDict, Literal
 
 from aiogram import Router, F
 from aiogram.types import (
+    FSInputFile,
     InlineKeyboardMarkup,
     InputMediaPhoto,
     Message,
     InlineKeyboardButton,
     CallbackQuery,
 )
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -123,7 +125,15 @@ class FindCommandsHandler:
         text = self._create_text(mangas, count, query)
         keyboard = self._create_keyboard(mangas, count, page, query, name)
         if media:
-            await message.answer_media_group(media=media)
+            try:
+                await message.answer_media_group(media=media)
+            except TelegramBadRequest:
+                await message.answer_photo(
+                    FSInputFile(path=str("src/frontend/user/static/images/500.jpg")),
+                    caption=text,
+                    reply_markup=keyboard,
+                )
+                return
         else:
             await state.clear()
 
@@ -181,7 +191,7 @@ class FindCommandsHandler:
         keyboard = []
         items = []
         for indx, manga in enumerate(mangas, start=1):
-            items.append(InlineKeyboardButton(text=manga.title, url=str(manga.url)))
+            items.append(InlineKeyboardButton(text=manga.title, callback_data=f"show:{manga.sku}"))
 
             if indx % self.MANGA_ON_KEYBOARD == 0:
                 keyboard.append(items)

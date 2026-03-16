@@ -20,6 +20,12 @@ def build_base_response(app: FastAPI, templates: Jinja2Templates):
             "404.html", status_code=404, context={"request": request}
         )
 
+    @app.exception_handler(500)
+    async def server_error(request, exc):
+        return templates.TemplateResponse(
+            "500.html", status_code=500, context={"request": request}
+        )
+
 
 def setup_frontend(
     manager: MangaManager, find: FindService, spider: SpiderManager

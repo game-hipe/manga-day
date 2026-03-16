@@ -3,7 +3,7 @@ from typing import Unpack
 from aiogram.types import BotCommand
 from loguru import logger
 
-from .handler import CommandsHandler, FindCommandsHandler
+from .handler import CommandsHandler, FindCommandsHandler, GetMangaCommandHandler
 from .._bot import BasicBot, BaseBotConfig
 from .._tools import AiogramProxy, get_router
 from .._alert import alert_wraps
@@ -50,8 +50,10 @@ class UserBot(BasicBot[UserBotConfig]):
             self.manager, self.pdf_service, self.config.get("save_path")
         )
         find_handler = FindCommandsHandler(self.manager, self.find_service)
-
-        dispatcher.include_routers(handler.router, find_handler.router)
+        get_handler = GetMangaCommandHandler(self.manager)
+        dispatcher.include_routers(
+            handler.router, find_handler.router, get_handler.router
+        )
         dispatcher.include_router(get_router())
         await dispatcher.start_polling(bot)
 
