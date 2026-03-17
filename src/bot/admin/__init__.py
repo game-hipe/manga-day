@@ -3,6 +3,7 @@ from typing import Unpack
 from loguru import logger
 
 from .handler import CommandsHandler
+from .._tools import get_router
 from ...core.manager import SpiderManager
 from ._bot import AdminBotConfig, AdminBot
 
@@ -27,6 +28,7 @@ async def setup_admin(
     bot = AdminBot(spider, **config)
 
     bot.include_router(CommandsHandler(bot))
+    bot.include_router(get_router())
 
     await bot.set_command()
     return bot
