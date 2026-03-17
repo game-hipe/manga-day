@@ -5,7 +5,8 @@ from loguru import logger
 from ...core import service, manager
 from ._bot import UserBotConfig, UserBot
 from .handler import StartHandler, FindCommandsHandler, GetMangaCommandHandler
-from .._tools import get_router
+from .._tools import get_router, cancel_router
+
 __all__ = ["setup_user", "start_user", "UserBotConfig", "UserBot"]
 
 
@@ -32,7 +33,7 @@ async def setup_user(
     logger.debug("Бот инцилизирован")
     await bot.set_command()
     logger.debug("Команды установлены")
-
+    bot.include_router(cancel_router())
     bot.include_router(StartHandler(bot))
     bot.include_router(FindCommandsHandler(bot))
     bot.include_router(GetMangaCommandHandler(bot))

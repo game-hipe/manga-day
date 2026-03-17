@@ -221,6 +221,9 @@ class FindCommandsHandler(UserBaseHandler):
                 keyboard.append(items)
                 items = []
 
+        if items:
+            keyboard.append(items)
+
         keyboard.append(
             [
                 button

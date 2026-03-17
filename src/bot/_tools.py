@@ -7,6 +7,18 @@ from aiohttp import BasicAuth
 from ..core.entities.schemas import AiohttpProxy
 
 
+def cancel_router() -> Router:
+    """Роутер для отмены действия."""
+    router = Router()
+
+    @router.message(Command("cancel"))
+    async def cancel_handler(message: Message, state: FSMContext):
+        await state.clear()
+        await message.answer("Действие отменено.")
+
+    return router
+
+
 def get_router() -> Router:
     """Роутер для обработки неизвестных команд."""
     router = Router()
@@ -16,11 +28,6 @@ def get_router() -> Router:
         await message.answer(
             "Неизвестная команда. Используйте /help для получения списка доступных команд."
         )
-
-    @router.message(Command("/cancel"))
-    async def cancel(message: Message, fsm: FSMContext):
-        await fsm.clear()
-        await message.answer("Отмена задачи.")
 
     return router
 

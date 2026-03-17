@@ -63,10 +63,12 @@ async def main():
             logger.critical(
                 "Критическая ошибка в основном цикле программы", exc_info=True
             )
-            logger.critical(f"Детали: {e}")
+            logger.critical(f"Детали: {e}", exc_info=True)
             for task in asyncio.all_tasks():
                 if task is not asyncio.current_task() and not task.done():
                     task.cancel()
+
+            raise
 
         finally:
             await engine.dispose()

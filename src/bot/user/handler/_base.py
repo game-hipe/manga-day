@@ -1,3 +1,5 @@
+import asyncio
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from urllib.parse import urljoin
@@ -182,6 +184,7 @@ class UserBaseHandler(BaseHandler[UserBot]):
 
         text = self._build_manga_text(manga)
         sent_message: Message | None = None
+        task: asyncio.Task | None = None
 
         if manga.pdf_id:
             await message.answer_document(
@@ -190,12 +193,12 @@ class UserBaseHandler(BaseHandler[UserBot]):
             return
 
         try:
+            task = asyncio.create_task(self.show_upload_status(message))
             message = await message.answer(
                 self.build_success_message("Пожалуйста подождите...")
             )
 
             with TemporaryDirectory() as tmpdir:
-                await self.bot.bot.send_chat_action(message.chat.id, "upload_document")
                 pdf = await self.bot.pdf_service.download(
                     manga, Path(tmpdir) / f"{manga.sku}.pdf"
                 )
@@ -209,6 +212,7 @@ class UserBaseHandler(BaseHandler[UserBot]):
                 sent_message = await message.answer_document(
                     document=FSInputFile(path=pdf), caption=text, parse_mode="HTML"
                 )
+                task.cancel()
 
         finally:
             if sent_message is not None and sent_message.document:
@@ -219,6 +223,10 @@ class UserBaseHandler(BaseHandler[UserBot]):
                     await message.delete()
                 except TelegramBadRequest:
                     pass
+
+            if task:
+                if not task.done():
+                    task.cancel()
 
     async def get_manga(self, query: str) -> OutputMangaSchema | None:
         """Возращает мангу из БД
@@ -244,3 +252,18 @@ class UserBaseHandler(BaseHandler[UserBot]):
             Message: Сообщение от бота о том что манга не найдена
         """
         return await message.answer(self.build_error_message("Манга не найдено"))
+
+    async def show_upload_status(self, message: Message):
+        """Показывает статус загрузки PDF
+
+        Args:
+            message (Message): Сообщение от пользователя
+        """
+        try:
+            while True:
+                await self.bot.bot.send_chat_action(
+                    chat_id=message.chat.id, action="upload_document"
+                )
+                await asyncio.sleep(5)
+        except (asyncio.CancelledError, KeyboardInterrupt):
+            pass
