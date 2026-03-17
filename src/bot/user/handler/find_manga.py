@@ -1,6 +1,7 @@
 from typing import TypedDict, Literal
 
-from aiogram import Router, F
+from aiogram import F
+from aiogram.filters import Command
 from aiogram.types import (
     FSInputFile,
     InlineKeyboardMarkup,
@@ -10,14 +11,14 @@ from aiogram.types import (
     CallbackQuery,
 )
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from loguru import logger
 
 from ....core.entities.schemas import BaseManga
-from ....core.manager import MangaManager
-from ....core.service import FindService
 from .._text import FIND_MANGA, ALL_FINDED_MANGA
+
+from ._base import UserBaseHandler
 
 
 class FindMangaStates(StatesGroup):
@@ -36,94 +37,85 @@ class FindArguments(TypedDict):
     """Тип поиска ["author", "genre", "language", "query"]"""
 
 
-class FindCommandsHandler:
+class FindCommandsHandler(UserBaseHandler):
     BASE_FIND_COUNT = 9
     """Количество манги за раз, число выбрано для красоты при пагинации"""
 
     MANGA_ON_KEYBOARD = 3
     """Количество манги на клавиатуре"""
 
-    def __init__(self, manager: MangaManager, find: FindService):
-        self.manager = manager
-        self.find = find
-        self.router = Router()
-        self.register_handlers()
-
-    def register_handlers(self):
-        self.router.message.register(self.find_manga, Command("find"))
-        self.router.message.register(self.browsing, FindMangaStates.browsing, F.text)
-        self.router.callback_query.register(
-            self.call_browsing, FindMangaStates.browsing, F.data.startswith("page")
+    def connect(self):
+        self.message_register(self.find_manga, Command("find"))
+        self.message_register(self.browsing, FindMangaStates.browsing, F.text)
+        self.callback_register(
+            self.call_browsing, FindMangaStates.browsing, F.data.startswith("page:")
         )
 
     async def find_manga(self, messsage: Message, state: FSMContext) -> None:
+        """Ищет мангу отвечает за команду `/find`
+
+        Args:
+            messsage (Message): Сообщение Telegram
+            state (FSMContext): Контекст FSM
+        """
         await state.set_state(FindMangaStates.browsing)
         await state.set_data({"page": 1, "name": "query"})
+
         await messsage.answer("Введите запрос для поиска: ")
 
     async def browsing(self, message: Message, state: FSMContext) -> None:
-        await state.set_data({"query": message.text})
-        data: FindArguments = await state.get_data()
-        count, mangas = await self.find.get_pages_by_query(
-            data.get("query"), data.get("page", 1), self.BASE_FIND_COUNT
-        )
-        await self._show_manga(
-            message,
-            mangas=mangas,
-            count=count,
-            page=data.get("page", 1),
-            query=data.get("query"),
-            name=data.get("name"),
-            state=state,
-        )
+        """Указывает на то-что человек находится в поисковом состоянии
+
+        Args:
+            message (Message): Сообщение Telegram
+            state (FSMContext): Контекст FSM
+        """
+        await state.update_data({"query": message.text})
+
+        await self._show_manga(await state.get_data(), message, state)
 
     async def call_browsing(self, call: CallbackQuery, state: FSMContext) -> None:
-        _, name, query, page = call.data.split(":")
+        """Обрабоатывает нажатие на кнопку если в начале стоит `page:`
+
+        Args:
+            call (CallbackQuery): Что выдало нажатие на кнопку
+            state (FSMContext): Контекст FSM
+        """
+        try:
+            command, name, query, page = call.data.split(":")
+        except ValueError:
+            logger.error(f"Не удалось получить данные (data={call.data})")
+            await call.message.answer("Не удалось получить данные")
+            return
+
         await state.set_data(
             {
                 "name": name,
                 "page": int(page),
-                "query": int(query) if query.isdigit() else query,
+                "query": int(query) if name != "query" else query,
             }
         )
-        data: FindArguments = await state.get_data()
-        count, mangas = await self.find.get_pages_by_query(
-            data.get("query"), data.get("page", 1), self.BASE_FIND_COUNT
-        )
 
-        await self._show_manga(
-            call.message,
-            mangas=mangas,
-            count=count,
-            page=data.get("page", 1),
-            query=data.get("query"),
-            name=data.get("name"),
-            state=state,
-        )
+        await self._show_manga(await state.get_data(), call.message, state)
 
     async def _show_manga(
-        self,
-        message: Message,
-        mangas: list[BaseManga],
-        count: int,
-        page: int,
-        query: str | int,
-        name: str,
-        state: FSMContext,
+        self, data: FindArguments, message: Message, state: FSMContext
     ) -> None:
-        """Показывает пользователю результат запроса
+        """Показывает мангу из результатов FindArguments
 
         Args:
-            message (Message): Сообщение от пользователя
-            mangas (list[BaseManga]): Манги
-            count (int): Количество манг
-            page (int): Текущая страница
-            query (str | int): Запрос от пользователя
-            name (str): Тип запроса Поддерживает следующие параметры ["author", "genre", "language", "query"]
+            data (FindArguments): Аргументы поиска
+            message (Message): Сообщение Telegram
+            state (FSMContext): Контекст FSM
         """
-        media = self._create_media(mangas)
-        text = self._create_text(mangas, count, query)
-        keyboard = self._create_keyboard(mangas, count, page, query, name)
+        count, mangas = await self.bot.find_service.get_pages_by_query(
+            query=data["query"], page=data.get("page", 1), per_page=self.BASE_FIND_COUNT
+        )
+
+        media = self._build_find_media(mangas)
+        keyboard = self._build_find_keyboard(data, mangas, count)
+        text = self._build_find_text(data, mangas, count)
+
         if media:
             try:
                 await message.answer_media_group(media=media)
@@ -141,13 +133,36 @@ class FindCommandsHandler:
             text=text, reply_markup=keyboard, disable_web_page_preview=True
         )
 
-    def _create_keyboard(
-        self,
-        mangas: list[BaseManga],
-        count: int,
-        page: int,
-        query: str | int,
-        name: str,
+    def _build_find_text(
+        self, data: FindArguments, mangas: list[BaseManga], count: int
+    ) -> str:
+        """Создание текста для отправки
+
+        Args:
+            mangas (list[BaseManga]): Базовая манга нужны лишь поля url, title, poster
+            count (int): Количество найденой манги
+            query (str): Запрос
+
+        Returns:
+            str: Текст
+        """
+        return ALL_FINDED_MANGA.format(
+            count=count,
+            query=data["query"],
+            mangas="\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n".join(
+                FIND_MANGA.format(
+                    title=manga.title[:40] + "..."
+                    if manga.title[:40] != manga.title
+                    else "",
+                    url=str(manga.url),
+                )
+                for manga in mangas
+            )
+            or "Ничего не найдено по запросу!",
+        )
+
+    def _build_find_keyboard(
+        self, data: FindArguments, mangas: list[BaseManga], count: int
     ) -> InlineKeyboardMarkup:
         """
         Создаёт inline-клавиатуру для отображения результатов поиска с пагинацией.
@@ -190,8 +205,17 @@ class FindCommandsHandler:
         """
         keyboard = []
         items = []
+
+        name = data["name"]
+        query = data["query"]
+        page = data["page"]
+
         for indx, manga in enumerate(mangas, start=1):
-            items.append(InlineKeyboardButton(text=manga.title, callback_data=f"show:{manga.sku}"))
+            items.append(
+                InlineKeyboardButton(
+                    text=manga.title, callback_data=f"show:{manga.sku}"
+                )
+            )
 
             if indx % self.MANGA_ON_KEYBOARD == 0:
                 keyboard.append(items)
@@ -220,28 +244,7 @@ class FindCommandsHandler:
         )
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-    def _create_text(self, mangas: list[BaseManga], count: int, query: str) -> str:
-        """Создание текста для отправки
-
-        Args:
-            mangas (list[BaseManga]): Базовая манга нужны лишь поля url, title, poster
-            count (int): Количество найденой манги
-            query (str): Запрос
-
-        Returns:
-            str: Текст
-        """
-        return ALL_FINDED_MANGA.format(
-            count=count,
-            query=query,
-            mangas="\n".join(
-                FIND_MANGA.format(title=manga.title, url=str(manga.url))
-                for manga in mangas
-            )
-            or "Ничего не найдено по запросу!",
-        )
-
-    def _create_media(self, mangas: list[BaseManga]) -> list[InputMediaPhoto]:
+    def _build_find_media(self, mangas: list[BaseManga]) -> list[InputMediaPhoto]:
         """Создаёт изображение для отправки
 
         Args:

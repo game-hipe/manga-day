@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import TypedDict, Unpack, TypeVar, Generic
 
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.base import BaseStorage
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -12,6 +12,7 @@ from aiogram.types import BotCommand
 from loguru import logger
 
 from ._tools import AiogramProxy
+from ._handler import BaseHandler
 from ..core.manager import AlertManager
 
 
@@ -50,11 +51,24 @@ class BasicBot(ABC, Generic[_T]):
         Args:
             bot (Bot | None, optional): Экземпляр бота. По умолчанию берётся из self.bot.
         """
+        logger.debug("Установка команд бота.")
         bot = bot or self.bot
         if not self.commands:
+            logger.warning(f"Команды не настроены (Bot={self.__class__.__name__})")
             return
 
         await bot.set_my_commands(self.commands)
+
+    def include_router(self, router: BaseHandler | Router) -> None:
+        """Соеденяет роутер с диспетчером.
+
+        Args:
+            router (BaseHandler | Router): Роутер или хэндлер.
+        """
+        if isinstance(router, BaseHandler):
+            router = router.router
+
+        self.dispatcher.include_router(router)
 
     @property
     @abstractmethod

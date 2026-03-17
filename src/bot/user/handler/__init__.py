@@ -1,5 +1,5 @@
-from .commands import CommandsHandler
+from .commands import StartHandler
 from .find_manga import FindCommandsHandler
 from .get_manga import GetMangaCommandHandler
 
-__all__ = ["CommandsHandler", "FindCommandsHandler", "GetMangaCommandHandler"]
+__all__ = ["StartHandler", "FindCommandsHandler", "GetMangaCommandHandler"]

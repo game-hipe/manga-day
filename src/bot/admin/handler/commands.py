@@ -1,6 +1,6 @@
 from typing import Any, Callable, TypeAlias, Awaitable
 
-from aiogram import Router, F
+from aiogram import F
 from aiogram.types import (
     Message,
     CallbackQuery,
@@ -9,14 +9,14 @@ from aiogram.types import (
 )
 from aiogram.filters import Command
 
-from ....core.manager.spider import SpiderManager
+from ._base import AdminBaseHandler
 from ....core.manager.spider._status import SpiderStatusEnum
 from .._text import GREETING, HELP
 
 CommandCallback: TypeAlias = CallbackQuery | Message
 
 
-class CommandsHandler:
+class CommandsHandler(AdminBaseHandler):
     """Обработчик команд Telegram-бота для управления парсингом.
 
     Инициализирует маршрутизатор и регистрирует обработчики команд.
@@ -30,19 +30,7 @@ class CommandsHandler:
         spider_manager (SpiderManager): Ссылка на менеджер парсинга.
     """
 
-    def __init__(self, spider_manager: SpiderManager):
-        """Инициализация обработчика команд.
-
-        Создаёт экземпляр роутера и регистрирует обработчики команд.
-
-        Args:
-            spider_manager (SpiderManager): Менеджер для управления процессом парсинга.
-        """
-        self.router = Router()
-        self.spider_manager = spider_manager
-        self.register_handlers()
-
-    def register_handlers(self):
+    def connect(self):
         """Регистрирует все обработчики команд в роутере.
 
         Обрабатывает следующие команды:
@@ -54,20 +42,16 @@ class CommandsHandler:
         - /start_spider
         - /status
         """
-        self.router.message.register(self.start, Command("start"))
-        self.router.message.register(self.help, Command("help"))
-        self.router.message.register(self.start_parsing, Command("start_parsing"))
-        self.router.message.register(self.stop_parsing, Command("stop_parsing"))
-        self.router.message.register(self.stop_spider, Command("stop_spider"))
-        self.router.message.register(self.start_spider, Command("start_spider"))
-        self.router.message.register(self.status, Command("status"))
+        self.message_register(self.start, Command("start"))
+        self.message_register(self.help, Command("help"))
+        self.message_register(self.start_parsing, Command("start_parsing"))
+        self.message_register(self.stop_parsing, Command("stop_parsing"))
+        self.message_register(self.stop_spider, Command("stop_spider"))
+        self.message_register(self.start_spider, Command("start_spider"))
+        self.message_register(self.status, Command("status"))
 
-        self.router.callback_query.register(
-            self.start_spider_call, F.data.startswith("start:")
-        )
-        self.router.callback_query.register(
-            self.stop_spider_call, F.data.startswith("stop:")
-        )
+        self.callback_register(self.start_spider_call, F.data.startswith("start:"))
+        self.callback_register(self.stop_spider_call, F.data.startswith("stop:"))
 
     async def start(self, message: Message):
         """Отправляет приветственное сообщение при получении команды /start.
@@ -98,7 +82,7 @@ class CommandsHandler:
             Исключения могут быть выброшены методом start_parsing() SpiderManager.
         """
         await message.answer("Попытка начать парсинг")
-        await self.spider_manager.start_full_parsing()
+        await self.spider.start_full_parsing()
 
     async def stop_parsing(self, message: Message):
         """Останавливает процесс парсинга по команде /stop_parsing.
@@ -113,7 +97,7 @@ class CommandsHandler:
             Исключения могут быть выброшены методом stop_parsing() SpiderManager.
         """
         await message.answer("Попытка остановить парсинг")
-        await self.spider_manager.stop_all_spider()
+        await self.spider.stop_all_spider()
 
     async def stop_spider(self, message: Message):
         """Останавливает спайдера по команде /stop_spider [spider_name].
@@ -153,7 +137,7 @@ class CommandsHandler:
             AttributeError: Если spider_manager не имеет атрибута status.
         """
         keyboard = self._create_spider_keyboard()
-        text = "\n".join(str(x) for x in self.spider_manager.status)
+        text = "\n".join(str(x) for x in self.spider.status)
 
         await message.answer(
             text=text, reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -193,15 +177,12 @@ class CommandsHandler:
         message = self._get_message(query)
         try:
             if spider_name == "all":
-                await self.spider_manager.start_full_parsing()
+                await self.spider.start_full_parsing()
                 return
-            if (
-                self.spider_manager.get_spider_status(spider_name)
-                == SpiderStatusEnum.RUNNING
-            ):
+            if self.spider.get_spider_status(spider_name) == SpiderStatusEnum.RUNNING:
                 await message.answer(f"Спайдер {spider_name} уже запущен")
                 return
-            await self.spider_manager.starter.start_spider(spider_name)
+            await self.spider.starter.start_spider(spider_name)
         except KeyError:
             await message.answer("Спайдер не найден.")
 
@@ -215,21 +196,21 @@ class CommandsHandler:
         message = self._get_message(query)
         try:
             if spider_name == "all":
-                await self.spider_manager.stop_all_spider()
+                await self.spider.stop_all_spider()
                 return
             if (
-                self.spider_manager.get_spider_status(spider_name)
+                self.spider.get_spider_status(spider_name)
                 == SpiderStatusEnum.NOT_RUNNING
             ):
                 await message.answer(f"Спайдер {spider_name} уже остановлен")
                 return
-            await self.spider_manager.starter.stop_spider(spider_name)
+            await self.spider.starter.stop_spider(spider_name)
         except KeyError:
             await message.answer("Спайдер не найден.")
 
     def _create_spider_keyboard(self) -> list[list[InlineKeyboardButton]]:
         keyboard: list[list[InlineKeyboardButton]] = []
-        for status in self.spider_manager.status:
+        for status in self.spider.status:
             if status.status == SpiderStatusEnum.NOT_RUNNING:
                 keyboard.append(
                     [

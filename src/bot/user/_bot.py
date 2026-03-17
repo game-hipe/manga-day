@@ -1,11 +1,9 @@
 from typing import Unpack
 
 from aiogram.types import BotCommand
-from loguru import logger
 
-from .handler import CommandsHandler, FindCommandsHandler, GetMangaCommandHandler
 from .._bot import BasicBot, BaseBotConfig
-from .._tools import AiogramProxy, get_router
+from .._tools import AiogramProxy
 from .._alert import alert_wraps
 from ...core.service import PDFService, FindService
 from ...core.manager import MangaManager, AlertManager
@@ -44,18 +42,7 @@ class UserBot(BasicBot[UserBotConfig]):
         "Пользовательская часть бота прекратила свою работу",
     )
     async def run(self):
-        bot = self.bot
-        dispatcher = self.dispatcher
-        handler = CommandsHandler(
-            self.manager, self.pdf_service, self.config.get("save_path")
-        )
-        find_handler = FindCommandsHandler(self.manager, self.find_service)
-        get_handler = GetMangaCommandHandler(self.manager)
-        dispatcher.include_routers(
-            handler.router, find_handler.router, get_handler.router
-        )
-        dispatcher.include_router(get_router())
-        await dispatcher.start_polling(bot)
+        await self.dispatcher.start_polling(self.bot)
 
     @property
     def token(self):
@@ -79,55 +66,6 @@ class UserBot(BasicBot[UserBotConfig]):
             BotCommand(command="start", description="Запустить бота"),
             BotCommand(command="help", description="Помощь"),
             BotCommand(command="download", description="Скачивает мангу по SKU"),
+            BotCommand(command="find", description="Поиск манги по названию"),
+            BotCommand(command="get_manga", description="Получить мангу по SKU"),
         ]
-
-
-async def setup_user(
-    manager: MangaManager,
-    pdf_service: PDFService,
-    find_service: FindService,
-    alert: AlertManager,
-    **config: Unpack[UserBotConfig],
-) -> UserBot:
-    """Инициализация клиентской части бота
-
-    Args:
-        manager (MangaManager): Менеджер манги.
-        pdf_service (PDFService): Сервис для генерации PDF
-        find_service (FindService): Сервис для поиска манги
-        alert (AlertManager): Система уведомлений.
-
-    Returns:
-        UserBot: Класс для управление ботом.
-    """
-    bot = UserBot(manager, pdf_service, find_service, alert, **config)
-    await bot.set_command()
-    return bot
-
-
-async def start_user(
-    manager: MangaManager,
-    pdf_service: PDFService,
-    find_service: FindService,
-    alert: AlertManager,
-    **config: Unpack[UserBotConfig],
-):
-    """Инициализация клиентской части бота, и дальнейший её запуск
-
-    Args:
-        manager (MangaManager): Менеджер манги.
-        pdf_service (PDFService): Сервис для генерации PDF
-        find_service (FindService): Сервис для поиска манги
-        alert (AlertManager): Система уведомлений.
-    """
-    bot = None
-    try:
-        bot = await setup_user(manager, pdf_service, find_service, alert, **config)
-        await bot.run()
-    finally:
-        if bot is not None:
-            await bot.bot.session.close()
-            logger.debug("Сессия закрыта")
-
-        else:
-            logger.warning("Инициализация не удалась (bot='UserBot')")

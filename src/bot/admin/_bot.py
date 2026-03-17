@@ -1,12 +1,10 @@
 from typing import Unpack
 
 from aiogram.types import BotCommand
-from loguru import logger
 
-from .handler.commands import CommandsHandler
 from .middleware.admins import AdminMiddleware
 from .._bot import BasicBot, BaseBotConfig
-from .._tools import AiogramProxy, get_router
+from .._tools import AiogramProxy
 from .._alert import BotAlert, alert_wraps
 from ...core.manager import SpiderManager
 from ...core import config
@@ -34,10 +32,7 @@ class AdminBot(BasicBot[AdminBotConfig]):
     async def run(self):
         bot = self.bot
         dispatcher = self.dispatcher
-        handler = CommandsHandler(self.spider)
 
-        dispatcher.include_router(handler.router)
-        dispatcher.include_router(get_router())
         dispatcher.message.middleware(
             AdminMiddleware(self.config.get("admin_ids") or config.bot.admins)
         )
@@ -72,39 +67,3 @@ class AdminBot(BasicBot[AdminBotConfig]):
             ),
             BotCommand(command="status", description="Статус парсинга"),
         ]
-
-
-async def setup_admin(
-    spider: SpiderManager, **config: Unpack[BaseBotConfig]
-) -> AdminBot:
-    """Инициализация админки возвращает экземпляр класса AdminBot
-
-    Args:
-        spider (SpiderManager): Менеджер пауков.
-
-    Returns:
-        AdminBot: Админка бота.
-    """
-    bot = AdminBot(spider, **config)
-    await bot.set_command()
-    return bot
-
-
-async def start_admin(spider: SpiderManager, **config: Unpack[BaseBotConfig]) -> None:
-    """Инициализация админки, и дальнейший запуск.
-
-    Args:
-        spider (SpiderManager): Менеджер пауков.
-    """
-    bot = None
-    try:
-        bot = await setup_admin(spider, **config)
-        await bot.run()
-    finally:
-        if bot is not None:
-            await bot.bot.session.close()
-            await bot.bot.session.close()
-            logger.debug("Сессия закрыта")
-
-        else:
-            logger.warning("Инициализация не удалась (bot='UserBot')")

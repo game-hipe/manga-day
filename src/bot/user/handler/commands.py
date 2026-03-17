@@ -1,160 +1,92 @@
-import os
-
-from pathlib import Path
-
-from aiogram import Router, F
+from aiogram import F
 from aiogram.filters import Command, CommandObject
-from aiogram.types import Message, FSInputFile, CallbackQuery
+from aiogram.types import Message, CallbackQuery
+from loguru import logger
 
-from ....core.entities.schemas import OutputMangaSchema
-from ....core.service import PDFService
-from ....core.manager import MangaManager
-from .._text import GREETING, HELP, SHOW_MANGA
+from ._base import UserBaseHandler
+from .._text import GREETING, HELP
 
 
-class CommandsHandler:
-    BASE_SAVE_PATH: str = "var/pdf"
-
-    def __init__(
-        self, manager: MangaManager, pdf: PDFService, save_path: str | None = None
-    ):
-        self.pdf = pdf
-        self.manager = manager
-        self.save_path = Path(save_path or self.BASE_SAVE_PATH)
-        self.router = Router()
-        self.register_handlers()
-
-    def register_handlers(self):
-        self.router.message.register(self.start, Command("start"))
-        self.router.message.register(self.help, Command("help"))
-        self.router.message.register(self.download, Command("download"))
-        self.router.callback_query.register(self.call_download, F.data.startswith("pdf"))
+class StartHandler(UserBaseHandler):
+    def connect(self):
+        self.message_register(self.start, Command("start"))
+        self.message_register(self.help, Command("help"))
+        self.message_register(self.message_download, Command("download"))
+        self.callback_register(self.call_download, F.data.startswith("pdf"))
 
     async def start(self, message: Message, command: CommandObject):
+        """Обработчик команды `/start`,
+        если во время перехода на нашего бота будет аргумет, то мы считаем что это запрос на мангу
+
+        Args:
+            message (Message): Сообщение Telegram
+            command (CommandObject): Команда Telegram
+        """
         if command.args:
-            manga = await self._get_manga(command.args)
+            manga = await self.get_manga(command.args)
             if manga is None:
                 await message.answer(
-                    f"Не найдена манга по запросу {command.args} (ﾉД`)"
+                    self.build_error_message(
+                        f"Не найдена манга по запросу {command.args}"
+                    )
                 )
                 return
 
-            msg = await message.answer(
-                f"Манга {manga.title} Найдена! Пожалуйста подождите..."
-            )
-            await self.download_manga(manga, msg)
+            await self.send_pdf(message=message, manga=manga)
             return
 
         await message.answer(GREETING)
 
-    async def help(self, message: Message):
+    async def help(self, message: Message) -> None:
+        """Обработчик команды `/help`
+
+        Args:
+            message (Message): Сообщение Telegram
+        """
         await message.answer(HELP)
 
-    async def call_download(self, call: CallbackQuery):
-        _, sku = call.data.split(":", maxsplit=1)
-        manga = await self._get_manga(sku)
-        if manga is None:
-            await call.message.answer(f"Не найдена манга по запросу {sku} (ﾉД`)")
-            return
+    async def message_download(self, message: Message) -> None:
+        """Обработчик команды /download
 
-        msg = await call.message.answer(
-            f"Манга {manga.title} Найдена! Пожалуйста подождите..."
-        )
-        await self.download_manga(manga, msg)
-
-    async def download(self, message: Message):
+        Args:
+            message (Message): Сообщение Telegram
+        """
         try:
-            command, query = message.text.split()
-            manga = await self._get_manga(query)
-
-            if manga is None:
-                await message.answer(f"Не найдена манга по запросу {query} (ﾉД`)")
-                return
-
-            msg = await message.answer(
-                f"Манга {manga.title} Найдена! Пожалуйста подождите..."
-            )
-            await self.download_manga(manga, msg)
-
+            command, query = message.text.split(maxsplit=1)
         except ValueError:
             await message.answer(
                 "Пожалуйста введите данные в виде <code>/download [АРТИКУЛ или URL]</code>"
             )
+            return
 
-    async def _get_manga(self, query: str) -> OutputMangaSchema | None:
-        """Получает мангу по SKU, или URL
+        await self._send_pdf(message, query)
 
-        Args:
-            query (str): URL или SKU
-
-        Returns:
-            OutputMangaSchema | None: Найденная манга из БД, иначе None
-        """
-        if query.startswith("http://") or query.startswith("https://"):
-            manga = await self.manager.get_manga_by_url(query)
-        else:
-            manga = await self.manager.get_manga_by_sku(query)
-
-        return manga
-
-    async def download_manga(self, manga: OutputMangaSchema, message: Message):
-        """Скачивает мангу, и присылает пользователю
+    async def call_download(self, call: CallbackQuery) -> None:
+        """Обработчик команды если CallbackQuery.data имеет начало `pdf:`
 
         Args:
-            manga (OutputMangaSchema): Манга из БД
-            message (Message): Сообщение от пользователя
+            call (CallbackQuery): CallbackQuery Telegram
         """
-        file = None
         try:
-            if manga.pdf_id:
-                await message.answer_document(
-                    manga.pdf_id,
-                    caption=SHOW_MANGA.format(
-                        title=manga.title,
-                        genres=", ".join(x.name for x in manga.genres) or "Отсутствует",
-                        author=manga.author.name if manga.author else "Неизвестно",
-                        language=manga.language.name
-                        if manga.language
-                        else "Неизвестно",
-                        sku=manga.sku,
-                    ),
-                )
-                return
-
-            if (
-                len(manga.gallery) > self.pdf.BASE_MAX_IMAGES
-            ):  # Добавлено ограничение, так-как бесмысленно генерировать то что невозможно будет отправить
-                await message.answer(
-                    f"Манга {manga.title} слишком большая, поэтому я не могу ее скачать..."
-                )
-                return
-
-            path = await self.pdf.download(manga, self.save_path / manga.sku)
-            if path is None:
-                await message.answer(f"Не удалось скачать мангу {manga.title} (ﾉД`)")
-                return
-
-            file = FSInputFile(path)
-            sent_message = await message.answer_document(
-                file,
-                caption=SHOW_MANGA.format(
-                    title=manga.title,
-                    genres=", ".join(x.name for x in manga.genres) or "Отсутствует",
-                    author=manga.author.name if manga.author else "Неизвестно",
-                    language=manga.language.name if manga.language else "Неизвестно",
-                    sku=manga.sku,
-                ),
+            command, sku = call.data.split(":", maxsplit=1)
+        except ValueError:
+            logger.error(f"Не удалось получить sku (data={call.data})")
+            await call.message.answer(
+                self.build_error_message("Не удалось получить SKU манги")
             )
 
-            if sent_message.document:
-                file_id = sent_message.document.file_id
+        await self._send_pdf(call.message, sku)
 
-            await self.manager.add_pdf(file_id, manga.id)
-        except Exception as e:
-            await message.answer(
-                f"Произошла ошибка при загрузке манги {manga.title} ({e})"
-            )
-        finally:
-            await message.delete()
-            if file:
-                os.remove(file.path)
+    async def _send_pdf(self, message: Message, query: str) -> None:
+        """Отправка PDF
+
+        Args:
+            message (Message): Сообщение Telegram
+            query (str): Артикул или URL
+        """
+        manga = await self.get_manga(query=query)
+        if manga is None:
+            await self.manga_not_found(message)
+            return
+
+        await self.send_pdf(message=message, manga=manga, delete_message=True)
