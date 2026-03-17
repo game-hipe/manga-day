@@ -151,9 +151,8 @@ class FindCommandsHandler(UserBaseHandler):
             query=data["query"],
             mangas="\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n".join(
                 FIND_MANGA.format(
-                    title=manga.title[:40] + "..."
-                    if manga.title[:40] != manga.title
-                    else "",
+                    title=manga.title[:40]
+                    + ("..." if manga.title[:40] != manga.title else ""),
                     url=str(manga.url),
                 )
                 for manga in mangas
