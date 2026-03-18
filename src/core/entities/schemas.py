@@ -179,3 +179,13 @@ class AiohttpProxy(ProxySchema):
             if self.login
             else None,
         }
+
+
+class MangaFindResultSchema(BaseModel):
+    """Схема для хранения результатов поиска манги."""
+
+    query: int | str
+    succsess: bool = Field(False)
+    total: int = Field(0)
+
+    response: list[ApiOutputManga] = Field(default_factory=list)

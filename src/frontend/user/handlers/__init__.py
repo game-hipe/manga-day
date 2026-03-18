@@ -6,7 +6,6 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 
-from ....core.manager.manga import MangaManager
 from ....core.service.manga import FindService
 from ....core import config
 
@@ -17,14 +16,12 @@ USER_FILES = Path(os.path.abspath(__file__)).parent.parent
 class UserHandler:
     def __init__(
         self,
-        manga_manager: MangaManager,
         templates: Jinja2Templates,
         find: FindService,
         static: Path | str | None = None,
     ):
         self._router = APIRouter(tags=["user"])
         self.find_engine = find
-        self.manga_manager = manga_manager
         self.templates = templates
         self.static = Path(static) or USER_FILES / "static"
         self._setup_routes()
@@ -95,7 +92,7 @@ class UserHandler:
         )
 
     async def get_pages(self, *, page: int = 1, request: Request) -> None:
-        pages, result = await self.manga_manager.get_manga_pages(page)
+        pages, result = await self.find_engine.get_manga_pages(page)
         if not result:
             return self.templates.TemplateResponse(
                 "404.html", status_code=404, context={"request": request}
@@ -112,7 +109,7 @@ class UserHandler:
         )
 
     async def get_manga(self, *, manga_sku: str, request: Request) -> None:
-        manga = await self.manga_manager.get_manga_by_sku(sku=manga_sku)
+        manga = await self.find_engine.manager.get_manga_by_sku(sku=manga_sku)
 
         if manga is None:
             return self.templates.TemplateResponse(

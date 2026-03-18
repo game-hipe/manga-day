@@ -1,8 +1,6 @@
-import asyncio
-import math
 from typing import overload
 
-from sqlalchemy import func, desc
+from sqlalchemy import func
 
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload, joinedload
@@ -226,60 +224,6 @@ class MangaManager:
                 id=manga.id,
                 pdf_id=manga.generated_pdf.id_file if manga.generated_pdf else None,
             )
-
-    async def get_manga_pages(
-        self, page: int, per_page: int | None = None
-    ) -> tuple[int, list[BaseManga]]:
-        """
-        Получает список манги для указанной страницы.
-
-        Args:
-            page (int): Номер страницы (начинается с 1).
-            per_page (int | None): Количество манги на странице. По умолчанию — BASE_PER_PAGE.
-
-        Raises:
-            ValueError: Если номер страницы меньше 1.
-            ValueError: Если количество манги на странице меньше 1.
-
-        Returns:
-            list[BaseManga]: Список манги без детальной информации.
-        """
-        per_page = per_page if per_page is not None else self.BASE_PER_PAGE
-
-        if page < 1:
-            logger.error(f"Неверный номер страницы (page={page})")
-            raise ValueError("Неверный номер страницы")
-
-        if per_page < 1:
-            logger.error(f"Неверное количество манги на странице (per_page={per_page})")
-            raise ValueError("Неверное количество манги на странице")
-
-        async with self.Session() as session:
-
-            async def get_page():
-                async with self.Session() as session_page:
-                    if result := await session_page.scalars(
-                        select(Manga)
-                        .offset((page - 1) * (per_page))
-                        .limit(per_page)
-                        .order_by(desc(Manga.id))
-                    ):
-                        return [
-                            BaseManga(
-                                title=manga.title, poster=manga.poster, url=manga.url
-                            )
-                            for manga in result
-                        ]
-
-                    logger.warning(f"Манга не найдена (page={page})")
-                    return []
-
-            total, r = await asyncio.gather(
-                session.scalar(select(func.count()).select_from(Manga)),
-                get_page(),
-            )
-
-            return math.ceil(total / per_page), r
 
     async def add_pdf(self, file_id: int, manga_id: int) -> None:
         """Добавляет связь PDF для манги
