@@ -35,7 +35,7 @@ def setup_frontend(
     shared_templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
     app.include_router(setup_admin(manager, spider))
-    app.include_router(setup_user(manager, find))
+    app.include_router(setup_user(find))
 
     build_base_response(app, shared_templates)
 

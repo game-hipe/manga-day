@@ -108,13 +108,13 @@ class FindCommandsHandler(UserBaseHandler):
             message (Message): Сообщение Telegram
             state (FSMContext): Контекст FSM
         """
-        count, mangas = await self.bot.find_service.get_pages_by_query(
+        mangas = await self.bot.find_service.get_pages_by_query(
             query=data["query"], page=data.get("page", 1), per_page=self.BASE_FIND_COUNT
         )
 
-        media = self._build_find_media(mangas)
-        keyboard = self._build_find_keyboard(data, mangas, count)
-        text = self._build_find_text(data, mangas, count)
+        media = self._build_find_media(mangas.response)
+        keyboard = self._build_find_keyboard(data, mangas.response, mangas.page)
+        text = self._build_find_text(data, mangas, mangas.page)
 
         if media:
             try:

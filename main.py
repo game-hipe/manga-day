@@ -11,7 +11,6 @@ from src.core.manager import MangaManager, SpiderManager, AlertManager
 
 from src.frontend import start_frontend
 from src.api import start_api
-from src.bot import start_admin
 from src.bot import start_user
 
 from src.core import SpiderScheduler
@@ -43,8 +42,8 @@ async def main():
 
         try:
             async with asyncio.TaskGroup() as tg:
-                tg.create_task(start_admin(spider=spider))
-                tg.create_task(start_api(manager=manager))
+                # tg.create_task(start_admin(spider=spider))
+                tg.create_task(start_api(service=find))
                 tg.create_task(
                     start_frontend(manager=manager, find=find, spider=spider)
                 )

@@ -184,8 +184,20 @@ class AiohttpProxy(ProxySchema):
 class MangaFindResultSchema(BaseModel):
     """Схема для хранения результатов поиска манги."""
 
-    query: int | str
-    succsess: bool = Field(False)
-    total: int = Field(0)
+    query: str
+    """Запрос, по которому был получен результат."""
 
-    response: list[ApiOutputManga] = Field(default_factory=list)
+    succsess: bool = Field(False)
+    """Флаг успешности поиска."""
+
+    total: int = Field(0)
+    """Общее количество результатов."""
+
+    page: int = Field(0)
+    """Найденное количество страниц"""
+
+    response: list[BaseManga] = Field(default_factory=list)
+    """Список найденных манг."""
+
+    page_now: int = Field(0)
+    """Текущая страница поиска"""

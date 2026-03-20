@@ -20,6 +20,7 @@ from ....core.entities.schemas import OutputMangaSchema
 from ..._handler import BaseHandler
 from .._bot import UserBot
 from .._text import SHOW_MANGA
+from ....core._exception import CantDownloadImage
 
 
 def send_on_error(on_error: str):
@@ -199,9 +200,18 @@ class UserBaseHandler(BaseHandler[UserBot]):
             )
 
             with TemporaryDirectory() as tmpdir:
-                pdf = await self.bot.pdf_service.download(
-                    manga, Path(tmpdir) / f"{manga.sku}.pdf"
-                )
+                try:
+                    pdf = await self.bot.pdf_service.download(
+                        manga, Path(tmpdir) / f"{manga.sku}.pdf"
+                    )
+                except CantDownloadImage:
+                    await message.answer_photo(
+                        photo=FSInputFile("src/frontend/user/static/images/500.jpg"),
+                        caption=self.build_error_message(
+                            "Не удалось скачать одно из изображений."
+                        ),
+                    )
+                    return
 
                 if pdf is None:
                     await message.answer(

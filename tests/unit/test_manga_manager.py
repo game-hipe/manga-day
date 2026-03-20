@@ -9,7 +9,7 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from src.core.manager.manga import MangaManager
-from src.core.entities.schemas import MangaSchema, BaseManga
+from src.core.entities.schemas import MangaSchema
 from src.core.entities.models import Manga
 
 
@@ -213,36 +213,3 @@ class TestMangaManager:
         await database.add_manga(manga_data)
         total_after = await database.get_total()
         assert total_after == total_before + 1
-
-    # --- Тесты пагинации ---
-
-    @pytest.mark.asyncio
-    async def test_get_manga_pages(self, database, manga_data):
-        """Тест пагинации манги"""
-        # Добавим несколько манг
-        for i in range(1, 5):
-            md = manga_data.model_copy(
-                update={
-                    "title": f"Test Manga {i}",
-                    "sku": f"manga_00{i}",
-                    "url": f"https://example.com/manga/{i}",
-                }
-            )
-            await database.add_manga(md)
-
-        pages, mangas = await database.get_manga_pages(page=1, per_page=2)
-        assert pages == 2  # всего 4 записи, по 2 на странице → 2 страницы
-        assert len(mangas) == 2
-        assert all(isinstance(m, BaseManga) for m in mangas)
-
-    @pytest.mark.asyncio
-    async def test_get_manga_pages_invalid_page(self, database):
-        """Тест ошибки при неверном номере страницы"""
-        with pytest.raises(ValueError, match="Неверный номер страницы"):
-            await database.get_manga_pages(page=0)
-
-    @pytest.mark.asyncio
-    async def test_get_manga_pages_invalid_per_page(self, database):
-        """Тест ошибки при неверном per_page"""
-        with pytest.raises(ValueError, match="Неверное количество манги на странице"):
-            await database.get_manga_pages(page=1, per_page=0)

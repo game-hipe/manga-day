@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from src.core.manager.manga import MangaManager
 from src.core.service.manga import FindService
 from src.core.entities.models import Manga
-from src.core.entities.schemas import MangaSchema
+from src.core.entities.schemas import MangaSchema, BaseManga
 
 
 db_path = "test_templates/test-service-database.db"
@@ -59,6 +59,22 @@ class TestService:
     def service(self, database):
         return FindService(database)
 
+    @pytest.fixture
+    def manga_data(self):
+        return MangaSchema(
+            title="Test Manga",
+            poster="https://example.com/poster.jpg",
+            url="https://example.com/manga/1",
+            sku="manga_001",
+            genres=["ahegao", "simple sex"],
+            author="Test Author",
+            language="English",
+            gallery=[
+                "https://example.com/gallery/1.jpg",
+                "https://example.com/gallery/2.jpg",
+            ],
+        )
+
     @pytest.mark.asyncio
     async def test_add(self, database, mangas):
         for manga in mangas:
@@ -71,8 +87,8 @@ class TestService:
             1,  # Page
         )
 
-        assert len(mangas[1]) == 6
-        assert mangas[0] == 1
+        assert len(mangas.response) == 6
+        assert mangas.page == 1
 
     @pytest.mark.asyncio
     async def test_find_genre(self, service):
@@ -81,8 +97,8 @@ class TestService:
             1,  # PAGE
         )
 
-        assert len(mangas[1]) == 30
-        assert mangas[0] == 4
+        assert len(mangas.response) == 30
+        assert mangas.page == 4
 
     @pytest.mark.asyncio
     async def test_find_author(self, service):
@@ -91,8 +107,8 @@ class TestService:
             1,  # PAGE
         )
 
-        assert len(mangas[1]) == 1
-        assert mangas[0] == 1
+        assert len(mangas.response) == 1
+        assert mangas.page == 1
 
     @pytest.mark.asyncio
     async def test_find_language(self, service):
@@ -101,8 +117,8 @@ class TestService:
             1,  # PAGE
         )
 
-        assert len(mangas[1]) == 30
-        assert mangas[0] == 4
+        assert len(mangas.response) == 30
+        assert mangas.page == 4
 
     @pytest.mark.asyncio
     async def test_check_error(self, service):
@@ -124,3 +140,34 @@ class TestService:
                 1,  # PAGE
                 -1,
             )
+
+    @pytest.mark.asyncio
+    async def test_get_manga_pages(self, service, manga_data):
+        """Тест пагинации манги"""
+        # Добавим несколько манг
+        for i in range(1, 5):
+            md = manga_data.model_copy(
+                update={
+                    "title": f"Test Manga {i}",
+                    "sku": f"manga_00{i}",
+                    "url": f"https://example.com/manga/{i}",
+                }
+            )
+            await service.manager.add_manga(md)
+
+        mangas = await service.get_pages(page=1, per_page=2)
+        assert mangas.page == 52
+        assert len(mangas.response) == 2
+        assert all(isinstance(m, BaseManga) for m in mangas.response)
+
+    @pytest.mark.asyncio
+    async def test_get_manga_pages_invalid_page(self, service):
+        """Тест ошибки при неверном номере страницы"""
+        with pytest.raises(ValueError, match="Неверное число"):
+            await service.get_pages(page=0)
+
+    @pytest.mark.asyncio
+    async def test_get_manga_pages_invalid_per_page(self, service):
+        """Тест ошибки при неверном per_page"""
+        with pytest.raises(ValueError, match="Неверное число"):
+            await service.get_pages(page=1, per_page=0)

@@ -1,27 +1,25 @@
-from typing import Awaitable
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
-from ...core.manager.manga import MangaManager
+from ...core.service import FindService
 from ...core.entities.schemas import (
-    BaseManga,
     ApiOutputManga,
     OutputMangaSchema,
     MangaSchema,
+    MangaFindResultSchema,
 )
-from .._response import BaseResponse, CountResponse
 
 
 class Endpoints:
     """Эндпоинты для API манги."""
 
-    def __init__(self, manga_manager: MangaManager):
+    def __init__(self, service: FindService):
         """Инициализация Endpoints
 
         Args:
-            manga_manager (MangaManager): Менеджер манги.
+            service (FindService): Сервис для работы с мангой.
         """
-        self.manga_manager = manga_manager
+        self.service = service
         self._router = APIRouter(prefix="/api/v1", tags=["api"])
 
         self._setup_routes()
@@ -34,8 +32,35 @@ class Endpoints:
             "/pages/{page}",
             self.get_pages,
             methods=["GET"],
-            response_model=CountResponse[list[BaseManga]],
+            response_model=MangaFindResultSchema,
             summary="Получить список манги по страницам",
+            tags=["manga"],
+        )
+
+        self._router.add_api_route(
+            "/pages/genre/{genre_id}",
+            self.get_pages_by_genre,
+            methods=["GET"],
+            response_model=MangaFindResultSchema,
+            summary="Получить список манги по жанру",
+            tags=["manga"],
+        )
+
+        self._router.add_api_route(
+            "/pages/author/{author_id}",
+            self.get_pages_by_author,
+            methods=["GET"],
+            response_model=MangaFindResultSchema,
+            summary="Получить список манги по автору",
+            tags=["manga"],
+        )
+
+        self._router.add_api_route(
+            "/pages/query/{query}",
+            self.get_pages_by_query,
+            methods=["GET"],
+            response_model=MangaFindResultSchema,
+            summary="Получить список манги по запросу",
             tags=["manga"],
         )
 
@@ -43,7 +68,7 @@ class Endpoints:
             "/manga/sku/{sku}",
             self.get_manga_by_sku,
             methods=["GET"],
-            response_model=BaseResponse[ApiOutputManga | None],
+            response_model=ApiOutputManga,
             summary="Получить мангу по SKU",
             tags=["manga"],
         )
@@ -52,7 +77,7 @@ class Endpoints:
             "/manga/url/{url}",
             self.get_manga_by_url,
             methods=["GET"],
-            response_model=BaseResponse[ApiOutputManga | None],
+            response_model=ApiOutputManga,
             summary="Получить мангу по URL",
             tags=["manga"],
         )
@@ -61,7 +86,7 @@ class Endpoints:
             "/manga/{id}",
             self.get_manga,
             methods=["GET"],
-            response_model=BaseResponse[ApiOutputManga | None],
+            response_model=ApiOutputManga,
             summary="Получить мангу по внутреннему ID в БД",
             tags=["manga"],
         )
@@ -70,35 +95,67 @@ class Endpoints:
             "/manga/add",
             self.add_manga,
             methods=["POST"],
-            response_model=BaseResponse[OutputMangaSchema | None],
+            response_model=ApiOutputManga,
             summary="Добавить мангу",
             tags=["manga"],
         )
 
-    async def get_pages(self, page: int) -> CountResponse[list[BaseManga]]:
+    async def get_pages(self, page: int) -> MangaFindResultSchema:
         """Получить страницу.
 
         Args:
             page (int): Номер страницы
 
         Returns:
-            CountResponse[list[BaseManga] | None]: Результат данных, с количеством страниц
+            MangaFindResultSchema: Результат данных, с количеством страниц
         """
-        total, result = await self.manga_manager.get_manga_pages(page)
-        try:
-            return CountResponse(
-                status=True,
-                message=f"Удалось достать {len(result)} манги",
-                result=result,
-                count=total,
-            )
+        return await self.service.get_pages(page)
 
-        except Exception as e:
-            return CountResponse(
-                status=False, message=f"Не удалось достать манги: {e}", count=0
-            )
+    async def get_pages_by_genre(self, genre_id: int) -> MangaFindResultSchema:
+        """Ищет мангу по запросу
 
-    async def get_manga_by_sku(self, sku: str) -> BaseResponse[ApiOutputManga | None]:
+        Args:
+            genre_id (int): ID жанра
+
+        Returns:
+            MangaFindResultSchema: Результат поиска
+        """
+        return await self.service.get_pages_by_genre(genre_id)
+
+    async def get_pages_by_author(self, author_id: int) -> MangaFindResultSchema:
+        """Ищет мангу по запросу
+
+        Args:
+            author_id (int): ID автора
+
+        Returns:
+            MangaFindResultSchema: Результат поиска
+        """
+        return await self.service.get_pages_by_author(author_id)
+
+    async def get_pages_by_language(self, language_id: int) -> MangaFindResultSchema:
+        """Ищет мангу по запросу
+
+        Args:
+            language_id (int): ID языка
+
+        Returns:
+            MangaFindResultSchema: Результат поиска
+        """
+        return await self.service.get_pages_by_language(language_id)
+
+    async def get_pages_by_query(self, query: str) -> MangaFindResultSchema:
+        """Ищет мангу по запросу
+
+        Args:
+            query (str): Запрос
+
+        Returns:
+            MangaFindResultSchema: Результат поиска
+        """
+        return await self.service.get_pages_by_query(query)
+
+    async def get_manga_by_sku(self, sku: str) -> ApiOutputManga:
         """Получить страницу.
 
         Args:
@@ -106,68 +163,78 @@ class Endpoints:
             sku (str):
 
         Returns:
-            ApiOutputManga | None: Данные манги или None, если не найдена.
+            ApiOutputManga | None: Данные манги.
         """
-        return await self._get_manga(self.manga_manager.get_manga_by_sku, sku)
+        manga = await self.service.manager.get_manga_by_sku(sku)
+        if manga is None:
+            raise HTTPException(status_code=404, detail="Манга не найдена")
 
-    async def get_manga_by_url(self, url: str) -> BaseResponse[ApiOutputManga | None]:
+        return self._build_manga(manga)
+
+    async def get_manga_by_url(self, url: str) -> ApiOutputManga:
         """Получить страницу.
 
         Args:
             url (str): URL манги
 
         Returns:
-            ApiOutputManga | None: Данные манги или None, если не найдена.
+            ApiOutputManga: Данные манги.
         """
-        return await self._get_manga(self.manga_manager.get_manga_by_url, url)
+        manga = await self.service.manager.get_manga_by_url(url)
+        if manga is None:
+            raise HTTPException(status_code=404, detail="Манга не найдена")
 
-    async def get_manga(self, id: int) -> BaseResponse[ApiOutputManga | None]:
+        return self._build_manga(manga)
+
+    async def get_manga(self, id: int) -> ApiOutputManga:
         """Получить страницу.
 
         Args:
             id (int): ID манги
 
         Returns:
-            ApiOutputManga | None: Данные манги или None, если не найдена.
+            ApiOutputManga | None: Данные манги.
         """
-        return await self._get_manga(self.manga_manager.get_manga, id)
+        manga = await self.service.manager.get_manga(id)
+        if manga is None:
+            raise HTTPException(status_code=404, detail="Манга не найдена")
+        print(manga)
+        return self._build_manga(manga)
 
-    async def add_manga(
-        self, manga: MangaSchema
-    ) -> BaseResponse[OutputMangaSchema | None]:
+    async def add_manga(self, manga: MangaSchema) -> ApiOutputManga:
         """Добавляет мангу в БД
 
         Args:
             manga (MangaSchema): Схема манги
 
         Returns:
-            BaseResponse[OutputMangaSchema | None]: Возвращает мангу с ID
+            OutputMangaSchema: Возвращает мангу с ID
         """
-        try:
-            result = await self.manga_manager.add_manga(manga)
-            return BaseResponse(
-                status=True, message=f"Манга добавлена, с ID {result.id}", result=result
-            )
-        except Exception as e:
-            return BaseResponse(status=False, message=str(e))
-
-    async def _get_manga(
-        self, func: Awaitable[OutputMangaSchema | None], *args
-    ) -> BaseResponse[ApiOutputManga | None]:
-        """Метод для того что-бы получить мангу"""
-        try:
-            manga = await func(*args)
-            if manga is None:
-                return BaseResponse(status=False, message="Манга не найдена")
-            return BaseResponse(
-                status=True,
-                message="Манга найдена",
-                result=ApiOutputManga(**manga.as_dict()),
-            )
-        except Exception as e:
-            return BaseResponse(status=False, message=f"Не удалось достать мангу: {e}")
+        return self._build_manga(await self.service.manager.add_manga(manga))
 
     @property
     def router(self) -> APIRouter:
         """Получить роутер."""
         return self._router
+
+    def _build_manga(self, manga: OutputMangaSchema) -> ApiOutputManga:
+        """Создаёт мангу
+
+        Args:
+            manga (OutputMangaSchema): Манга
+
+        Returns:
+            ApiOutputManga: Манга с sku
+        """
+        return ApiOutputManga(
+            title=manga.title,
+            poster=manga.poster,
+            url=manga.url,
+            genres=manga.genres,
+            author=manga.author,
+            language=manga.language,
+            gallery=manga.gallery,
+            pdf_id=manga.pdf_id,
+            id=manga.id,
+            sku=manga.sku,
+        )

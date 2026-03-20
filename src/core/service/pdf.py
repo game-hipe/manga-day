@@ -14,6 +14,7 @@ from PIL.ImageFile import ImageFile
 from ..abstract.request import RequestItem
 from ..entities.schemas import MangaSchema, OutputMangaSchema
 from ..manager.request import RequestManager
+from .._exception import CantDownloadImage
 
 
 class PDFService:
@@ -153,7 +154,8 @@ class PDFService:
         response = await self.session.get(url, "read")
         if response:
             return io.BytesIO(response), index
-        return None, index
+
+        raise CantDownloadImage(f"Не удалось скачать изображение по ссылке: {url}")
 
     def _create_image(self, buffer: io.BytesIO) -> ImageFile:
         return Image.open(buffer)
