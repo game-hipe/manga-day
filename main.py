@@ -12,6 +12,7 @@ from src.core.manager import MangaManager, SpiderManager, AlertManager
 from src.frontend import start_frontend
 from src.api import start_api
 from src.bot import start_user
+from src.bot import start_admin
 
 from src.core import SpiderScheduler
 
