@@ -42,7 +42,7 @@ async def main():
 
         try:
             async with asyncio.TaskGroup() as tg:
-                # tg.create_task(start_admin(spider=spider))
+                tg.create_task(start_admin(spider=spider))
                 tg.create_task(start_api(service=find))
                 tg.create_task(
                     start_frontend(manager=manager, find=find, spider=spider)
