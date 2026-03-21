@@ -14,7 +14,7 @@ from PIL.ImageFile import ImageFile
 from ..abstract.request import RequestItem
 from ..entities.schemas import MangaSchema, OutputMangaSchema
 from ..manager.request import RequestManager
-from .._exception import CantDownloadImage
+from ..exc import CantDownloadImage
 
 
 class PDFService:

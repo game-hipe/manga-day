@@ -42,7 +42,7 @@ class FindService:
             list[BaseManga]: Список манги без детальной информации.
         """
         per_page = per_page if per_page is not None else self.BASE_PER_PAGE
-        print(per_page)
+
         self._number_biggest_zero(page)
         self._number_biggest_zero(per_page)
 

@@ -19,7 +19,7 @@ from ....core.entities.schemas import OutputMangaSchema
 from ..._handler import BaseHandler, send_on_error
 from .._bot import UserBot
 from .._text import SHOW_MANGA
-from ....core._exception import CantDownloadImage
+from ....core.exc import CantDownloadImage
 
 
 class UserBaseHandler(BaseHandler[UserBot]):
