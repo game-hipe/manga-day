@@ -124,7 +124,7 @@ class SpiderManager:
 
         if all(x.status == SpiderStatusEnum.RUNNING for x in self.status):
             await self.starter._alert(
-                "Все пауки уже запущены, перезапуск не требуется.", "INFO"
+                "Все пауки уже запущены, перезапуск не требуется.", "info"
             )
             return
 

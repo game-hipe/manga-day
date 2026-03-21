@@ -251,18 +251,25 @@ class CommandsHandler(AdminBaseHandler):
     @staticmethod
     def _get_message(query: CommandCallback) -> Message:
         if isinstance(query, CallbackQuery):
-            return query.message
+            if query.message is None:
+                raise AttributeError("CallbackQuery.message Пуст")
+            if isinstance(query.message, Message):
+                return query.message
         return query
 
     async def _run_spider(
         self,
         call: CallbackQuery,
-        func: Callable[[str], Awaitable[Any]],
+        func: Callable[[str, CallbackQuery], Awaitable[Any]],
         on_error: str,
     ):
+        if call.data is None:
+            await call.message.answer(on_error)  # type: ignore
+            return
+
         try:
             _, spider_name = call.data.split(":", 1)
             await func(spider_name, call)
 
         except ValueError:
-            await call.message.answer(on_error)
+            await call.message.answer(on_error)  # type: ignore

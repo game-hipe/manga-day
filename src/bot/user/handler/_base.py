@@ -3,10 +3,9 @@ import asyncio
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from urllib.parse import urljoin
-from functools import wraps
-from typing import Callable
 
-from aiogram.exceptions import TelegramBadRequest, TelegramAPIError
+from aiogram.fsm.context import FSMContext
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
     FSInputFile,
     Message,
@@ -17,57 +16,10 @@ from loguru import logger
 
 from ....core import config
 from ....core.entities.schemas import OutputMangaSchema
-from ..._handler import BaseHandler
+from ..._handler import BaseHandler, send_on_error
 from .._bot import UserBot
 from .._text import SHOW_MANGA
 from ....core._exception import CantDownloadImage
-
-
-def send_on_error(on_error: str):
-    """
-    Декоратор: при ошибке в обработчике отправляет пользователю фото с сообщением об ошибке.
-
-    Args:
-        on_error (str): Текст ошибки, который будет показан пользователю.
-    """
-
-    def wrapper(func: Callable) -> Callable:
-        logger.debug(f"Обработчик {func.__name__} будет обрабатывать ошибки")
-
-        @wraps(func)
-        async def inner(self: "BaseHandler", message: Message, *args, **kwargs):
-            try:
-                return await func(self, message, *args, **kwargs)
-            except Exception as e:
-                logger.error(f"Ошибка в функции {func.__name__}: {e}", exc_info=True)
-                try:
-                    if message.from_user:
-                        await message.answer_photo(
-                            photo=FSInputFile(
-                                "src/frontend/user/static/images/500.jpg"
-                            ),
-                            caption=self.build_error_message(on_error),
-                        )
-                except TelegramAPIError as te:
-                    logger.warning(
-                        f"Не удалось отправить сообщение об ошибке пользователю: {te}"
-                    )
-                except Exception as ue:
-                    logger.warning(
-                        f"Неожиданная ошибка при отправке ошибки пользователю: {ue}"
-                    )
-
-            finally:
-                # Логируем вызов функции, только если message.text существует
-                text = getattr(message, "text", None) or getattr(
-                    message, "caption", None
-                )
-                safe_text = (text[:50] + "...") if text and len(text) > 50 else text
-                logger.debug(f"Вызов функции {func.__name__}, текст: {safe_text}")
-
-        return inner
-
-    return wrapper
 
 
 class UserBaseHandler(BaseHandler[UserBot]):
@@ -137,16 +89,21 @@ class UserBaseHandler(BaseHandler[UserBot]):
 
     @send_on_error("Неизвестная ошибка при попытке показать мангу")
     async def show_manga(
-        self, message: Message, manga: OutputMangaSchema, delete_message: bool = True
+        self,
+        message: Message,
+        manga: OutputMangaSchema,
+        state: FSMContext | None = None,
     ) -> None:
         """Присылает подробности об манге
 
         Args:
             message (Message): Сообщение от пользователя
             manga (OutputMangaSchema): Манга из БД
+            state (FSMContext | None): Состояние FSM
         """
         text = self._build_manga_text(manga)
         keyboard = self._build_manga_keyboard(manga)
+
         try:
             await message.answer_photo(
                 photo=str(manga.poster),
@@ -155,19 +112,35 @@ class UserBaseHandler(BaseHandler[UserBot]):
                 reply_markup=keyboard,
             )
         except TelegramBadRequest:
-            await message.answer_photo(
-                photo=FSInputFile(path="src/frontend/user/static/images/500.jpg"),
+            message_with_image = await message.answer_photo(
+                photo=self.image_not_found,
                 caption=text,
                 parse_mode="HTML",
                 reply_markup=keyboard,
             )
-
+            self.image_not_found = message_with_image
         finally:
-            if delete_message:
-                try:
-                    await message.delete()
-                except TelegramBadRequest:
-                    pass
+            chat_id: int | None = None
+            message_id: int | None = None
+            try:
+                if state:
+                    chat_id = await state.get_value("delete_chat_id")
+                    message_id = await state.get_value("delete_message_id")
+                    if chat_id and message_id:
+                        await self.bot.bot.delete_message(chat_id, message_id)
+            except TelegramBadRequest:
+                logger.info(
+                    f"Не удалось удалить сообщение {message_id} в чате {chat_id}"
+                )
+
+            finally:
+                if state:
+                    await state.update_data(
+                        {
+                            "delete_chat_id": None,
+                            "delete_message_id": None,
+                        }
+                    )
 
     @send_on_error("Неизвестная ошибка при попытке скачать мангу")
     async def send_pdf(
@@ -205,11 +178,8 @@ class UserBaseHandler(BaseHandler[UserBot]):
                         manga, Path(tmpdir) / f"{manga.sku}.pdf"
                     )
                 except CantDownloadImage:
-                    await message.answer_photo(
-                        photo=FSInputFile("src/frontend/user/static/images/500.jpg"),
-                        caption=self.build_error_message(
-                            "Не удалось скачать одно из изображений."
-                        ),
+                    await self.manga_server_error(
+                        message, "Не удалось скачать одно из ключевых изображенией"
                     )
                     return
 
@@ -248,20 +218,12 @@ class UserBaseHandler(BaseHandler[UserBot]):
             OutputMangaSchema | None: Манга из БД если найдено иначе None
         """
         if query.startswith("http"):
-            return await self.bot.manager.get_manga_by_url(query)
+            if not query.startswith(config.site.domen):
+                return await self.bot.manager.get_manga_by_url(query)
+
+            return await self.bot.manager.get_manga_by_sku(query.split("/")[-1])
 
         return await self.bot.manager.get_manga_by_sku(query)
-
-    async def manga_not_found(self, message: Message) -> Message:
-        """Присылает сообщение по типу "Манга не найдено"
-
-        Args:
-            message (Message): Сообщение от пользователя
-
-        Returns:
-            Message: Сообщение от бота о том что манга не найдена
-        """
-        return await message.answer(self.build_error_message("Манга не найдено"))
 
     async def show_upload_status(self, message: Message):
         """Показывает статус загрузки PDF

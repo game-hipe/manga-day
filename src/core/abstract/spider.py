@@ -37,8 +37,8 @@ class BaseSpider(ABC):
         self,
         session: BaseRequestManager,
         manager: MangaManager | None = None,
-        features: str = None,
-        batch: int = None,
+        features: Optional[str] = None,
+        batch: Optional[int] = None,
     ) -> None:
         """
         Инициализация спайдера с использованием существующего менеджера запросов.
@@ -55,8 +55,8 @@ class BaseSpider(ABC):
         self,
         session: aiohttp.ClientSession,
         manager: MangaManager,
-        features: str = None,
-        batch: int = None,
+        features: Optional[str] = None,
+        batch: Optional[int] = None,
         **kwargs: Unpack[RequestItem],
     ) -> None:
         """
@@ -80,8 +80,8 @@ class BaseSpider(ABC):
         self,
         session: aiohttp.ClientSession | BaseRequestManager,
         manager: MangaManager | None = None,
-        features: str = None,
-        batch: int = None,
+        features: Optional[str] = None,
+        batch: Optional[int] = None,
         **kwargs,
     ) -> None:
         """

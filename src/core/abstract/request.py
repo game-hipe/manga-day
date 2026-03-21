@@ -22,31 +22,31 @@ class ProxyStatus(TypedDict):
 class RequestItem(TypedDict):
     """Аргументы для запросов"""
 
-    max_concurrent: int | None = (None,)
+    max_concurrent: int | None
     """Максимальное количество запросов одновременно."""
 
-    max_retries: int | None = (None,)
+    max_retries: int | None
     """Максимальное количество попыток."""
 
-    sleep_time: int | None = (None,)
+    sleep_time: int | None
     """Время сна после запроса."""
 
-    use_random: bool | None = (None,)
+    use_random: bool | None
     """Использовать ли рандом во время ожидания."""
 
-    proxy: list[ProxySchema] | None = (None,)
+    proxy: list[ProxySchema] | None
     """Прокси"""
 
-    maxsize: int | None = (None,)
+    maxsize: int | None
     """Максимальный размер кэша."""
 
-    ttl: float | None = None
+    ttl: float | None
     """Время жизни кэша."""
 
-    max_chance: int | None = None
+    max_chance: int | None
     """Максимальное количество шансов для прокси"""
 
-    ban_proxy: bool | None = None
+    ban_proxy: bool | None
     """Банить ли прокси, если он не отвечает"""
 
 

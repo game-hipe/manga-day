@@ -1,8 +1,14 @@
 from aiogram import F
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 
 from ._base import UserBaseHandler
+
+
+class MangaStates(StatesGroup):
+    browsing = State()
 
 
 class GetMangaCommandHandler(UserBaseHandler):
@@ -10,32 +16,38 @@ class GetMangaCommandHandler(UserBaseHandler):
     """Путь к манге на сайте"""
 
     def connect(self):
-        self.message_register(self.get_manga_command, Command("get_manga"))
+        self.message_register(self.get_manga_command, Command("get"))
+        self.message_register(self.get_manga_user, MangaStates.browsing, F.text)
         self.callback_register(self.get_manga_call, F.data.startswith("show:"))
 
-    async def get_manga_call(self, call: CallbackQuery):
+    async def get_manga_call(self, call: CallbackQuery, state: FSMContext):
         try:
             command, sku = call.data.split(":", maxsplit=1)
         except ValueError:
             await call.answer("Неверный формат команды.")
             return
 
-        await self._show_manga(call.message, sku)
+        await self._show_manga(call.message, sku, state)
 
-    async def get_manga_command(self, message: Message):
+    async def get_manga_command(self, message: Message, state: FSMContext):
         try:
             command, sku = message.text.split(maxsplit=1)
         except ValueError:
-            await message.answer(
-                "Неверный формат команды. Правильный формат: /get_manga [sku]"
-            )
+            await message.answer("Введите URL, либо артикул манги: ")
+            await state.set_state(MangaStates.browsing)
             return
 
-        await self._show_manga(message, sku)
+        await self._show_manga(message, sku, state)
 
-    async def _show_manga(self, message: Message, query: str):
+    async def get_manga_user(self, message: Message, state: FSMContext):
+        try:
+            await self._show_manga(message, message.text, state)
+        finally:
+            await state.set_state(state=None)
+
+    async def _show_manga(self, message: Message, query: str, state: FSMContext):
         if manga := await self.get_manga(query):
-            await self.show_manga(message=message, manga=manga, delete_message=True)
+            await self.show_manga(message=message, manga=manga, state=state)
             return
 
         await self.manga_not_found(message)

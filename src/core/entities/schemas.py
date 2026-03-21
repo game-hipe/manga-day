@@ -37,9 +37,8 @@ class BaseManga(BaseModel):
     @property
     def sku(self) -> str:
         """Генерирует sku"""
-        if self.title and self.url:
-            data = self.title.encode("utf-8")
-            return hashlib.sha256(data).hexdigest()[:32]
+        data = self.title.encode("utf-8")
+        return hashlib.sha256(data).hexdigest()[:32]
 
     def as_dict(self) -> dict:
         return {
@@ -76,7 +75,7 @@ class MangaSchema(BaseManga):
         }
 
 
-class OutputMangaSchema(MangaSchema):
+class OutputMangaSchema(BaseManga):
     """
     Схема для хранении версии манги из БД
 
@@ -89,6 +88,8 @@ class OutputMangaSchema(MangaSchema):
     author: ObjectWithId | None = Field(default=None)
     language: ObjectWithId | None = Field(default=None)
     pdf_id: str | None = Field(default=None)
+
+    gallery: list[HttpUrl] = Field(default_factory=list)
 
     id: int
 
@@ -172,7 +173,7 @@ class ProxySchema(BaseModel):
 
 
 class AiohttpProxy(ProxySchema):
-    def auth(self) -> dict[str, str | BasicAuth]:
+    def auth(self) -> dict[str, str | BasicAuth | None]:
         return {
             "proxy": self.proxy,
             "proxy_auth": BasicAuth(login=self.login, password=self.password or "")

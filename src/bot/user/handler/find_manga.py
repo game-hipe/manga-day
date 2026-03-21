@@ -3,7 +3,6 @@ from typing import TypedDict, Literal
 from aiogram import F
 from aiogram.filters import Command
 from aiogram.types import (
-    FSInputFile,
     InlineKeyboardMarkup,
     InputMediaPhoto,
     Message,
@@ -51,17 +50,24 @@ class FindCommandsHandler(UserBaseHandler):
             self.call_browsing, FindMangaStates.browsing, F.data.startswith("page:")
         )
 
-    async def find_manga(self, messsage: Message, state: FSMContext) -> None:
+    async def find_manga(self, message: Message, state: FSMContext) -> None:
         """Ищет мангу отвечает за команду `/find`
 
         Args:
             messsage (Message): Сообщение Telegram
             state (FSMContext): Контекст FSM
         """
-        await state.set_state(FindMangaStates.browsing)
-        await state.set_data({"page": 1, "name": "query"})
+        try:
+            await state.set_data({"page": 1, "name": "query"})
+            command, query = message.text.split(maxsplit=1)
+        except ValueError:
+            await state.set_state(FindMangaStates.browsing)
 
-        await messsage.answer("Введите запрос для поиска: ")
+            await message.answer("Введите запрос для поиска: ")
+            return
+
+        await state.update_data({"query": query})
+        await self._show_manga(await state.get_data(), message, state)
 
     async def browsing(self, message: Message, state: FSMContext) -> None:
         """Указывает на то-что человек находится в поисковом состоянии
@@ -114,14 +120,15 @@ class FindCommandsHandler(UserBaseHandler):
 
         media = self._build_find_media(mangas.response)
         keyboard = self._build_find_keyboard(data, mangas.response, mangas.page)
-        text = self._build_find_text(data, mangas, mangas.page)
+        text = self._build_find_text(data, mangas.response, mangas.page)
 
         if media:
             try:
                 await message.answer_media_group(media=media)
+
             except TelegramBadRequest:
                 await message.answer_photo(
-                    FSInputFile(path=str("src/frontend/user/static/images/500.jpg")),
+                    photo=self.image_server_error,
                     caption=text,
                     reply_markup=keyboard,
                 )

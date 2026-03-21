@@ -1,10 +1,12 @@
+# mypy: ignore-errors
+
 import os
 import sys
 
 from hashlib import sha256
 
 from loguru import logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from yaml import full_load
 
 from dotenv import load_dotenv
@@ -77,24 +79,50 @@ class LoggingConfig(BaseModel):
 
 
 class DataBaseConfig(BaseModel):
-    db: str = Field(os.getenv("DATABASE_URL"))
+    db: str | None = Field(os.getenv("DATABASE_URL"))
+
+    @model_validator(mode="after")
+    def check_db(self):
+        if self.db is None:
+            raise ValueError(
+                "Не указана переменная окружения DATABASE_URL, либо указанна неверно!"
+            )
+
+        return self
 
 
 class UpdateConfig(BaseModel):
-    start_time: str = Field("7:00 AM")
+    start_time: str = Field(default="7:00 AM")
     zone: str = Field(default="Europe/Moscow")
 
 
 class BotConfig(BaseModel):
-    api_key: str = Field(os.getenv("USER_TOKEN"))
+    api_key: str | None = Field(os.getenv("USER_TOKEN"))
     proxy: str | None = Field(default=None)
     url: str
 
+    @model_validator(mode="after")
+    def check_api_key(self):
+        if self.api_key is None:
+            raise ValueError(
+                "Не указана переменная окружения ADMIN_TOKEN, либо указанна неверно!"
+            )
+
+        return self
+
 
 class AdminBotConfig(BaseModel):
-    api_key: str = Field(os.getenv("ADMIN_TOKEN"))
+    api_key: str | None = Field(os.getenv("ADMIN_TOKEN"))
     proxy: str | None = Field(default=None)
     admins: list[int]
+
+    @model_validator(mode="after")
+    def check_api_key(self):
+        if self.api_key is None:
+            raise ValueError(
+                "Не указана переменная окружения ADMIN_TOKEN, либо указанна неверно!"
+            )
+        return self
 
 
 class Config(BaseModel):
@@ -124,12 +152,11 @@ def load_config():
     )
     logger.add(sys.stderr, level=config.logging.level, format=config.logging.format)
 
-    logger.info("Конфигурация успешно загружена!")
-
     if config.parsing.features != "lxml":
         logger.warning(
             "Вы используете парсер 'html.parser', который может работать медленнее, чем 'lxml'. Рекомендуется установить 'lxml' для лучшей производительности."
         )
+
     else:
         try:
             import lxml  # noqa
@@ -145,7 +172,12 @@ def load_config():
     except FileExistsError:
         pass
 
-    return config
+    logger.info("Конфигурация успешно загружена!")
+
+    if isinstance(config, Config):
+        return config
+
+    raise ValueError("Не удалось загрузить конфигурацию!")
 
 
 config = load_config()

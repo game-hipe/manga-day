@@ -1,5 +1,5 @@
 from ...core.abstract.alert import BaseAlert, LEVEL
-from .handlers.schemas import MessageResponse
+from .handlers.schemas import MessageResponse, AlertMessage
 from fastapi.websockets import WebSocket, WebSocketState
 
 
@@ -14,7 +14,7 @@ class AdminAlert(BaseAlert):
 
             await self._wb.send_json(
                 MessageResponse(
-                    result={"message": message, "level": level}
+                    result=AlertMessage(message=message, level=level)
                 ).model_dump()
             )
             return True
