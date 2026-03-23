@@ -56,7 +56,7 @@ class ParserConfig(BaseModel):
 
 
 class PDFConfig(BaseModel):
-    save_path: str = Field("var/pdf")
+    domen: str = Field("http://localhost:3040")
 
 
 class ApiConfig(BaseModel):
@@ -166,11 +166,6 @@ def load_config():
             )
             config.parsing.features = "html.parser"
             logger.warning("Используется парсер 'html.parser' вместо 'lxml'.")
-
-    try:
-        os.mkdir(config.pdf.save_path)
-    except FileExistsError:
-        pass
 
     logger.info("Конфигурация успешно загружена!")
 

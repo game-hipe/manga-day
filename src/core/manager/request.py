@@ -1,3 +1,4 @@
+from hashlib import sha256
 from typing import Unpack, Literal, TypeAlias, overload
 
 from fake_headers import Headers
@@ -140,6 +141,16 @@ class RequestManager(BaseRequestManager[ClientSession]):
                     if proxy:
                         templates = kwargs | proxy.auth()
 
+                    else:
+                        templates = kwargs.copy()
+
+                    if (
+                        sku := sha256(
+                            (f"{method}{url}" + str(templates)).encode()
+                        ).hexdigest()
+                    ) in self.cache:
+                        return self.cache[sku]
+
                     templates["headers"] = kwargs.get(
                         "headers", self.headers.generate()
                     )
@@ -152,7 +163,7 @@ class RequestManager(BaseRequestManager[ClientSession]):
                         logger.debug(
                             f"Удалось получить страницу (url={url}, method={method}, result_len={len(result)})"
                         )
-                        self.cache[f"{method}{url}"] = result
+                        self.cache[sku] = result
                         return result
 
                 except ClientResponseError as error:

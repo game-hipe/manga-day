@@ -18,7 +18,6 @@ class UserBotConfig(BaseBotConfig):
         token (str | None, optional): Токен Telegram-бота. По умолчанию берётся из конфига.
     """
 
-    save_path: str | None
     token: str | None
 
 

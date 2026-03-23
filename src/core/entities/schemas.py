@@ -49,7 +49,20 @@ class BaseManga(BaseModel):
         }
 
 
-class MangaSchema(BaseManga):
+class MangaWithGallery(BaseManga):
+    """Схема данных для хранение gallery
+
+    Args:
+        gallery (list[HttpUrl]): список ссылок на изображения
+    """
+
+    gallery: list[HttpUrl] = Field(default_factory=list)
+
+    def as_dict(self) -> dict:
+        return super().as_dict() | {"gallery": [str(x) for x in self.gallery]}
+
+
+class MangaSchema(MangaWithGallery):
     """
     Схема для хранения версии манги с дополнительными данными (Наследуется от BaseManga)
 
@@ -57,25 +70,21 @@ class MangaSchema(BaseManga):
         genres (list[str]): список жанров (строки)
         author (str | None): автор манги
         language (str | None): язык манги
-        gallery (list[HttpUrl]): список ссылок на изображения
     """
 
     genres: list[str] = Field(default_factory=list)
     author: str | None = Field(default=None)
     language: str | None = Field(default=None)
 
-    gallery: list[HttpUrl] = Field(default_factory=list)
-
     def as_dict(self) -> dict:
         return super().as_dict() | {
             "genres": self.genres,
             "author": self.author,
             "language": self.language,
-            "gallery": [str(x) for x in self.gallery],
         }
 
 
-class OutputMangaSchema(BaseManga):
+class OutputMangaSchema(MangaWithGallery):
     """
     Схема для хранении версии манги из БД
 
@@ -89,8 +98,6 @@ class OutputMangaSchema(BaseManga):
     language: ObjectWithId | None = Field(default=None)
     pdf_id: str | None = Field(default=None)
 
-    gallery: list[HttpUrl] = Field(default_factory=list)
-
     id: int
 
     def as_dict(self):
@@ -99,7 +106,6 @@ class OutputMangaSchema(BaseManga):
             "genres": [x.as_dict() for x in self.genres],
             "author": self.author.as_dict() if self.author else None,
             "language": self.language.as_dict() if self.language else None,
-            "gallery": [str(x) for x in self.gallery],
         }
 
     def to_manga(self) -> MangaSchema:

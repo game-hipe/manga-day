@@ -1,13 +1,11 @@
 import asyncio
 
-from pathlib import Path
-from tempfile import TemporaryDirectory
 from urllib.parse import urljoin
 
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
-    FSInputFile,
+    BufferedInputFile,
     Message,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -172,27 +170,24 @@ class UserBaseHandler(BaseHandler[UserBot]):
                 self.build_success_message("Пожалуйста подождите...")
             )
 
-            with TemporaryDirectory() as tmpdir:
-                try:
-                    pdf = await self.bot.pdf_service.download(
-                        manga, Path(tmpdir) / f"{manga.sku}.pdf"
-                    )
-                except CantDownloadImage:
-                    await self.manga_server_error(
-                        message, "Не удалось скачать одно из ключевых изображенией"
-                    )
-                    return
+            try:
+                pdf = await self.bot.pdf_service.download(manga)
 
-                if pdf is None:
-                    await message.answer(
-                        self.build_error_message("Не удалось скачать PDF")
-                    )
-                    return
-
-                sent_message = await message.answer_document(
-                    document=FSInputFile(path=pdf), caption=text, parse_mode="HTML"
+            except CantDownloadImage:
+                await self.manga_server_error(
+                    message, "Не удалось скачать одно из ключевых изображенией"
                 )
-                task.cancel()
+                return
+
+            if pdf is None:
+                await message.answer(self.build_error_message("Не удалось скачать PDF"))
+                return
+
+            buffer = BufferedInputFile(file=pdf, filename=f"{manga.title}.pdf")
+            sent_message = await message.answer_document(
+                document=buffer, caption=text, parse_mode="HTML"
+            )
+            task.cancel()
 
         finally:
             if sent_message is not None and sent_message.document:

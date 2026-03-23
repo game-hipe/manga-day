@@ -39,7 +39,7 @@ async def main():
         scheduler = SpiderScheduler(spider)
 
         find = FindService(manager)
-        pdf = PDFService(session, proxy=proxy)
+        pdf = PDFService(session, config.pdf.domen)
 
         try:
             async with asyncio.TaskGroup() as tg:
@@ -50,11 +50,7 @@ async def main():
                 )
                 tg.create_task(
                     start_user(
-                        manager=manager,
-                        alert=alert,
-                        pdf_service=pdf,
-                        find_service=find,
-                        save_path=config.pdf.save_path,
+                        manager=manager, alert=alert, pdf_service=pdf, find_service=find
                     )
                 )
                 tg.create_task(scheduler.start())

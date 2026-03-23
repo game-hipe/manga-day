@@ -1,18 +1,12 @@
-import io
-import asyncio
-
-from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urljoin
 from typing import overload, Unpack
-from pathlib import Path
 
 import aiohttp
 
 from loguru import logger
-from PIL import Image
-from PIL.ImageFile import ImageFile
 
 from ..abstract.request import RequestItem
-from ..entities.schemas import MangaSchema, OutputMangaSchema
+from ..entities.schemas import MangaSchema, MangaWithGallery, OutputMangaSchema
 from ..manager.request import RequestManager
 from ..exc import CantDownloadImage
 
@@ -28,141 +22,77 @@ class PDFService:
         В будущем можно добавить REDIS, для кэширование
     """
 
-    BASE_PATH: str = "."
-    BASE_MAX_WORKER: int = 5
     BASE_MAX_IMAGES: int = 100
+    """Базовое максимальное число изображений для скачивания"""
+
+    ENDPOINT: str = "/generate-pdf"
 
     @overload
     def __init__(
-        self, session: RequestManager, max_workers: int | None = None
+        self,
+        session: RequestManager,
+        domen: str,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
         session: aiohttp.ClientSession,
-        max_workers: int | None = None,
+        domen: str,
         **kwargs: Unpack[RequestItem],
     ) -> None: ...
 
     def __init__(
         self,
         session: RequestManager | aiohttp.ClientSession,
-        max_workers: int | None = None,
+        domen: str,
         **kwargs,
     ) -> None:
-        kwargs["maxsize"] = kwargs.get(
-            "maxsize", 1
-        )  # Число 1 выбрано так-как кэш может "Съесть" всю память
-
         if isinstance(session, RequestManager):
             self.session = session
         else:
-            self.session = RequestManager(session, **kwargs)
+            self.session = RequestManager(
+                session, **kwargs, maxsize=1
+            )  # Число 1 выбрано так-как кэш может "Съесть" всю память
+        self.url = urljoin(domen, self.ENDPOINT)
 
-        self.executer = ThreadPoolExecutor(
-            max_workers=max_workers or self.BASE_MAX_WORKER
-        )
+    async def download(self, gallery: list[str] | MangaWithGallery) -> bytes | None:
+        """Основной метод для скачивания изображений и сохранения в PDF.
 
-    async def download(
-        self, gallery: list[str] | MangaSchema | OutputMangaSchema, path: str | Path
-    ) -> Path | None:
+        Args:
+            gallery (list[str] | MangaSchema | OutputMangaSchema): Схема для манги с gallery, либо список ссылок на изображения.
+
+        Returns:
+            bytes: PDF файл в виде bytes
         """
-        Основной метод для скачивания изображений и сохранения в PDF.
+        images_urls = self._extract_images(gallery)
+
+        return await self.session.post(self.url, "read", json=images_urls)
+
+    @staticmethod
+    def _extract_images(gallery: list[str] | MangaWithGallery) -> list[str]:
+        """Достать ссылки на изображение
+
+        Args:
+            gallery (list[str] | MangaSchema | OutputMangaSchema): Галлерея
+
+        Raises:
+            CantDownloadImage: Ошибка если не удалось достать ссылки
+
+        Returns:
+            list[str]: Список ссылок на изображения
         """
-        try:
-            urls = await self._prepare_gallery(gallery)
-            if len(urls) > self.BASE_MAX_IMAGES:
-                logger.error(
-                    f"Слишком много изображений для конвертации в PDF. Максимум: {self.BASE_MAX_IMAGES}"
-                )
-                return
-            image_bytes_list = await self._fetch_images(urls)
-            if not image_bytes_list:
-                logger.warning("Не удалось скачать ни одно изображение.")
-                return None
+        result = None
 
-            images = await self._process_images(image_bytes_list)
+        if isinstance(gallery, (MangaSchema, OutputMangaSchema)):
+            result = [str(x) for x in gallery.gallery]
 
-            final_path = self._ensure_pdf_extension(path)
-            return await self._save_as_pdf(images, final_path)
+        if isinstance(gallery, list):
+            if all(isinstance(x, str) for x in gallery):
+                result = gallery
 
-        except Exception as e:
-            logger.error(f"Ошибка в процессе скачивания или генерации PDF: {e}")
-            return None
+        if result:
+            logger.debug(f"Удалось получить (urls_count={len(result)})")
+            return result
 
-    async def _prepare_gallery(
-        self, gallery: list[str] | MangaSchema | OutputMangaSchema
-    ) -> list[str]:
-        """Преобразует входные данные в список URL."""
-        if isinstance(gallery, MangaSchema) or isinstance(gallery, OutputMangaSchema):
-            return [str(img_url) for img_url in gallery.gallery]
-        elif isinstance(gallery, list):
-            return gallery
-        else:
-            raise TypeError(f"Неподдерживаемый тип: {type(gallery).__name__}")
-
-    def _ensure_pdf_extension(self, path: str | Path) -> Path:
-        """Гарантирует, что путь заканчивается на .pdf."""
-        path = Path(path)
-        if path.suffix.lower() != ".pdf":
-            path = path.with_suffix(".pdf")
-        return path
-
-    async def _fetch_images(self, urls: list[str]) -> list[io.BytesIO | None]:
-        """Скачивает все изображения асинхронно."""
-        tasks = [self._download_image(url, index) for index, url in enumerate(urls)]
-        results = []
-
-        for coro in asyncio.as_completed(tasks):
-            response, index = await coro
-            results.append((response, index))
-
-        sorted_results = sorted(results, key=lambda x: x[1])
-        return [res[0] for res in sorted_results]
-
-    async def _process_images(
-        self, buffers: list[io.BytesIO | None]
-    ) -> list[ImageFile]:
-        """Конвертирует байты в объекты PIL.Image в пуле потоков."""
-        loop = asyncio.get_running_loop()
-        valid_buffers = [buf for buf in buffers if buf is not None]
-
-        if not valid_buffers:
-            return []
-
-        images = await loop.run_in_executor(
-            self.executer,
-            lambda: [self._create_image(buffer) for buffer in valid_buffers],
-        )
-        return images
-
-    async def _save_as_pdf(self, images: list[ImageFile], path: Path) -> Path | None:
-        """Сохраняет изображения в виде PDF."""
-        if not images:
-            logger.warning("Нет изображений для сохранения в PDF.")
-            return None
-
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            self.executer, lambda: self._build_pdf(images, path)
-        )
-
-    async def _download_image(
-        self, url: str, index: int
-    ) -> tuple[io.BytesIO | None, int]:
-        response = await self.session.get(url, "read")
-        if response:
-            return io.BytesIO(response), index
-
-        raise CantDownloadImage(f"Не удалось скачать изображение по ссылке: {url}")
-
-    def _create_image(self, buffer: io.BytesIO) -> ImageFile:
-        return Image.open(buffer)
-
-    def _build_pdf(self, images: list[ImageFile], path: Path | str) -> Path | None:
-        try:
-            images[0].save(path, save_all=True, append_images=images[1:])
-            return Path(path)
-        except Exception as e:
-            logger.error(f"Произошла ошибка во время генерации PDF (error={e})")
+        raise CantDownloadImage("Неверный тип данных для gallery")
