@@ -159,7 +159,7 @@ class UserHandler:
         result = await self.find_engine.get_pages_by_genre(genre_id, page)
         self._bad_response(result)
 
-        title = await self.find_engine.get(genre_id, "genre")
+        title = await self.find_engine.tag_getter.get(genre_id, "genre")
 
         return self._show_page(result, request, title=f"[Жанр]: {title}")
 
@@ -179,7 +179,7 @@ class UserHandler:
         result = await self.find_engine.get_pages_by_author(author_id, page)
         self._bad_response(result)
 
-        title = await self.find_engine.get(author_id, "author")
+        title = await self.find_engine.tag_getter.get(author_id, "author")
 
         return self._show_page(result, request, title=f"[Автор]: {title}")
 
@@ -199,7 +199,7 @@ class UserHandler:
         result = await self.find_engine.get_pages_by_language(language_id, page)
         self._bad_response(result)
 
-        title = await self.find_engine.get(language_id, "language")
+        title = await self.find_engine.tag_getter.get(language_id, "language")
 
         return self._show_page(result, request, title=f"[Язык]: {title}")
 
@@ -217,7 +217,9 @@ class UserHandler:
             HTMLResponse: Страница от поиска
         """
         result = await self.find_engine.get_pages_by_query(query, page)
-        self._bad_response(result)
+        if not result.response:
+            return await self.get_manga(manga_sku=query, request=request)
+
         return self._show_page(result, request, title=f"[Запрос]: {query}")
 
     async def get_static(self, path: str) -> FileResponse:

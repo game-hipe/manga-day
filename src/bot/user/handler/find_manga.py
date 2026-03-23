@@ -11,18 +11,13 @@ from aiogram.types import (
 )
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
 from loguru import logger
 
-from ....core.entities.schemas import BaseManga
+from ....core.entities.schemas import BaseManga, MangaFindResultSchema
 from .._text import FIND_MANGA, ALL_FINDED_MANGA
 
 from ._base import UserBaseHandler
-
-
-class FindMangaStates(StatesGroup):
-    browsing = State()
-    """Указывает на то что человек находится в поиске"""
+from ._states import FindMangaStates
 
 
 class FindArguments(TypedDict):
@@ -46,9 +41,7 @@ class FindCommandsHandler(UserBaseHandler):
     def connect(self):
         self.message_register(self.find_manga, Command("find"))
         self.message_register(self.browsing, FindMangaStates.browsing, F.text)
-        self.callback_register(
-            self.call_browsing, FindMangaStates.browsing, F.data.startswith("page:")
-        )
+        self.callback_register(self.call_browsing, F.data.startswith("page:"))
 
     async def find_manga(self, message: Message, state: FSMContext) -> None:
         """Ищет мангу отвечает за команду `/find`
@@ -114,13 +107,13 @@ class FindCommandsHandler(UserBaseHandler):
             message (Message): Сообщение Telegram
             state (FSMContext): Контекст FSM
         """
-        mangas = await self.bot.find_service.get_pages_by_query(
-            query=data["query"], page=data.get("page", 1), per_page=self.BASE_FIND_COUNT
-        )
+        mangas: MangaFindResultSchema = await getattr(
+            self.bot.find_service, f"get_pages_by_{data['name']}"
+        )(data["query"], page=data.get("page", 1), per_page=self.BASE_FIND_COUNT)
 
         media = self._build_find_media(mangas.response)
         keyboard = self._build_find_keyboard(data, mangas.response, mangas.page)
-        text = self._build_find_text(data, mangas.response, mangas.page)
+        text = await self._build_find_text(data, mangas.response, mangas.total)
 
         if media:
             try:
@@ -140,7 +133,7 @@ class FindCommandsHandler(UserBaseHandler):
             text=text, reply_markup=keyboard, disable_web_page_preview=True
         )
 
-    def _build_find_text(
+    async def _build_find_text(
         self, data: FindArguments, mangas: list[BaseManga], count: int
     ) -> str:
         """Создание текста для отправки
@@ -153,9 +146,18 @@ class FindCommandsHandler(UserBaseHandler):
         Returns:
             str: Текст
         """
+
+        try:
+            query = await self.bot.find_service.tag_getter.get(
+                data["query"], data["name"]
+            )
+
+        except KeyError:
+            query = data["query"]
+
         return ALL_FINDED_MANGA.format(
             count=count,
-            query=data["query"],
+            query=query,
             mangas="\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n".join(
                 FIND_MANGA.format(
                     title=manga.title[:40]

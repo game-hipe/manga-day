@@ -1,6 +1,7 @@
 import asyncio
 
 from urllib.parse import urljoin
+from itertools import batched
 
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
@@ -56,20 +57,94 @@ class UserBaseHandler(BaseHandler[UserBot]):
             text=self.build_success_message("Хорошего дня!"), callback_data="NONE"
         )
 
-        button_original = InlineKeyboardButton(text="Оригинал тут!", url=str(manga.url))
+        button_original = InlineKeyboardButton(
+            text="Оригинал тут!", url=str(manga.url), style="primary"
+        )
         button_on_site = InlineKeyboardButton(
             text="Посмотреть на сайте",
             url=urljoin(config.site.domen, f"/manga/{manga.sku}"),
+            style="primary",
         )
 
         if self.pdf_condition(manga):
             button_pdf = InlineKeyboardButton(
-                text="Скачать в PDF", callback_data=f"pdf:{manga.sku}"
+                text="Скачать в PDF", callback_data=f"pdf:{manga.sku}", style="success"
             )
 
-        return InlineKeyboardMarkup(
-            inline_keyboard=[[button_original], [button_on_site], [button_pdf]]
+        author = (
+            [
+                InlineKeyboardButton(
+                    text=manga.author.name,
+                    callback_data=f"page:author:{manga.author.id}:1",
+                    style="primary",
+                )
+            ]
+            if manga.author
+            else None
         )
+
+        language = (
+            [
+                InlineKeyboardButton(
+                    text=manga.language.name,
+                    callback_data=f"page:language:{manga.language.id}:1",
+                    style="primary",
+                )
+            ]
+            if manga.language
+            else None
+        )
+
+        genre_markup = []
+        for genre_batch in batched(manga.genres, 3):
+            genre_part = []
+            for genre in genre_batch:
+                genre_part.append(
+                    InlineKeyboardButton(
+                        text=genre.name,
+                        callback_data=f"page:genre:{genre.id}:1",
+                        style="success",
+                    )
+                )
+            genre_markup.append(genre_part)
+
+        final_markup = [
+            [button_original],
+            [button_on_site],
+            [button_pdf],
+        ]
+
+        if author:
+            final_markup.append(
+                [
+                    InlineKeyboardButton(
+                        text="Автор".center(20, "-"), callback_data="DONT_USEBLE"
+                    )
+                ]
+            )
+            final_markup.append(author)
+
+        if language:
+            final_markup.append(
+                [
+                    InlineKeyboardButton(
+                        text="Язык".center(20, "-"), callback_data="DONT_USEBLE"
+                    )
+                ]
+            )
+            final_markup.append(language)
+
+        if genre_markup:
+            final_markup.append(
+                [
+                    InlineKeyboardButton(
+                        text="Жанры".center(20, "-"), callback_data="DONT_USEBLE"
+                    )
+                ]
+            )
+            final_markup.extend(genre_markup)
+
+        return InlineKeyboardMarkup(inline_keyboard=final_markup)
 
     def pdf_condition(self, manga: OutputMangaSchema) -> bool:
         """Возвращает bool если условие выполнено
@@ -117,6 +192,7 @@ class UserBaseHandler(BaseHandler[UserBot]):
                 reply_markup=keyboard,
             )
             self.image_not_found = message_with_image
+
         finally:
             chat_id: int | None = None
             message_id: int | None = None

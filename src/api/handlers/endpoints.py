@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, Query
 
 from ...core.service import FindService
 from ...core.entities.schemas import (
@@ -6,7 +6,20 @@ from ...core.entities.schemas import (
     OutputMangaSchema,
     MangaSchema,
     MangaFindResultSchema,
+    ObjectWithId,
 )
+
+
+def pagination(
+    page: int = Query(1, ge=1, description="Номер страницы"),
+    per_page: int | None = Query(
+        None, ge=1, le=100, description="Количество на странице"
+    ),
+):
+    return {
+        "page": page,
+        "per_page": per_page,
+    }
 
 
 class Endpoints:
@@ -22,47 +35,13 @@ class Endpoints:
         self._router = APIRouter(prefix="/api/v1", tags=["api"])
 
         self._setup_routes()
+        self._setup_tag_routes()
+        self._setup_finder_routes()
 
     def _setup_routes(self):
         """
         Настройка роутера добавление новых поинтов
         """
-        self._router.add_api_route(
-            "/pages/{page}",
-            self.get_pages,
-            methods=["GET"],
-            response_model=MangaFindResultSchema,
-            summary="Получить список манги по страницам",
-            tags=["manga"],
-        )
-
-        self._router.add_api_route(
-            "/pages/genre/{genre_id}",
-            self.get_pages_by_genre,
-            methods=["GET"],
-            response_model=MangaFindResultSchema,
-            summary="Получить список манги по жанру",
-            tags=["manga"],
-        )
-
-        self._router.add_api_route(
-            "/pages/author/{author_id}",
-            self.get_pages_by_author,
-            methods=["GET"],
-            response_model=MangaFindResultSchema,
-            summary="Получить список манги по автору",
-            tags=["manga"],
-        )
-
-        self._router.add_api_route(
-            "/pages/query/{query}",
-            self.get_pages_by_query,
-            methods=["GET"],
-            response_model=MangaFindResultSchema,
-            summary="Получить список манги по запросу",
-            tags=["manga"],
-        )
-
         self._router.add_api_route(
             "/manga/sku/{sku}",
             self.get_manga_by_sku,
@@ -99,60 +78,144 @@ class Endpoints:
             tags=["manga"],
         )
 
-    async def get_pages(self, page: int) -> MangaFindResultSchema:
+    def _setup_finder_routes(self):
+        self._router.add_api_route(
+            "/pages/",
+            self.get_pages,
+            methods=["GET"],
+            response_model=MangaFindResultSchema,
+            summary="Получить список манги по страницам",
+            tags=["find"],
+        )
+
+        self._router.add_api_route(
+            "/pages/genre/",
+            self.get_pages_by_genre,
+            methods=["GET"],
+            response_model=MangaFindResultSchema,
+            summary="Получить список манги по жанру",
+            tags=["find"],
+        )
+
+        self._router.add_api_route(
+            "/pages/author/",
+            self.get_pages_by_author,
+            methods=["GET"],
+            response_model=MangaFindResultSchema,
+            summary="Получить список манги по автору",
+            tags=["find"],
+        )
+
+        self._router.add_api_route(
+            "/pages/query/",
+            self.get_pages_by_query,
+            methods=["GET"],
+            response_model=MangaFindResultSchema,
+            summary="Получить список манги по запросу",
+            tags=["find"],
+        )
+
+    def _setup_tag_routes(self):
+        self._router.add_api_route(
+            "/genres",
+            self.get_all_genres,
+            methods=["GET"],
+            response_model=list[ObjectWithId],
+            summary="Получить список жанров",
+            tags=["Tags"],
+        )
+
+        self._router.add_api_route(
+            "/language",
+            self.get_all_languages,
+            methods=["GET"],
+            response_model=list[ObjectWithId],
+            summary="Получить список языков",
+            tags=["Tags"],
+        )
+
+        self._router.add_api_route(
+            "/author",
+            self.get_authors,
+            methods=["POST"],
+            response_model=list[ObjectWithId],
+            summary="Получить список авторов",
+            tags=["Tags"],
+        )
+
+    async def get_pages(
+        self, common: dict = Depends(pagination)
+    ) -> MangaFindResultSchema:
         """Получить страницу.
 
         Args:
             page (int): Номер страницы
+            per_page (int, optional): Количество манги на странице. По умолчанию None.
 
         Returns:
             MangaFindResultSchema: Результат данных, с количеством страниц
         """
-        return await self.service.get_pages(page)
+        return await self.service.get_pages(**common)
 
-    async def get_pages_by_genre(self, genre_id: int) -> MangaFindResultSchema:
+    async def get_pages_by_genre(
+        self, genre_id: int, common: dict = Depends(pagination)
+    ) -> MangaFindResultSchema:
         """Ищет мангу по запросу
 
         Args:
             genre_id (int): ID жанра
+            page (int): Номер страницы
+            per_page (int, optional): Количество манги на странице. По умолчанию None.
 
         Returns:
             MangaFindResultSchema: Результат поиска
         """
-        return await self.service.get_pages_by_genre(genre_id)
+        return await self.service.get_pages_by_genre(genre_id, **common)
 
-    async def get_pages_by_author(self, author_id: int) -> MangaFindResultSchema:
+    async def get_pages_by_author(
+        self, author_id: int, common: dict = Depends(pagination)
+    ) -> MangaFindResultSchema:
         """Ищет мангу по запросу
 
         Args:
             author_id (int): ID автора
+            page (int): Номер страницы
+            per_page (int, optional): Количество манги на странице. По умолчанию None.
 
         Returns:
             MangaFindResultSchema: Результат поиска
         """
-        return await self.service.get_pages_by_author(author_id)
+        return await self.service.get_pages_by_author(author_id, **common)
 
-    async def get_pages_by_language(self, language_id: int) -> MangaFindResultSchema:
+    async def get_pages_by_language(
+        self, language_id: int, common: dict = Depends(pagination)
+    ) -> MangaFindResultSchema:
         """Ищет мангу по запросу
 
         Args:
             language_id (int): ID языка
+            page (int): Номер страницы
+            per_page (int, optional): Количество манги на странице. По умолчанию None.
 
         Returns:
             MangaFindResultSchema: Результат поиска
         """
-        return await self.service.get_pages_by_language(language_id)
+        return await self.service.get_pages_by_language(language_id, **common)
 
-    async def get_pages_by_query(self, query: str) -> MangaFindResultSchema:
+    async def get_pages_by_query(
+        self, query: str, common: dict = Depends(pagination)
+    ) -> MangaFindResultSchema:
         """Ищет мангу по запросу
 
         Args:
             query (str): Запрос
+            page (int): Номер страницы
+            per_page (int, optional): Количество манги на странице. По умолчанию None.
 
         Returns:
             MangaFindResultSchema: Результат поиска
         """
-        return await self.service.get_pages_by_query(query)
+        return await self.service.get_pages_by_query(query, **common)
 
     async def get_manga_by_sku(self, sku: str) -> ApiOutputManga:
         """Получить страницу.
@@ -210,6 +273,36 @@ class Endpoints:
             OutputMangaSchema: Возвращает мангу с ID
         """
         return self._build_manga(await self.service.manager.add_manga(manga))
+
+    async def get_all_genres(self) -> list[ObjectWithId]:
+        """Получить все жанры
+
+        Returns:
+            list[ObjectWithId]: Обьекты с ID и названием
+        """
+        return await self.service.tag_getter.get_genres()
+
+    async def get_all_languages(self) -> list[ObjectWithId]:
+        """Получить все языки
+
+        Returns:
+            list[ObjectWithId]: Обьекты с ID и названием
+        """
+        return await self.service.tag_getter.get_language()
+
+    async def get_authors(
+        self, page: int, per_page: int | None = None
+    ) -> list[ObjectWithId]:
+        """Получить авторов постранично
+
+        Args:
+            page (int): Страница авторов
+            per_page (int | None, optional): Сколько обьектов в ответе. По умолчанию None.
+
+        Returns:
+            list[ObjectWithId]: Обьекты с ID и названием
+        """
+        return await self.service.tag_getter.get_authors(page, per_page)
 
     @property
     def router(self) -> APIRouter:

@@ -4,7 +4,7 @@
 }
 
 /* Заголовок раздела */
-.index-container h2 {
+.index-container .page-title {
     color: var(--text-color);
     font-size: 1.8rem;
     margin-bottom: 1.5rem;
@@ -14,15 +14,15 @@
 }
 
 /* Сетка галереи - адаптивная */
-#dle-content {
+.manga-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr); /* 5 колонок на ПК */
     gap: 1.5rem;
     width: 100%;
 }
 
-/* Элемент галереи */
-.gallery {
+/* ========== НОВАЯ КАРТОЧКА ========== */
+.gallery-card {
     background-color: var(--card-bg);
     border-radius: 12px;
     overflow: hidden;
@@ -33,31 +33,32 @@
     flex-direction: column;
 }
 
-.gallery:hover {
+.gallery-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 15px var(--hover-shadow-color);
 }
 
-.gallery a {
+.gallery-card__link {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1;
     text-decoration: none;
     color: inherit;
 }
 
-.gallery img {
+.gallery-card__image {
     width: 100%;
     height: 280px;
     object-fit: cover;
     transition: transform 0.3s ease;
+    flex-shrink: 0;
 }
 
-.gallery:hover img {
+.gallery-card:hover .gallery-card__image {
     transform: scale(1.03);
 }
 
-.caption {
+.gallery-card__caption {
     padding: 1rem;
     flex-grow: 1;
     display: flex;
@@ -72,7 +73,57 @@
     border-top: 1px solid var(--border-color);
 }
 
-/* Пагинация */
+/* ========== МЕТА-БЛОКИ (новые элементы) ========== */
+.gallery-card__meta {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.gallery-card__meta .meta-title {
+    color: #bbb;
+    margin-bottom: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.gallery-card__meta .meta-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    background-color: #2a2a2a;
+    color: #ccc;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.tag:hover {
+    background-color: var(--primary-color);
+    color: #121212;
+}
+
+.tag--more {
+    background-color: #333;
+    color: #888;
+    cursor: default;
+}
+
+.tag--more:hover {
+    background-color: #333;
+    color: #888;
+}
+
+/* ========== ПАГИНАЦИЯ (обновлено под BEM) ========== */
 .paginator {
     margin-top: 2.5rem;
     padding-top: 1.5rem;
@@ -111,7 +162,7 @@
     cursor: pointer;
 }
 
-.page-link:hover:not(.current):not(.ellipsis) {
+.page-link:hover:not(.page-link--current):not(.page-link--ellipsis) {
     background-color: var(--primary-color);
     color: #121212;
     border-color: var(--primary-color);
@@ -119,7 +170,7 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-.page-link.current {
+.page-link--current {
     background-color: var(--primary-color);
     color: #121212;
     border-color: var(--primary-color);
@@ -127,7 +178,7 @@
     cursor: default;
 }
 
-.page-link.ellipsis {
+.page-link--ellipsis {
     background-color: transparent;
     border: none;
     cursor: default;
@@ -135,59 +186,59 @@
     color: #888;
 }
 
-.page-link.prev,
-.page-link.next {
+.page-link--prev,
+.page-link--next {
     background-color: #1a1a1a;
     font-weight: bold;
     padding: 0 16px;
 }
 
-.page-link.prev:hover,
-.page-link.next:hover {
+.page-link--prev:hover,
+.page-link--next:hover {
     background-color: var(--primary-color);
     color: #121212;
 }
 
-.page-info {
+.paginator__info {
     color: #aaa;
     font-size: 0.9rem;
     text-align: center;
 }
 
-/* ========== АДАПТИВНОСТЬ ========== */
+/* ========== АДАПТИВНОСТЬ (mobile-first подход сохранён) ========== */
 @media (max-width: 1200px) {
-    #dle-content {
+    .manga-grid {
         grid-template-columns: repeat(4, 1fr);
         gap: 1.3rem;
     }
 }
 
 @media (max-width: 992px) {
-    #dle-content {
+    .manga-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 1.2rem;
     }
     
-    .gallery img {
+    .gallery-card__image {
         height: 240px;
     }
     
-    .index-container h2 {
+    .index-container .page-title {
         font-size: 1.7rem;
     }
 }
 
 @media (max-width: 768px) {
-    #dle-content {
+    .manga-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
     }
     
-    .gallery img {
+    .gallery-card__image {
         height: 200px;
     }
     
-    .index-container h2 {
+    .index-container .page-title {
         font-size: 1.6rem;
     }
     
@@ -202,32 +253,32 @@
         font-size: 0.9rem;
     }
     
-    .page-link.prev,
-    .page-link.next {
+    .page-link--prev,
+    .page-link--next {
         padding: 0 12px;
     }
 }
 
 @media (max-width: 480px) {
-    #dle-content {
-        grid-template-columns: repeat(2, 1fr); /* оставляем 2 колонки */
+    .manga-grid {
+        grid-template-columns: repeat(2, 1fr);
         gap: 0.8rem;
     }
     
-    .gallery {
+    .gallery-card {
         border-radius: 10px;
     }
     
-    .gallery img {
+    .gallery-card__image {
         height: 160px;
     }
     
-    .caption {
+    .gallery-card__caption {
         padding: 0.7rem;
         font-size: 0.85rem;
     }
     
-    .index-container h2 {
+    .index-container .page-title {
         font-size: 1.4rem;
         margin-bottom: 1rem;
     }
@@ -251,19 +302,19 @@
         padding-top: 1rem;
     }
     
-    .page-info {
+    .paginator__info {
         font-size: 0.85rem;
     }
 }
 
 @media (max-width: 360px) {
-    #dle-content {
-        grid-template-columns: 1fr; /* 1 колонка */
+    .manga-grid {
+        grid-template-columns: 1fr;
         gap: 0.8rem;
     }
     
-    .gallery img {
-        height: 200px; /* чуть больше для одной колонки */
+    .gallery-card__image {
+        height: 200px;
     }
     
     .page-link {

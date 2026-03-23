@@ -11,7 +11,11 @@
         </div>
         <h1>{{ manga.title }}</h1>
         <a href="{{ manga.url }}">Оригинал</a>
+
+        {% if manga.gallery|length < 100 %}
         <a href="{{ bot }}?start={{ manga.sku }}">Скачать в PDF</a>
+        {% endif %}
+
     </div>
     <div id="info-manga">
         <div class="tags">
@@ -44,6 +48,11 @@
             </p>
             <div class="copy-notification" id="copyNotification">Скопировано!</div>
         </div>
+
+        <div class="gallery-count">
+            <p>Количество страниц: {{ manga.gallery|length }}</p>
+        </div>
+
     </div>
     <div id="gallery">
         <h2>Галлерея</h2>

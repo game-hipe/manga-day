@@ -30,6 +30,6 @@ SHOW_MANGA = (
     "📖 Удачной ночки)"
 )
 
-ALL_FINDED_MANGA = "<b>По запросу {query}, найдено {count} страниц</b>\n{mangas}"
+ALL_FINDED_MANGA = "<b>По запросу {query}, найдено {count} манг</b>\n{mangas}"
 
 FIND_MANGA = '• {title} - <a href="{url}">Оригинал</a>'

@@ -144,6 +144,36 @@ class ApiOutputManga(OutputMangaSchema):
         return v
 
 
+class ApiOutputBaseManga(BaseManga):
+    """
+    Схема для отображения манги в API с добавленным sku
+    """
+
+    id: int | None = Field(default=None)
+    language: ObjectWithId | None = Field(default=None)
+    author: ObjectWithId | None = Field(default=None)
+    genres: list[ObjectWithId] = Field(default_factory=list)
+    manga_sku: str | None = Field(default=None, alias="sku", serialization_alias="sku")
+
+    @field_validator("manga_sku", mode="before")
+    @classmethod
+    def set_sku_if_none(cls, v, info):
+        if v is None:
+            title = info.data.get("title")
+            if title:
+                data = title.encode("utf-8")
+                return hashlib.sha256(data).hexdigest()[:32]
+        return v
+
+    def as_dict(self):
+        return super().as_dict() | {
+            "id": self.id,
+            "genres": [x.as_dict() for x in self.genres],
+            "author": self.author.as_dict() if self.author else None,
+            "language": self.language.as_dict() if self.language else None,
+        }
+
+
 class ProxySchema(BaseModel):
     """
     Схема данных для настройки прокси-сервера с аутентификацией
@@ -203,7 +233,7 @@ class MangaFindResultSchema(BaseModel):
     page: int = Field(0)
     """Найденное количество страниц"""
 
-    response: list[BaseManga] = Field(default_factory=list)
+    response: list[ApiOutputBaseManga] = Field(default_factory=list)
     """Список найденных манг."""
 
     page_now: int = Field(0)
