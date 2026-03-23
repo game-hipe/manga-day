@@ -25,7 +25,7 @@ services:
     ports:
       - "3040:3040"
     environment:
-      - PROXY=http://localhost:8888
+      - PROXY=http://localhost:8888 # Если такового не имеется удалить environment
 
   app:
     build: .

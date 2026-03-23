@@ -31,7 +31,7 @@ api:
   backend_host: "0.0.0.0" # Хост бэкенда
 
 pdf:
-  domen: "http://localhost:3040" # Путь сохранения PDF файлов
+  domen: "http://localhost:3040" # URL домен для генерации PDF
 
 parsing:
   features: "lxml" # Движок парсинга для BeautifulSoup.
