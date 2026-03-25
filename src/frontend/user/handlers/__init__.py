@@ -40,7 +40,7 @@ class UserHandler:
     def _setup_find(self):
         self.router.add_api_route(
             "/",
-            self.get_pages,
+            self._show_page,
             methods=["GET"],
             tags=["frontend"],
             response_class=HTMLResponse,
@@ -48,7 +48,7 @@ class UserHandler:
 
         self.router.add_api_route(
             "/genre",
-            self.get_genres_pages,
+            self._show_page,
             methods=["GET"],
             response_class=HTMLResponse,
             tags=["frontend"],
@@ -56,7 +56,7 @@ class UserHandler:
 
         self.router.add_api_route(
             "/author",
-            self.get_author_pages,
+            self._show_page,
             methods=["GET"],
             response_class=HTMLResponse,
             tags=["frontend"],
@@ -64,7 +64,7 @@ class UserHandler:
 
         self.router.add_api_route(
             "/query",
-            self.get_query_pages,
+            self._show_page,
             methods=["GET"],
             response_class=HTMLResponse,
             tags=["frontend"],
@@ -72,7 +72,7 @@ class UserHandler:
 
         self.router.add_api_route(
             "/language",
-            self.get_language_pages,
+            self._show_page,
             methods=["GET"],
             response_class=HTMLResponse,
             tags=["frontend"],
@@ -90,125 +90,11 @@ class UserHandler:
 
         self.router.add_api_route(
             "/manga/{manga_sku}",
-            self.get_manga,
+            self._show_page,
             tags=["frontend"],
             response_class=HTMLResponse,
             methods=["GET"],
         )
-
-    async def get_pages(
-        self,
-        *,
-        page: int = 1,
-        request: Request
-    ) -> HTMLResponse:
-        """Получить страницу от поиска.
-
-        Args:
-            request (Request): Запрос от клиента.
-            page (int, optional): Страница. По умолчанию 1.
-
-        Returns:
-            HTMLResponse: Страница от поиска
-        """
-        result = await self.find_engine.get_pages(page)
-        self._bad_response(result)
-        return self._show_page(result, request)
-
-    async def get_genres_pages(
-        self,
-        *,
-        query: int,
-        page: int = 1,
-        request: Request
-    ) -> HTMLResponse:
-        """Получить страницу от поиска.
-
-        Args:
-            query (int): ID жанра
-            request (Request): Запрос от клиента.
-            page (int, optional): Страница. По умолчанию 1.
-
-        Returns:
-            HTMLResponse: Страница от поиска
-        """
-        result = await self.find_engine.get_pages_by_genre(query, page)
-        self._bad_response(result)
-
-        title = await self.find_engine.tag_getter.get(query, "genre")
-
-        return self._show_page(result, request, title=f"[Жанр]: {title}")
-
-    async def get_author_pages(
-        self,
-        *,
-        query: int,
-        page: int = 1,
-        request: Request
-    ) -> HTMLResponse:
-        """Получить страницу от поиска.
-
-        Args:
-            query (int): ID автора
-            request (Request): Запрос от клиента.
-            page (int, optional): Страница. По умолчанию 1.
-
-        Returns:
-            HTMLResponse: Страница от поиска
-        """
-        result = await self.find_engine.get_pages_by_author(query, page)
-        self._bad_response(result)
-
-        title = await self.find_engine.tag_getter.get(query, "author")
-
-        return self._show_page(result, request, title=f"[Автор]: {title}")
-
-    async def get_language_pages(
-        self,
-        *,
-        query: int,
-        page: int = 1,
-        request: Request
-    ) -> HTMLResponse:
-        """Получить страницу от поиска.
-
-        Args:
-            query (int): ID языка
-            request (Request): Запрос от клиента.
-            page (int, optional): Страница. По умолчанию 1.
-
-        Returns:
-            HTMLResponse: Страница от поиска
-        """
-        result = await self.find_engine.get_pages_by_language(query, page)
-        self._bad_response(result)
-
-        title = await self.find_engine.tag_getter.get(query, "language")
-
-        return self._show_page(result, request, title=f"[Язык]: {title}")
-
-    async def get_query_pages(
-        self,
-        *,
-        query: str,
-        page: int = 1,
-        request: Request
-    ) -> HTMLResponse:
-        """Получить страницу от поиска.
-
-        Args:
-            query (int): Запрос
-            request (Request): Запрос от клиента.
-            page (int, optional): Страница. По умолчанию 1.
-
-        Returns:
-            HTMLResponse: Страница от поиска
-        """
-        result = await self.find_engine.get_pages_by_query(query, page)
-        if not result.response:
-            return await self.get_manga(manga_sku=query, request=request)
-
-        return self._show_page(result, request, title=f"[Запрос]: {query}")
 
     async def get_static(self, path: str) -> FileResponse:
         """Получить статичный файл
@@ -227,62 +113,13 @@ class UserHandler:
             return FileResponse(static_file)
         raise HTTPException(status_code=404)
 
-    async def get_manga(self, *, manga_sku: str, request: Request) -> HTMLResponse:
-        """Получить страницу с мангой
-
-        Args:
-            manga_sku (str): артикул манги
-            request (Request): запрос от клиента
-
-        Returns:
-            HTMLResponse: Страница с мангой
-        """
-        manga = await self.find_engine.manager.get_manga_by_sku(sku=manga_sku)
-
-        if manga is None:
-            return self.templates.TemplateResponse(
-                "404.html", status_code=404, context={"request": request}
-            )
-
-        return self.templates.TemplateResponse(
-            "manga.html",
-            context={
-                "request": request,
-                "manga": manga.as_dict(),
-                "bot": config.user_bot.url,
-            },
-        )
-
-    def _bad_response(self, result: MangaFindResultSchema) -> None:
-        """Проверяет на то удачный ли результат поиска
-
-        Args:
-            result (MangaFindResultSchema): Результат поиска
-        """
-        if not result.response:
-            return self._show_404()
-
-        if not result.success:
-            print(1)
-            return self._show_500()
-
-    def _show_404(self):
-        """Страница 404"""
-        raise HTTPException(status_code=404)
-
-    def _show_500(self):
-        """Страница 500"""
-        raise HTTPException(status_code=500)
-
     def _show_page(
-        self, result: MangaFindResultSchema, request: Request, title: str | None = None
+        self, request: Request
     ) -> HTMLResponse:
         """Показать страницу
 
         Args:
-            result (MangaFindResultSchema): Результат поиска
             request (Request): Запрос от пользователя
-            title (str | None, optional): Описание страницы. По умолчанию None.
 
         Returns:
             HTMLResponse: Страница от поиска.
@@ -291,12 +128,18 @@ class UserHandler:
         return self.templates.TemplateResponse(
             "index.html",
             context={
-                "request": request,
-                "mangas": [x.as_dict() for x in result.response],
-                "total": result.page,
-                "page_now": result.page_now,
-                "title": (title or "Manga-Day") + f" найдено манги {result.total}",
+                "request": request
             },
+        )
+
+    def _show_manga(
+        self, request: Request,
+    ):
+        return self.templates.TemplateResponse(
+            "manga.html",
+            context={
+                "request": request
+            }
         )
 
     @property

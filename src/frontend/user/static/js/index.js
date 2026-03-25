@@ -182,6 +182,76 @@ let isLoading = false;
 let hasMore = true;
 let totalItems = 0;
 let observer = null;
+// --- Topbar hide/show on scroll ---
+let topbar = null;
+let topbarHeight = 0;
+let isTopbarHidden = false;
+let lastScrollY = 0;
+let scrollTimeout = null;
+function updateTopbarHeight() {
+    if (!topbar)
+        return;
+    const newHeight = topbar.offsetHeight;
+    if (newHeight > 0 && !isTopbarHidden) {
+        topbarHeight = newHeight;
+        document.documentElement.style.setProperty('--topbar-height', `${topbarHeight}px`);
+    }
+    else if (isTopbarHidden) {
+        // if hidden, keep variable zero but remember actual height for later
+        const actualHeight = topbar.offsetHeight;
+        if (actualHeight > 0)
+            topbarHeight = actualHeight;
+    }
+}
+function showTopbar() {
+    if (!topbar || !isTopbarHidden)
+        return;
+    topbar.classList.remove('topbar--hidden');
+    isTopbarHidden = false;
+    document.documentElement.style.setProperty('--topbar-height', `${topbarHeight}px`);
+}
+function hideTopbar() {
+    if (!topbar || isTopbarHidden)
+        return;
+    topbar.classList.add('topbar--hidden');
+    isTopbarHidden = true;
+    document.documentElement.style.setProperty('--topbar-height', '0px');
+}
+function handleScroll() {
+    if (scrollTimeout)
+        return;
+    scrollTimeout = window.requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        // only act if scrolled enough (avoid hiding when barely moved)
+        const scrollDelta = currentScrollY - lastScrollY;
+        if (scrollDelta > 8 && currentScrollY > topbarHeight) {
+            // scrolling down
+            hideTopbar();
+        }
+        else if (scrollDelta < -8) {
+            // scrolling up
+            showTopbar();
+        }
+        lastScrollY = currentScrollY;
+        scrollTimeout = null;
+    });
+}
+function initTopbarBehavior() {
+    topbar = document.querySelector('.topbar');
+    if (!topbar)
+        return;
+    updateTopbarHeight();
+    window.addEventListener('resize', () => {
+        updateTopbarHeight();
+        if (!isTopbarHidden) {
+            document.documentElement.style.setProperty('--topbar-height', `${topbarHeight}px`);
+        }
+    });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // initial state
+    lastScrollY = window.scrollY;
+}
+// --- end topbar behavior ---
 function setStateMessage(message) {
     if (!gallery)
         return;
@@ -288,6 +358,7 @@ function initSearch() {
             return;
         }
         const nextUrl = new URL(window.location.href);
+        nextUrl.pathname = "/query";
         if (value) {
             nextUrl.searchParams.set("query", value);
         }
@@ -300,11 +371,9 @@ function initSearch() {
 async function main() {
     if (!gallery)
         return;
+    initTopbarBehavior();
     initSearch();
     initInfiniteScroll();
-    if (!initialQuery) {
-        // Ничего специального не делаем — просто загружаем первую страницу.
-    }
     await loadMore();
 }
 void main();

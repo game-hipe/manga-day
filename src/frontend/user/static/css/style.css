@@ -74,14 +74,22 @@ input {
 }
 
 .topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 20;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   background: linear-gradient(to bottom, rgba(11, 13, 18, 0.92), rgba(11, 13, 18, 0.72));
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   padding: 14px 12px 12px;
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+}
+
+.topbar--hidden {
+  transform: translateY(-100%);
 }
 
 .brand {
@@ -119,11 +127,13 @@ input {
   background: rgba(21, 26, 35, 0.92);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
+  position: relative;
+  z-index: 21;
 }
 
 .search-form:focus-within {
-  border-color: rgba(255, 77, 141, 0.35);
-  box-shadow: 0 0 0 4px rgba(255, 77, 141, 0.09), var(--shadow);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(255, 77, 141, 0.2), var(--shadow);
 }
 
 #search-input {
@@ -136,6 +146,8 @@ input {
   padding: 14px 14px 14px 16px;
   font-size: 16px;
   border-radius: 12px;
+  position: relative;
+  z-index: 22;
 }
 
 #search-input::placeholder {
@@ -178,7 +190,9 @@ input {
 
 .page {
   width: min(var(--max-width), calc(100% - 24px));
-  margin: 18px auto 0;
+  margin: 0 auto;
+  transition: padding-top 0.2s ease;
+  padding-top: var(--topbar-height, 0px);
 }
 
 .manga-gallery {
@@ -394,7 +408,6 @@ input {
 
   .page {
     width: min(var(--max-width), calc(100% - 40px));
-    margin-top: 22px;
   }
 
   .manga-gallery {
