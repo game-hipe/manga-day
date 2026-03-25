@@ -1,28 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manga-Day - Новая манга во мгновение ока!</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manga-Day — удобный каталог манги</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body>
-    <div class="search-container">
-        <form id="search-form" class="search-form">
-            <input type="search" id="search-input" placeholder="Название или артикул манги..." autocomplete="off">
-            <button type="submit">Поиск</button>
-            <div class="error-message" id="search-error"></div>
-        </form>
+  <header class="topbar">
+    <div class="brand">
+      <h1>Manga-Day</h1>
     </div>
 
-    <div class="manga-gallery" id="gallery">
-        <h1>Загрузка манги...</h1>
-    </div>
+    <form id="search-form" class="search-form" action="/query" method="GET" role="search" novalidate>
+      <label class="sr-only" for="search-input">Поиск манги</label>
+      <input
+        type="search"
+        id="search-input"
+        name="query"
+        placeholder="Название, SKU или автор"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button type="submit" aria-label="Искать">
+        <span>Поиск</span>
+      </button>
+      <div class="error-message" id="search-error" aria-live="polite"></div>
+    </form>
+  </header>
 
-    <div class="footer">
-        © 2026 Manga-Day
-    </div>
+  <main class="page">
+    <section class="manga-gallery" id="gallery" aria-live="polite">
+      <div class="gallery-state">Загрузка манги...</div>
+    </section>
 
-    <script src="/static/js/index.js"></script>
+    <div id="loader" class="loader" aria-hidden="true">
+      <span>Загрузка ещё...</span>
+    </div>
+  </main>
+
+  <footer class="footer">
+    © 2026 Manga-Day
+  </footer>
+
+  <script src="/static/js/index.js"></script>
 </body>
 </html>

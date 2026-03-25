@@ -1,4 +1,5 @@
 "use strict";
+var _a;
 const URLJoin = (...args) => args
     .join("/")
     .replace(/[\/]+/g, "/")
@@ -11,173 +12,299 @@ const API = "http://localhost:8080/api/v1";
 const API_ENDPOINTS = {
     author: URLJoin(API, "/pages/author"),
     language: URLJoin(API, "/pages/language"),
-    genre: URLJoin(API, "/pages/genre")
+    genre: URLJoin(API, "/pages/genre"),
+    query: URLJoin(API, "/pages/query"),
+    pages: URLJoin(API, "/pages"),
 };
-const nameMap = {
-    'language': 'Язык',
-    'author': 'Автор',
-    'genre': 'Жанры'
-};
-function buildDiv(objects, name) {
-    /**
-     * Построить div с объектами
-     */
-    if (!objects) {
+const ITEMS_PER_PAGE = 10;
+const TAG_LIMIT = 6;
+const DEFAULT_ENDPOINT = "query";
+function getActiveEndpoint() {
+    const pathname = window.location.pathname.replace(/^\/+|\/+$/g, "");
+    if (pathname in API_ENDPOINTS) {
+        return pathname;
+    }
+    return DEFAULT_ENDPOINT;
+}
+function createTextBadge(text, className) {
+    const badge = document.createElement("span");
+    badge.className = className;
+    badge.textContent = text;
+    return badge;
+}
+function createMetaLine(text) {
+    const line = document.createElement("div");
+    line.className = "manga-meta-line";
+    line.textContent = text;
+    return line;
+}
+function formatRating(value) {
+    if (value === null || value === undefined || Number.isNaN(value)) {
         return null;
     }
-    else if (objects[0] === null) {
+    const rounded = Math.round(value * 10) / 10;
+    return `★ ${rounded.toFixed(1)}`;
+}
+function buildTags(genres) {
+    if (!genres || genres.length === 0) {
         return null;
     }
-    else if (objects.length === 0) {
-        return null;
+    const tagsWrap = document.createElement("div");
+    tagsWrap.className = "tags";
+    const visible = genres.slice(0, TAG_LIMIT);
+    visible.forEach((genre) => {
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = genre.name;
+        tagsWrap.appendChild(tag);
+    });
+    if (genres.length > TAG_LIMIT) {
+        const more = document.createElement("span");
+        more.className = "tag tag--more";
+        more.textContent = `+${genres.length - TAG_LIMIT}`;
+        tagsWrap.appendChild(more);
     }
-    const objDiv = document.createElement('div');
-    var metaBox = document.createElement('div');
-    var tagBox = document.createElement('div');
-    metaBox.className = 'tag-title__meta';
-    metaBox.innerText = nameMap[name] + ': ';
-    tagBox.className = 'tag-tags__meta';
-    for (let index = 0; index < objects.length; index++) {
-        if (index == 15) {
-            break;
-        }
-        const element = objects[index];
-        if (!element) {
-            continue;
-        }
-        let tag = document.createElement('a');
-        tag.innerText = element.name;
-        tag.className = 'tag';
-        tag.href = `/${name}?query=${element.id}`;
-        tagBox.appendChild(tag);
+    return tagsWrap;
+}
+function buildInfoBlock(manga) {
+    var _a, _b, _c, _d, _e;
+    const meta = document.createElement("div");
+    meta.className = "manga-meta";
+    const authorName = (_b = (_a = manga.author) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : null;
+    const languageName = (_d = (_c = manga.language) === null || _c === void 0 ? void 0 : _c.name) !== null && _d !== void 0 ? _d : null;
+    const ratingText = formatRating(manga.rating);
+    const statusText = ((_e = manga.status) === null || _e === void 0 ? void 0 : _e.trim()) || null;
+    if (authorName) {
+        meta.appendChild(createMetaLine(authorName));
     }
-    objDiv.appendChild(metaBox);
-    objDiv.appendChild(tagBox);
-    return objDiv;
+    const secondLineParts = [];
+    if (languageName)
+        secondLineParts.push(languageName);
+    if (statusText)
+        secondLineParts.push(statusText);
+    if (secondLineParts.length > 0) {
+        meta.appendChild(createMetaLine(secondLineParts.join(" • ")));
+    }
+    const badges = document.createElement("div");
+    badges.className = "manga-badges";
+    if (ratingText) {
+        badges.appendChild(createTextBadge(ratingText, "badge badge--rating"));
+    }
+    if (statusText) {
+        badges.appendChild(createTextBadge(statusText, "badge badge--status"));
+    }
+    if (badges.childElementCount > 0) {
+        meta.appendChild(badges);
+    }
+    return meta;
 }
 function buildManga(manga) {
-    const mangaDiv = document.createElement('div');
-    mangaDiv.className = 'manga';
-    var language = buildDiv([manga.language], "language");
-    var author = buildDiv([manga.author], "author");
-    var genres = buildDiv(manga.genres, "genre");
-    var title = document.createElement('h2');
-    var redirect = document.createElement('a');
-    var poster = document.createElement('img');
-    title.innerText = manga.title;
+    const card = document.createElement("a");
+    card.className = "manga";
+    card.href = `/manga/${encodeURIComponent(manga.sku)}`;
+    card.setAttribute("aria-label", manga.title);
+    const cover = document.createElement("div");
+    cover.className = "manga-cover";
+    const poster = document.createElement("img");
     poster.src = manga.poster;
+    poster.alt = manga.title;
     poster.loading = "lazy";
-    redirect.href = `/manga/${manga.sku}`;
-    redirect.appendChild(poster);
-    mangaDiv.appendChild(redirect);
-    mangaDiv.appendChild(title);
-    if (language) {
-        mangaDiv.appendChild(language);
+    poster.decoding = "async";
+    poster.onerror = () => {
+        poster.onerror = null;
+        poster.src =
+            "data:image/svg+xml;charset=UTF-8," +
+                encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900">
+          <rect width="600" height="900" fill="#111827"/>
+          <rect x="90" y="120" width="420" height="660" rx="24" fill="#1f2937"/>
+          <path d="M180 560l70-85 60 60 70-90 90 115" fill="none" stroke="#64748b" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="250" cy="320" r="40" fill="#64748b"/>
+          <text x="300" y="820" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="30">No poster</text>
+        </svg>
+      `);
+    };
+    cover.appendChild(poster);
+    const body = document.createElement("div");
+    body.className = "manga-body";
+    const title = document.createElement("h2");
+    title.className = "manga-title";
+    title.textContent = manga.title;
+    body.appendChild(title);
+    body.appendChild(buildInfoBlock(manga));
+    const tags = buildTags(manga.genres);
+    if (tags) {
+        body.appendChild(tags);
     }
-    if (author) {
-        mangaDiv.appendChild(author);
-    }
-    if (genres) {
-        mangaDiv.appendChild(genres);
-    }
-    return mangaDiv;
+    card.appendChild(cover);
+    card.appendChild(body);
+    return card;
 }
 async function buildResponse(endpoint, page, query = null) {
-    var url = API_ENDPOINTS[endpoint];
-    if (!url) {
-        url = URLJoin(API, "/pages");
+    const baseUrl = API_ENDPOINTS[endpoint];
+    const params = new URLSearchParams({
+        page: String(page),
+        per_page: String(ITEMS_PER_PAGE),
+    });
+    if (query && query.trim()) {
+        params.set("query", query.trim());
     }
-    console.log(url);
-    let params;
+    var response;
     if (query) {
-        params = new URLSearchParams({
-            query: query,
-            page: page.toString(),
-            per_page: '24'
+        response = await fetch(`${baseUrl}/?${params.toString()}`, {
+            headers: {
+                Accept: "application/json",
+            },
         });
     }
     else {
-        params = new URLSearchParams({
-            page: page.toString(),
-            per_page: '24'
+        response = await fetch(`${API_ENDPOINTS['pages']}/?${params.toString()}`, {
+            headers: {
+                Accept: "application/json",
+            },
         });
     }
-    const fullUrl = `${url}/?${params.toString()}`;
-    const response = await fetch(fullUrl);
     if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error: ${response.status}`);
     }
-    return await response.json();
+    return (await response.json());
 }
-// === НОВАЯ ЛОГИКА БЕСКОНЕЧНОГО СКРОЛЛИНГА (используем buildResponse как есть) ===
-const mangaType = window.location.pathname.replace("/", "");
-const url = new URL(window.location.href);
-const query = url.searchParams.get("query"); // убрал лишний cast, чтобы явно было null
+const gallery = document.getElementById("gallery");
+const loader = document.getElementById("loader");
+const searchForm = document.getElementById("search-form");
+const searchInput = document.getElementById("search-input");
+const searchError = document.getElementById("search-error");
+const activeEndpoint = getActiveEndpoint();
+const currentUrl = new URL(window.location.href);
+const initialQuery = (_a = currentUrl.searchParams.get("query")) !== null && _a !== void 0 ? _a : "";
 let currentPage = 1;
 let isLoading = false;
 let hasMore = true;
 let totalItems = 0;
-const PER_PAGE = 1; // оставили как в оригинальном buildResponse
+let observer = null;
+function setStateMessage(message) {
+    if (!gallery)
+        return;
+    gallery.innerHTML = "";
+    const state = document.createElement("div");
+    state.className = "gallery-state";
+    state.textContent = message;
+    gallery.appendChild(state);
+}
+function setError(message) {
+    if (!searchError)
+        return;
+    searchError.textContent = message;
+}
+function clearError() {
+    setError("");
+}
+function renderMangas(items) {
+    if (!gallery)
+        return;
+    const fragment = document.createDocumentFragment();
+    items.forEach((item) => fragment.appendChild(buildManga(item)));
+    gallery.appendChild(fragment);
+}
 async function loadMore() {
-    if (isLoading || !hasMore)
+    if (isLoading || !hasMore || !gallery)
         return;
     isLoading = true;
+    if (loader) {
+        loader.textContent = "Загрузка ещё...";
+        loader.style.display = "grid";
+    }
     try {
-        const result = await buildResponse(mangaType, currentPage, query);
+        const result = await buildResponse(activeEndpoint, currentPage, initialQuery);
         if (!result.success) {
-            console.log("Бля");
+            hasMore = false;
+            if (currentPage === 1) {
+                setStateMessage("Ничего не найдено.");
+            }
             return;
         }
-        // Запоминаем общее количество только один раз (из первого ответа)
         if (totalItems === 0) {
             totalItems = result.total;
         }
-        const gallery = document.getElementById("gallery");
-        if (!gallery) {
+        if (currentPage === 1) {
+            gallery.innerHTML = "";
+        }
+        if (!result.response.length && currentPage === 1) {
+            setStateMessage("Ничего не найдено.");
+            hasMore = false;
             return;
         }
-        for (let index = 0; index < result.response.length; index++) {
-            const element = result.response[index];
-            gallery.appendChild(buildManga(element));
-        }
-        // Проверяем, есть ли ещё данные
-        if (currentPage * PER_PAGE >= totalItems) {
+        renderMangas(result.response);
+        const loadedCount = gallery.querySelectorAll(".manga").length;
+        if (loadedCount >= totalItems || result.response.length < ITEMS_PER_PAGE) {
             hasMore = false;
+            if (loader) {
+                loader.textContent = "Это всё";
+            }
         }
         else {
-            currentPage++;
+            currentPage += 1;
         }
     }
     catch (error) {
         console.error("Ошибка при загрузке:", error);
+        if (currentPage === 1) {
+            setStateMessage("Не удалось загрузить мангу. Попробуйте ещё раз.");
+        }
+        hasMore = false;
+        if (loader) {
+            loader.textContent = "Ошибка загрузки";
+        }
     }
     finally {
         isLoading = false;
     }
 }
-async function main() {
-    const gallery = document.getElementById("gallery");
-    if (!gallery) {
+function initInfiniteScroll() {
+    if (!loader)
         return;
-    }
-    // Удаляем старый h1 (как в оригинале)
-    var h1 = gallery.querySelector("h1");
-    if (h1) {
-        h1.remove();
-    }
-    // Первая загрузка (всегда с 1 страницы — классика infinite scroll)
-    await loadMore();
-    // Обработчик бесконечного скролла
-    window.addEventListener("scroll", () => {
-        if (isLoading || !hasMore)
-            return;
-        const scrollTop = window.scrollY;
-        const clientHeight = window.innerHeight;
-        const scrollHeight = document.documentElement.scrollHeight;
-        // Подгружаем за 300px до конца (можно менять)
-        if (scrollTop + clientHeight >= scrollHeight - 300) {
-            loadMore();
+    observer = new IntersectionObserver((entries) => {
+        var _a;
+        if ((_a = entries[0]) === null || _a === void 0 ? void 0 : _a.isIntersecting) {
+            void loadMore();
         }
+    }, {
+        root: null,
+        rootMargin: "300px 0px",
+        threshold: 0.01,
+    });
+    observer.observe(loader);
+}
+function initSearch() {
+    if (!searchForm || !searchInput)
+        return;
+    searchInput.value = initialQuery;
+    searchForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        clearError();
+        const value = searchInput.value.trim();
+        if (value.length > 120) {
+            setError("Слишком длинный запрос.");
+            return;
+        }
+        const nextUrl = new URL(window.location.href);
+        if (value) {
+            nextUrl.searchParams.set("query", value);
+        }
+        else {
+            nextUrl.searchParams.delete("query");
+        }
+        window.location.href = nextUrl.toString();
     });
 }
-main();
+async function main() {
+    if (!gallery)
+        return;
+    initSearch();
+    initInfiniteScroll();
+    if (!initialQuery) {
+        // Ничего специального не делаем — просто загружаем первую страницу.
+    }
+    await loadMore();
+}
+void main();
