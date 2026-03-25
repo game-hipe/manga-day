@@ -224,7 +224,7 @@ class MangaFindResultSchema(BaseModel):
     query: str
     """Запрос, по которому был получен результат."""
 
-    succsess: bool = Field(False)
+    success: bool = Field(False)
     """Флаг успешности поиска."""
 
     total: int = Field(0)

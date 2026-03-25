@@ -170,7 +170,7 @@ class FindService:
 
         return MangaFindResultSchema(
             query="ALL MANGA",
-            succsess=True,
+            success=True,
             total=count,
             response=manga,
             page=math.ceil((count or 0) / per_page),
@@ -219,7 +219,7 @@ class FindService:
 
         return MangaFindResultSchema(
             query=f"FIND MANGA BY GENRE = {genre_id}",
-            succsess=True,
+            success=True,
             total=count,
             response=manga,
             page=math.ceil((count or 0) / per_page),
@@ -266,7 +266,7 @@ class FindService:
 
         return MangaFindResultSchema(
             query=f"FIND MANGA BY AUTHOR = {author_id}",
-            succsess=True,
+            success=True,
             total=count,
             response=manga,
             page=math.ceil((count or 0) / per_page),
@@ -313,7 +313,7 @@ class FindService:
 
         return MangaFindResultSchema(
             query=f"FIND MANGA BY LANGUAGE = {language_id}",
-            succsess=True,
+            success=True,
             total=count,
             response=manga,
             page=math.ceil((count or 0) / per_page),
@@ -366,7 +366,7 @@ class FindService:
 
         return MangaFindResultSchema(
             query=f"FIND MANGA BY QUERY = {_find_query}",
-            succsess=True,
+            success=True,
             total=count,
             response=manga,
             page=math.ceil((count or 0) / per_page),
@@ -382,7 +382,7 @@ class FindService:
         )
 
         return MangaFindResultSchema(
-            query=str(selector), succsess=True, total=count, response=manga
+            query=str(selector), success=True, total=count, response=manga
         )
 
     async def _scalars_manga(

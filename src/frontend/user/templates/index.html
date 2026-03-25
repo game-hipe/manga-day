@@ -1,111 +1,28 @@
-{% extends "base.html" %}
-
-{% block content %}
-<main>
-    <link rel="stylesheet" href="/static/css/gallery.css">
-    <div class="container index-container">
-        <h2 class="page-title">{{ title }}</h2>
-        
-        <div id="dle-content" class="manga-grid">
-            {% for manga in mangas %}
-                <article class="gallery-card">
-                    <a href="/manga/{{ manga.sku }}" class="gallery-card__link">
-                        <img src="{{ manga.poster }}" alt="Обложка манги: {{ manga.title }}" class="gallery-card__image" loading="lazy">
-                        <div class="gallery-card__caption">
-                            {{ manga.title }}
-                        </div>
-                    </a>
-
-                    {% if manga.genres|length > 0 %}
-                    <div class="gallery-card__meta gallery-card__meta--genres">
-                        <h3 class="meta-title">Жанры:</h3>
-                        <div class="meta-tags">
-                            {% set visible_genres = manga.genres[:5] %}
-                            {% set hidden_count = manga.genres|length - 5 %}
-                            
-                            {% for genre in visible_genres %}
-                                <a href="/manga/tags/{{ genre.id }}" class="tag tag--genre">{{ genre.name }}</a>
-                            {% endfor %}
-                            
-                            {% if hidden_count > 0 %}
-                                <span class="tag tag--more" 
-                                      title="Скрыто жанров: {{ hidden_count }}" 
-                                      aria-label="И ещё {{ hidden_count }} жанров">
-                                    +{{ hidden_count }}
-                                </span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if manga.author %} 
-                    <div class="gallery-card__meta gallery-card__meta--author">
-                        <h3 class="meta-title">Автор:</h3>
-                        <a href="/manga/author/{{ manga.author.id }}" class="tag tag--author">{{ manga.author.name }}</a>
-                    </div>
-                    {% endif %}
-
-                    {% if manga.language %}
-                    <div class="gallery-card__meta gallery-card__meta--language">
-                        <h3 class="meta-title">Язык:</h3>
-                        <a href="/manga/language/{{ manga.language.id }}" class="tag tag--language">{{ manga.language.name }}</a>
-                    </div>
-                    {% endif %}
-                </article>
-            {% endfor %}
-        </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manga-Day - Новая манга во мгновение ока!</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="search-container">
+        <form id="search-form" class="search-form">
+            <input type="search" id="search-input" placeholder="Название или артикул манги..." autocomplete="off">
+            <button type="submit">Поиск</button>
+            <div class="error-message" id="search-error"></div>
+        </form>
     </div>
 
-    {% if total > 1 %}
-    <nav class="paginator" aria-label="Навигация по страницам">
-        <ul class="pagination">
-            {% if page_now > 1 %}
-                <li class="pagination__item">
-                    <a href="?page={{ page_now - 1 }}" class="page-link page-link--nav page-link--prev" aria-label="Предыдущая страница">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
-                </li>
-            {% endif %}
+    <div class="manga-gallery" id="gallery">
+        <h1>Загрузка манги...</h1>
+    </div>
 
-            {% for page in range(1, total + 1) %}
-                {% if page == page_now %}
-                    <li class="pagination__item">
-                        <span class="page-link page-link--current" aria-current="page">{{ page }}</span>
-                    </li>
-                {% elif page == 1 or page == total or (page >= page_now - 2 and page <= page_now + 2) %}
-                    <li class="pagination__item">
-                        <a href="?page={{ page }}" class="page-link">{{ page }}</a>
-                    </li>
-                {% elif page == page_now - 3 or page == page_now + 3 %}
-                    <li class="pagination__item">
-                        <span class="page-link page-link--ellipsis" aria-hidden="true">...</span>
-                    </li>
-                {% endif %}
-            {% endfor %}
+    <div class="footer">
+        © 2026 Manga-Day
+    </div>
 
-            {% if page_now < total %}
-                <li class="pagination__item">
-                    <a href="?page={{ page_now + 1 }}" class="page-link page-link--nav page-link--next" aria-label="Следующая страница">
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>
-            {% endif %}
-        </ul>
-        <div class="paginator__info" aria-live="polite">
-            Страница {{ page_now }} из {{ total }}
-        </div>
-    </nav>
-    {% endif %}
-</main>
-<script>
-    (function() {
-        const images = document.querySelectorAll('.gallery-card__image');
-        images.forEach(img => {
-            const src = img.getAttribute('src');
-            if (src && src.startsWith('https://hitomikr.org')) {
-                img.src = src.replace('https://hitomikr.org', 'https://moeimg.fan');
-            }
-        });
-    })();
-</script>
-{% endblock %}
+    <script src="/static/js/index.js"></script>
+</body>
+</html>
