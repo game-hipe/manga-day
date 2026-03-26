@@ -1,25 +1,3 @@
-const URLJoin = (...args: string[]): string =>
-  args
-    .join("/")
-    .replace(/[\/]+/g, "/")
-    .replace(/^(.+):\//, "$1://")
-    .replace(/^file:/, "file:/")
-    .replace(/\/(\?|&|#[^!])/g, "$1")
-    .replace(/\?/g, "&")
-    .replace("&", "?");
-
-const API = "http://localhost:8080/api/v1";
-
-const API_ENDPOINTS = {
-  author: URLJoin(API, "/pages/author"),
-  language: URLJoin(API, "/pages/language"),
-  genre: URLJoin(API, "/pages/genre"),
-  query: URLJoin(API, "/pages/query"),
-  pages: URLJoin(API, "/pages"),
-} as const;
-
-type EndpointKey = keyof typeof API_ENDPOINTS;
-
 interface ObjectWithId {
   id: number;
   name: string;
@@ -34,8 +12,6 @@ interface Manga {
   author: ObjectWithId | null;
   genres: ObjectWithId[];
   sku: string;
-  rating?: number | null;
-  status?: string | null;
 }
 
 interface ResponsePayload {
@@ -47,7 +23,7 @@ interface ResponsePayload {
   response: Manga[];
 }
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 24;
 const TAG_LIMIT = 6;
 const DEFAULT_ENDPOINT: EndpointKey = "query";
 
@@ -71,14 +47,6 @@ function createMetaLine(text: string): HTMLDivElement {
   line.className = "manga-meta-line";
   line.textContent = text;
   return line;
-}
-
-function formatRating(value: number | null | undefined): string | null {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return null;
-  }
-  const rounded = Math.round(value * 10) / 10;
-  return `★ ${rounded.toFixed(1)}`;
 }
 
 function buildTags(genres: ObjectWithId[]): HTMLDivElement | null {
@@ -114,8 +82,6 @@ function buildInfoBlock(manga: Manga): HTMLDivElement {
 
   const authorName = manga.author?.name ?? null;
   const languageName = manga.language?.name ?? null;
-  const ratingText = formatRating(manga.rating);
-  const statusText = manga.status?.trim() || null;
 
   if (authorName) {
     meta.appendChild(createMetaLine(authorName));
@@ -123,7 +89,6 @@ function buildInfoBlock(manga: Manga): HTMLDivElement {
 
   const secondLineParts: string[] = [];
   if (languageName) secondLineParts.push(languageName);
-  if (statusText) secondLineParts.push(statusText);
 
   if (secondLineParts.length > 0) {
     meta.appendChild(createMetaLine(secondLineParts.join(" • ")));
@@ -131,14 +96,6 @@ function buildInfoBlock(manga: Manga): HTMLDivElement {
 
   const badges = document.createElement("div");
   badges.className = "manga-badges";
-
-  if (ratingText) {
-    badges.appendChild(createTextBadge(ratingText, "badge badge--rating"));
-  }
-
-  if (statusText) {
-    badges.appendChild(createTextBadge(statusText, "badge badge--status"));
-  }
 
   if (badges.childElementCount > 0) {
     meta.appendChild(badges);
@@ -217,13 +174,13 @@ async function buildResponse(
   var response: Response;
 
   if (query) {
-    response = await fetch(`${baseUrl}/?${params.toString()}`, {
+    response = await fetch(`${baseUrl}?${params.toString()}`, {
         headers: {
         Accept: "application/json",
         },
     });
   } else {
-    response = await fetch(`${API_ENDPOINTS['pages']}/?${params.toString()}`, {
+    response = await fetch(`${API_ENDPOINTS['pages']}?${params.toString()}`, {
         headers: {
         Accept: "application/json",
         },
@@ -350,6 +307,12 @@ function renderMangas(items: Manga[]): void {
   gallery.appendChild(fragment);
 }
 
+function removeLoader(): void {
+    if (loader) {
+        loader.remove();
+    }
+}
+
 async function loadMore(): Promise<void> {
   if (isLoading || !hasMore || !gallery) return;
 
@@ -365,6 +328,7 @@ async function loadMore(): Promise<void> {
     if (!result.success) {
       hasMore = false;
       if (currentPage === 1) {
+        removeLoader();
         setStateMessage("Ничего не найдено.");
       }
       return;
@@ -379,6 +343,7 @@ async function loadMore(): Promise<void> {
     }
 
     if (!result.response.length && currentPage === 1) {
+      removeLoader();
       setStateMessage("Ничего не найдено.");
       hasMore = false;
       return;

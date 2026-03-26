@@ -19,7 +19,7 @@ def setup_api(service: FindService) -> FastAPI:
     """
     app = FastAPI(title="Manga-Day API")
 
-    endpoint = Endpoints(service)
+    endpoint = Endpoints(service, config.user_bot.url)
     app.include_router(endpoint.router)
 
     app.add_middleware(

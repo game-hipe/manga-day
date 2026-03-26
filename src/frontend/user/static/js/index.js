@@ -1,22 +1,6 @@
 "use strict";
 var _a;
-const URLJoin = (...args) => args
-    .join("/")
-    .replace(/[\/]+/g, "/")
-    .replace(/^(.+):\//, "$1://")
-    .replace(/^file:/, "file:/")
-    .replace(/\/(\?|&|#[^!])/g, "$1")
-    .replace(/\?/g, "&")
-    .replace("&", "?");
-const API = "http://localhost:8080/api/v1";
-const API_ENDPOINTS = {
-    author: URLJoin(API, "/pages/author"),
-    language: URLJoin(API, "/pages/language"),
-    genre: URLJoin(API, "/pages/genre"),
-    query: URLJoin(API, "/pages/query"),
-    pages: URLJoin(API, "/pages"),
-};
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 24;
 const TAG_LIMIT = 6;
 const DEFAULT_ENDPOINT = "query";
 function getActiveEndpoint() {
@@ -37,13 +21,6 @@ function createMetaLine(text) {
     line.className = "manga-meta-line";
     line.textContent = text;
     return line;
-}
-function formatRating(value) {
-    if (value === null || value === undefined || Number.isNaN(value)) {
-        return null;
-    }
-    const rounded = Math.round(value * 10) / 10;
-    return `★ ${rounded.toFixed(1)}`;
 }
 function buildTags(genres) {
     if (!genres || genres.length === 0) {
@@ -67,32 +44,22 @@ function buildTags(genres) {
     return tagsWrap;
 }
 function buildInfoBlock(manga) {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d;
     const meta = document.createElement("div");
     meta.className = "manga-meta";
     const authorName = (_b = (_a = manga.author) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : null;
     const languageName = (_d = (_c = manga.language) === null || _c === void 0 ? void 0 : _c.name) !== null && _d !== void 0 ? _d : null;
-    const ratingText = formatRating(manga.rating);
-    const statusText = ((_e = manga.status) === null || _e === void 0 ? void 0 : _e.trim()) || null;
     if (authorName) {
         meta.appendChild(createMetaLine(authorName));
     }
     const secondLineParts = [];
     if (languageName)
         secondLineParts.push(languageName);
-    if (statusText)
-        secondLineParts.push(statusText);
     if (secondLineParts.length > 0) {
         meta.appendChild(createMetaLine(secondLineParts.join(" • ")));
     }
     const badges = document.createElement("div");
     badges.className = "manga-badges";
-    if (ratingText) {
-        badges.appendChild(createTextBadge(ratingText, "badge badge--rating"));
-    }
-    if (statusText) {
-        badges.appendChild(createTextBadge(statusText, "badge badge--status"));
-    }
     if (badges.childElementCount > 0) {
         meta.appendChild(badges);
     }
@@ -151,14 +118,14 @@ async function buildResponse(endpoint, page, query = null) {
     }
     var response;
     if (query) {
-        response = await fetch(`${baseUrl}/?${params.toString()}`, {
+        response = await fetch(`${baseUrl}?${params.toString()}`, {
             headers: {
                 Accept: "application/json",
             },
         });
     }
     else {
-        response = await fetch(`${API_ENDPOINTS['pages']}/?${params.toString()}`, {
+        response = await fetch(`${API_ENDPOINTS['pages']}?${params.toString()}`, {
             headers: {
                 Accept: "application/json",
             },
@@ -276,6 +243,11 @@ function renderMangas(items) {
     items.forEach((item) => fragment.appendChild(buildManga(item)));
     gallery.appendChild(fragment);
 }
+function removeLoader() {
+    if (loader) {
+        loader.remove();
+    }
+}
 async function loadMore() {
     if (isLoading || !hasMore || !gallery)
         return;
@@ -289,6 +261,7 @@ async function loadMore() {
         if (!result.success) {
             hasMore = false;
             if (currentPage === 1) {
+                removeLoader();
                 setStateMessage("Ничего не найдено.");
             }
             return;
@@ -300,6 +273,7 @@ async function loadMore() {
             gallery.innerHTML = "";
         }
         if (!result.response.length && currentPage === 1) {
+            removeLoader();
             setStateMessage("Ничего не найдено.");
             hasMore = false;
             return;

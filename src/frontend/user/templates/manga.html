@@ -1,11 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Загрузка манги</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <script src="/static/js/base.js"></script>
 </head>
 <body>
-    
+  <header class="topbar">
+    <div class="brand">
+      <h1>Manga-Day</h1>
+    </div>
+
+    <form id="search-form" class="search-form" action="/query" method="GET" role="search" novalidate>
+      <label class="sr-only" for="search-input">Поиск манги</label>
+      <input
+        type="search"
+        id="search-input"
+        name="query"
+        placeholder="Название или SKU"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button type="submit" aria-label="Искать">
+        <span>Поиск</span>
+      </button>
+      <div class="error-message" id="search-error" aria-live="polite" style="display: none;"></div>
+    </form>
+  </header>
+
+  <div class="manga-gallery" id="manga">
+      <div class="gallery-state">Загрузка манги...</div>
+  </div>
+
+  <main class="page">
+    <section class="manga-gallery" id="gallery" aria-live="polite">
+      <div class="gallery-state">Загрузка манги...</div>
+    </section>
+
+    <div id="loader" class="loader" aria-hidden="true">
+      <span>Загрузка ещё...</span>
+    </div>
+  </main>
+
+  <footer class="footer">
+    © 2026 Manga-Day
+  </footer>
+
+  <script src="/static/js/manga.js"></script>
+  <!--<script src="/static/js/index.js"></script>--->
 </body>
 </html>

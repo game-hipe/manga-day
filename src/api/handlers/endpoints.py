@@ -25,18 +25,34 @@ def pagination(
 class Endpoints:
     """Эндпоинты для API манги."""
 
-    def __init__(self, service: FindService):
+    def __init__(self, service: FindService, bot: str):
         """Инициализация Endpoints
 
         Args:
             service (FindService): Сервис для работы с мангой.
+            bot (str): URL бота Telegram.
         """
         self.service = service
+        self.bot = bot
         self._router = APIRouter(prefix="/api/v1", tags=["api"])
 
         self._setup_routes()
         self._setup_tag_routes()
         self._setup_finder_routes()
+
+        self._setuo_tools()
+
+    def _setuo_tools(self):
+        """Настройка инструментов."""
+
+        self._router.add_api_route(
+            "/bot",
+            self.get_bot_url,
+            methods=["GET"],
+            response_model=str,
+            summary="Получить URL бота",
+            tags=["tools"],
+        )
 
     def _setup_routes(self):
         """
@@ -312,6 +328,9 @@ class Endpoints:
             list[ObjectWithId]: Обьекты с ID и названием
         """
         return await self.service.tag_getter.get_authors(**common)
+
+    async def get_bot_url(self) -> str:
+        return self.bot
 
     @property
     def router(self) -> APIRouter:

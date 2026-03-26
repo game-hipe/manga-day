@@ -6,9 +6,7 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 
-from ....core.entities.schemas import MangaFindResultSchema
 from ....core.service.manga import FindService
-from ....core import config
 
 
 USER_FILES = Path(os.path.abspath(__file__)).parent.parent
@@ -90,7 +88,7 @@ class UserHandler:
 
         self.router.add_api_route(
             "/manga/{manga_sku}",
-            self._show_page,
+            self._show_manga,
             tags=["frontend"],
             response_class=HTMLResponse,
             methods=["GET"],
@@ -113,9 +111,7 @@ class UserHandler:
             return FileResponse(static_file)
         raise HTTPException(status_code=404)
 
-    def _show_page(
-        self, request: Request
-    ) -> HTMLResponse:
+    def _show_page(self, request: Request) -> HTMLResponse:
         """Показать страницу
 
         Args:
@@ -127,19 +123,15 @@ class UserHandler:
 
         return self.templates.TemplateResponse(
             "index.html",
-            context={
-                "request": request
-            },
+            context={"request": request},
         )
 
     def _show_manga(
-        self, request: Request,
+        self,
+        request: Request,
     ):
         return self.templates.TemplateResponse(
-            "manga.html",
-            context={
-                "request": request
-            }
+            "manga.html", context={"request": request}
         )
 
     @property
