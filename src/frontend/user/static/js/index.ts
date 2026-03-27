@@ -200,9 +200,9 @@ const searchForm = document.getElementById("search-form") as HTMLFormElement | n
 const searchInput = document.getElementById("search-input") as HTMLInputElement | null;
 const searchError = document.getElementById("search-error") as HTMLElement | null;
 
-const activeEndpoint = getActiveEndpoint();
 const currentUrl = new URL(window.location.href);
-const initialQuery = currentUrl.searchParams.get("query") ?? "";
+var activeEndpoint = getActiveEndpoint();
+var initialQuery = currentUrl.searchParams.get("query") ?? "";
 
 let currentPage = 1;
 let isLoading = false;
@@ -313,7 +313,7 @@ function removeLoader(): void {
     }
 }
 
-async function loadMore(): Promise<void> {
+async function loadMore(endpoint: EndpointKey | null = null, query: string | null = null): Promise<void> {
   if (isLoading || !hasMore || !gallery) return;
 
   isLoading = true;
@@ -323,7 +323,7 @@ async function loadMore(): Promise<void> {
   }
 
   try {
-    const result = await buildResponse(activeEndpoint, currentPage, initialQuery);
+    const result = await buildResponse(endpoint || activeEndpoint, currentPage, query || initialQuery);
 
     if (!result.success) {
       hasMore = false;

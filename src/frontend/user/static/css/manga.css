@@ -1,0 +1,236 @@
+/* =============================================
+   MANGA DETAIL PAGE — manga.css
+   Соблюдает дизайн-систему проекта (переменные из style.css)
+   Mobile-first, чистая архитектура, минимум дублирования
+   ============================================= */
+
+:root {
+  /* Убеждаемся, что все переменные доступны даже если порядок подключения изменится */
+  --bg: #0b0d12;
+  --surface: #151a23;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text: #f4f5f7;
+  --muted: #9aa4b2;
+  --accent: #ff4d8d;
+  --accent-2: #8b5cf6;
+  --shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
+  --shadow-hover: 0 18px 48px rgba(0, 0, 0, 0.38);
+  --radius-lg: 22px;
+  --radius-md: 16px;
+}
+
+/* Переопределяем контейнер #manga (он имеет класс manga-gallery из HTML) */
+.manga-gallery#manga {
+  display: block;
+  width: min(var(--max-width, 1240px), 100%);
+  margin: 0 auto;
+  padding: 20px 12px 40px;
+  background: transparent;
+}
+
+/* Основной блок информации */
+.manga-info {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 28px 20px;
+  margin-bottom: 40px;
+}
+
+@media (min-width: 768px) {
+  .manga-gallery#manga {
+    padding: 40px 20px 60px;
+  }
+  .manga-info {
+    padding: 40px 32px;
+  }
+}
+
+/* Секция заголовок + постер */
+#info {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+#info h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 5vw, 2.75rem);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+#info img {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  align-self: flex-start;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Desktop: постер слева, заголовок справа */
+@media (min-width: 640px) {
+  #info {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 36px;
+  }
+
+  #info h1 {
+    order: 2;
+    flex: 1;
+  }
+
+  #info img {
+    order: 1;
+    max-width: 280px;
+    flex-shrink: 0;
+  }
+}
+
+#info img:hover {
+  transform: scale(1.03);
+}
+
+/* Теги (жанры / автор / язык) */
+#tags {
+  margin: 28px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#tags > div { /* #genres, #author, #language */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag__manga {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  background: rgba(255, 77, 141, 0.12);
+  border: 1px solid rgba(255, 77, 141, 0.25);
+  color: var(--accent);
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.tag__manga:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(255, 77, 141, 0.3);
+}
+
+/* Кнопки */
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.button__pdf,
+.button__manga {
+  flex: 1 1 220px;
+  min-height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 28px;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow);
+}
+
+.button__pdf {
+  background: linear-gradient(135deg, var(--accent-2), #a78bfa);
+  color: #fff;
+}
+
+.button__pdf:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+  filter: brightness(1.08);
+}
+
+.button__manga {
+  background: linear-gradient(135deg, var(--accent), #ff6fa4);
+  color: #fff;
+}
+
+.button__manga:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+  filter: brightness(1.08);
+}
+
+/* Галерея страниц */
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.gallery__image {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  display: block;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #0f131a;
+}
+
+.gallery__image:hover {
+  transform: scale(1.015);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Состояния (ошибка / загрузка) */
+.manga-gallery#manga .gallery-state {
+  padding: 60px 20px;
+  text-align: center;
+  font-size: 1.1rem;
+  color: var(--muted);
+}
+
+/* Адаптивные улучшения */
+@media (min-width: 1024px) {
+  .manga-info {
+    padding: 48px 40px;
+  }
+  #info {
+    gap: 48px;
+  }
+  .gallery {
+    gap: 32px;
+  }
+}
+
+/* Уменьшение анимаций при reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  #info img,
+  .tag__manga,
+  .button__pdf,
+  .button__manga,
+  .gallery__image {
+    transition: none;
+  }
+}

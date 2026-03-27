@@ -1,0 +1,705 @@
+// =============================================
+// УНИФИЦИРОВАННЫЙ TypeScript — unified-manga.ts
+// Объединяет логику главной страницы (index.ts) + страницы манги (manga.ts)
+// Единая система фильтрации по тегам (author / genre / language)
+// Работает на ОБОИХ страницах без конфликтов
+// =============================================
+
+interface ObjectWithId {
+  id: number;
+  name: string;
+}
+
+interface Manga {
+  id: number;
+  title: string;
+  poster: string;
+  url: string;
+  language: ObjectWithId | null;
+  author: ObjectWithId | null;
+  genres: ObjectWithId[];
+  sku: string;
+}
+
+interface MangaWithGallery extends Manga {
+  gallery: string[];
+}
+
+interface ResponsePayload {
+  query: string;
+  success: boolean;
+  total: number;
+  page: number;
+  page_now: number;
+  response: Manga[];
+}
+
+// ==================== КОНСТАНТЫ И ГЛОБАЛЬНОЕ СОСТОЯНИЕ ====================
+const ITEMS_PER_PAGE = 24;
+const TAG_LIMIT = 6;
+var randomTag: Map<string, string> = new Map();
+
+let activeEndpoint: EndpointKey = "pages";
+let initialQuery = "";
+
+let currentPage = 1;
+let isLoading = false;
+let hasMore = true;
+let totalItems = 0;
+let observer: IntersectionObserver | null = null;
+
+// DOM-элементы (общие для обеих страниц)
+const galleryEl = document.getElementById("gallery") as HTMLElement | null;
+const loaderEl = document.getElementById("loader") as HTMLElement | null;
+const searchForm = document.getElementById("search-form") as HTMLFormElement | null;
+const searchInput = document.getElementById("search-input") as HTMLInputElement | null;
+const searchError = document.getElementById("search-error") as HTMLElement | null;
+const textShowEl = document.getElementById("textShow") as HTMLHeadingElement | null;
+
+// ==================== УТИЛИТЫ ====================
+// Ключевые изменения: добавлена детекция страницы + getSkuFromUrl
+function isDetailPage(): boolean {
+  return window.location.pathname.startsWith("/manga/");
+}
+
+function getSkuFromUrl(): string | null {
+  const pathname = window.location.pathname.replace(/^\/+|\/+$/g, "");
+  const parts = pathname.split("/");
+  return parts[parts.length - 1] || null;
+}
+
+// ==================== BUILDERS ДЛЯ КАРТОЧЕК (из index.ts) ====================
+function createTextBadge(text: string, className: string): HTMLSpanElement {
+  const badge = document.createElement("span");
+  badge.className = className;
+  badge.textContent = text;
+  return badge;
+}
+
+function createMetaLine(text: string): HTMLDivElement {
+  const line = document.createElement("div");
+  line.className = "manga-meta-line";
+  line.textContent = text;
+  return line;
+}
+
+function buildTags(genres: ObjectWithId[]): HTMLDivElement | null {
+  if (!genres || genres.length === 0) return null;
+
+  const tagsWrap = document.createElement("div");
+  tagsWrap.className = "tags";
+
+  const visible = genres.slice(0, TAG_LIMIT);
+  visible.forEach((genre) => {
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = genre.name;
+    tagsWrap.appendChild(tag);
+  });
+
+  if (genres.length > TAG_LIMIT) {
+    const more = document.createElement("span");
+    more.className = "tag tag--more";
+    more.textContent = `+${genres.length - TAG_LIMIT}`;
+    tagsWrap.appendChild(more);
+  }
+  return tagsWrap;
+}
+
+function buildInfoBlock(manga: Manga): HTMLDivElement {
+  const meta = document.createElement("div");
+  meta.className = "manga-meta";
+
+  const authorName = manga.author?.name ?? null;
+  const languageName = manga.language?.name ?? null;
+
+  if (authorName) meta.appendChild(createMetaLine(authorName));
+
+  const secondLineParts: string[] = [];
+  if (languageName) secondLineParts.push(languageName);
+  if (secondLineParts.length > 0) {
+    meta.appendChild(createMetaLine(secondLineParts.join(" • ")));
+  }
+
+  const badges = document.createElement("div");
+  badges.className = "manga-badges";
+  if (badges.childElementCount > 0) meta.appendChild(badges);
+
+  return meta;
+}
+
+function buildManga(manga: Manga): HTMLAnchorElement {
+  const card = document.createElement("a");
+  card.className = "manga";
+  card.href = `/manga/${encodeURIComponent(manga.sku)}`;
+  card.setAttribute("aria-label", manga.title);
+
+  const cover = document.createElement("div");
+  cover.className = "manga-cover";
+
+  const poster = document.createElement("img");
+  poster.src = manga.poster;
+  poster.alt = manga.title;
+  poster.loading = "lazy";
+  poster.decoding = "async";
+
+  poster.onerror = () => {
+    poster.onerror = null;
+    poster.src =
+      "data:image/svg+xml;charset=UTF-8," +
+      encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900">
+          <rect width="600" height="900" fill="#111827"/>
+          <rect x="90" y="120" width="420" height="660" rx="24" fill="#1f2937"/>
+          <path d="M180 560l70-85 60 60 70-90 90 115" fill="none" stroke="#64748b" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="250" cy="320" r="40" fill="#64748b"/>
+          <text x="300" y="820" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="30">No poster</text>
+        </svg>
+      `);
+  };
+
+  cover.appendChild(poster);
+
+  const body = document.createElement("div");
+  body.className = "manga-body";
+
+  const title = document.createElement("h2");
+  title.className = "manga-title";
+  title.textContent = manga.title;
+
+  body.appendChild(title);
+  body.appendChild(buildInfoBlock(manga));
+
+  const tags = buildTags(manga.genres);
+  if (tags) body.appendChild(tags);
+
+  card.appendChild(cover);
+  card.appendChild(body);
+  return card;
+}
+
+// ==================== BUILDERS ДЛЯ ДЕТАЛЬНОЙ СТРАНИЦЫ (из manga.ts) ====================
+function createLinkTag(
+  type: "genre" | "author" | "language",
+  text: string,
+  id: number
+): HTMLAnchorElement {
+  const tag = document.createElement("a");
+  tag.href = `/${type}?query=${id}`;
+  tag.textContent = text;
+  tag.className = "tag__manga";
+  return tag;
+}
+
+// Ключевые изменения: исправлены опечатки и тексты заголовков
+function buildClickableTags(manga: Manga): HTMLDivElement {
+  const tagsWrap = document.createElement("div");
+  tagsWrap.id = "tags";
+  tagsWrap.className = "tags";
+
+  // Жанры
+  if (manga.genres?.length) {
+    const genresBlock = document.createElement("div");
+    genresBlock.id = "genres";
+
+    const genresText = document.createElement("h2");
+    genresText.textContent = "Жанры:";
+    genresBlock.appendChild(genresText);
+
+    manga.genres.forEach((genre) => {
+      genresBlock.appendChild(createLinkTag("genre", genre.name, genre.id));
+    });
+    tagsWrap.appendChild(genresBlock);
+  }
+
+  // Автор
+  if (manga.author) {
+    const authorBlock = document.createElement("div");
+    authorBlock.id = "author";
+
+    const authorText = document.createElement("h2");
+    authorText.textContent = "Автор:";
+    authorBlock.appendChild(authorText);
+
+    authorBlock.appendChild(
+      createLinkTag("author", manga.author.name, manga.author.id)
+    );
+    tagsWrap.appendChild(authorBlock);
+  }
+
+  // Язык
+  if (manga.language) {
+    const languageBlock = document.createElement("div");
+    languageBlock.id = "language";
+
+    const languageText = document.createElement("h2");
+    languageText.textContent = "Язык:";   // ← исправлено
+    languageBlock.appendChild(languageText);
+
+    languageBlock.appendChild(
+      createLinkTag("language", manga.language.name, manga.language.id)
+    );
+    tagsWrap.appendChild(languageBlock);
+  }
+
+  return tagsWrap;
+}
+
+function buildInfo(manga: MangaWithGallery): HTMLDivElement {
+  const infoBlock = document.createElement("div");
+  infoBlock.id = "info";
+
+  const title = document.createElement("h1");
+  title.textContent = manga.title;
+
+  const poster = document.createElement("img");
+  poster.src = manga.poster;
+  poster.alt = `Обложка манги «${manga.title}»`;
+  poster.loading = "lazy";
+  poster.decoding = "async";
+
+  poster.onerror = () => {
+    poster.src =
+      "data:image/svg+xml;charset=UTF-8," +
+      encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900">
+          <rect width="600" height="900" fill="#111827"/>
+          <rect x="90" y="120" width="420" height="660" rx="24" fill="#1f2937"/>
+          <path d="M180 560l70-85 60 60 70-90 90 115" fill="none" stroke="#64748b" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="250" cy="320" r="40" fill="#64748b"/>
+          <text x="300" y="820" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="30">No poster</text>
+        </svg>
+      `);
+  };
+
+  infoBlock.append(title, poster);
+  return infoBlock;
+}
+
+function buildMangaButtons(
+  manga: MangaWithGallery,
+  botUrl: string | null
+): HTMLDivElement {
+  const buttons = document.createElement("div");
+  buttons.id = "button";
+  buttons.className = "buttons";
+
+  if (manga.gallery.length < 100 && botUrl) {
+    const pdfButton = document.createElement("a");
+    const botURL = new URL(botUrl);
+    botURL.searchParams.append("start", manga.sku);
+
+    pdfButton.textContent = "Скачать PDF";
+    pdfButton.className = "button__pdf";
+    pdfButton.id = "pdf";
+    pdfButton.href = botURL.toString();
+    buttons.appendChild(pdfButton);
+  }
+
+  if (manga.url) {
+    const originalButton = document.createElement("a");
+    originalButton.textContent = "Оригинал";
+    originalButton.className = "button__manga";
+    originalButton.id = "original";
+    originalButton.href = manga.url;
+    originalButton.target = "_blank";
+    originalButton.rel = "noopener noreferrer";
+    buttons.appendChild(originalButton);
+  }
+
+  return buttons;
+}
+
+function buildInfoBlockFull(
+  manga: MangaWithGallery,
+  bot: string | null
+): HTMLDivElement {
+  const wrapper = document.createElement("div");
+  wrapper.id = "manga-info";
+  wrapper.className = "manga-info";
+
+  wrapper.append(
+    buildInfo(manga),
+    buildClickableTags(manga),
+    buildMangaButtons(manga, bot),
+    buildGallery(manga)
+  );
+  return wrapper;
+}
+
+function buildImage(url: string): HTMLImageElement {
+  const img = document.createElement("img");
+  img.className = "gallery__image";
+  img.src = url;
+  img.loading = "lazy";
+  img.alt = "Страница манги";
+  return img;
+}
+
+function buildGallery(manga: MangaWithGallery): HTMLDivElement {
+  const gallery = document.createElement("div");
+  gallery.id = "gallery";
+  gallery.className = "gallery";
+
+  manga.gallery.forEach((url) => {
+    gallery.appendChild(buildImage(url));
+  });
+  return gallery;
+}
+
+function renderManga(manga: MangaWithGallery, bot: string | null): void {
+  const container = document.getElementById("manga") as HTMLDivElement | null;
+  if (!container) return;
+  container.innerHTML = "";
+  container.append(buildInfoBlockFull(manga, bot));
+}
+
+// ==================== API ====================
+async function buildResponse(
+  endpoint: EndpointKey,
+  page: number,
+  query: string | null = null
+): Promise<ResponsePayload> {
+  const baseUrl = API_ENDPOINTS[endpoint];
+  const params = new URLSearchParams({
+    page: String(page),
+    per_page: String(ITEMS_PER_PAGE),
+  });
+
+  if (query && query.trim()) {
+    params.set("query", query.trim());
+  }
+
+  const url = query
+    ? `${baseUrl}?${params.toString()}`
+    : `${API_ENDPOINTS["pages"]}?${params.toString()}`;
+
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+  return (await response.json()) as ResponsePayload;
+}
+
+async function fetchManga(sku: string): Promise<MangaWithGallery> {
+  const response = await fetch(buildMangaURL(sku), {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+
+async function fetchBot(): Promise<string | null> {
+  try {
+    const response = await fetch(API_ENDPOINTS.bot, {
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return typeof data === "string" ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+// ==================== ФИЛЬТРАЦИЯ И ВЫБОР ТЕГА (ОБНОВЛЁННАЯ randomSelect) ====================
+// Ключевые изменения:
+// • Теперь возвращает структурированный объект (чистая архитектура, без мутации глобальных переменных)
+// • Выбор только из существующих тегов манги (автор + жанры + язык)
+// • Строгая фильтрация обеспечивается бэкендом (endpoint + query=id)
+// • Исключены дубликаты и пустые кейсы
+// • Оптимизировано — один проход по массивам
+function getType(type: "author" | "genre" | "language"): string {
+  if (type === "author") return "автора";
+  if (type === "genre") return "жанра";
+  return "языка";
+}
+
+function randomSelect(manga: MangaWithGallery): {
+  endpoint: EndpointKey;
+  query: string;
+  displayText: string;
+} {
+  const tags: Array<{ type: EndpointKey; object: ObjectWithId }> = [];
+
+  if (manga.author) {
+    tags.push({ type: "author", object: manga.author });
+  }
+  if (manga.genres?.length) {
+    manga.genres.forEach((genre) => {
+      tags.push({ type: "genre", object: genre });
+    });
+  }
+  if (manga.language) {
+    tags.push({ type: "language", object: manga.language });
+  }
+
+  if (tags.length === 0) {
+    return {
+      endpoint: "pages",
+      query: "",
+      displayText: "Новинки",
+    };
+  }
+
+  // Случайный выбор из релевантных тегов
+  const randomIndex = Math.floor(Math.random() * tags.length);
+  const selected = tags[randomIndex];
+
+  return {
+    endpoint: selected.type,
+    query: selected.object.id.toString(),
+    displayText: `Результаты по ${getType(selected.type)}: ${selected.object.name}`,
+  };
+}
+
+// ==================== ГАЛЕРЕЯ И БЕСКОНЕЧНАЯ ЗАГРУЗКА (из index.ts) ====================
+function setStateMessage(message: string): void {
+  if (!galleryEl) return;
+  galleryEl.innerHTML = "";
+  const state = document.createElement("div");
+  state.className = "gallery-state";
+  state.textContent = message;
+  galleryEl.appendChild(state);
+}
+
+function renderMangas(items: Manga[]): void {
+  if (!galleryEl) return;
+  const fragment = document.createDocumentFragment();
+  items.forEach((item) => fragment.appendChild(buildManga(item)));
+  galleryEl.appendChild(fragment);
+}
+
+function removeLoader(): void {
+  if (loaderEl) loaderEl.remove();
+}
+
+async function loadMore(
+  endpoint: EndpointKey | null = null,
+  query: string | null = null
+): Promise<void> {
+  if (isLoading || !hasMore || !galleryEl) return;
+
+  isLoading = true;
+  if (loaderEl) {
+    loaderEl.textContent = "Загрузка ещё...";
+    loaderEl.style.display = "grid";
+  }
+
+  try {
+    const result = await buildResponse(
+      endpoint || activeEndpoint,
+      currentPage,
+      query || initialQuery
+    );
+
+    if (!result.success) {
+      hasMore = false;
+      if (currentPage === 1) {
+        removeLoader();
+        setStateMessage("Ничего не найдено.");
+      }
+      return;
+    }
+
+    if (totalItems === 0) totalItems = result.total;
+
+    if (currentPage === 1) galleryEl.innerHTML = "";
+
+    if (!result.response.length && currentPage === 1) {
+      removeLoader();
+      setStateMessage("Ничего не найдено.");
+      hasMore = false;
+      return;
+    }
+
+    renderMangas(result.response);
+
+    const loadedCount = galleryEl.querySelectorAll(".manga").length;
+    if (loadedCount >= totalItems || result.response.length < ITEMS_PER_PAGE) {
+      hasMore = false;
+      if (loaderEl) loaderEl.textContent = "Это всё";
+    } else {
+      currentPage += 1;
+    }
+  } catch (error) {
+    console.error("Ошибка при загрузке:", error);
+    if (currentPage === 1) {
+      setStateMessage("Не удалось загрузить мангу. Попробуйте ещё раз.");
+    }
+    hasMore = false;
+    if (loaderEl) loaderEl.textContent = "Ошибка загрузки";
+  } finally {
+    isLoading = false;
+  }
+}
+
+function initInfiniteScroll(): void {
+  if (!loaderEl || observer) return;
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) void loadMore(randomTag.endpoint, randomTag.query);
+    },
+    { root: null, rootMargin: "300px 0px", threshold: 0.01 }
+  );
+
+  observer.observe(loaderEl);
+}
+
+// ==================== ОБЩИЕ ФУНКЦИИ (topbar + search) ====================
+let topbar: HTMLElement | null = null;
+let topbarHeight = 0;
+let isTopbarHidden = false;
+let lastScrollY = 0;
+let scrollTimeout: number | null = null;
+
+function updateTopbarHeight() {
+  if (!topbar) return;
+  const newHeight = topbar.offsetHeight;
+  if (newHeight > 0 && !isTopbarHidden) {
+    topbarHeight = newHeight;
+    document.documentElement.style.setProperty('--topbar-height', `${topbarHeight}px`);
+  } else if (isTopbarHidden) {
+    // if hidden, keep variable zero but remember actual height for later
+    const actualHeight = topbar.offsetHeight;
+    if (actualHeight > 0) topbarHeight = actualHeight;
+  }
+}
+function showTopbar() {
+  if (!topbar || !isTopbarHidden) return;
+  topbar.classList.remove('topbar--hidden');
+  isTopbarHidden = false;
+  document.documentElement.style.setProperty('--topbar-height', `${topbarHeight}px`);
+}
+function hideTopbar() {
+  if (!topbar || isTopbarHidden) return;
+  topbar.classList.add('topbar--hidden');
+  isTopbarHidden = true;
+  document.documentElement.style.setProperty('--topbar-height', '0px');
+}
+function handleScroll() {
+  if (scrollTimeout) return;
+  scrollTimeout = window.requestAnimationFrame(() => {
+    const currentScrollY = window.scrollY;
+    // only act if scrolled enough (avoid hiding when barely moved)
+    const scrollDelta = currentScrollY - lastScrollY;
+    if (scrollDelta > 8 && currentScrollY > topbarHeight) {
+      // scrolling down
+      hideTopbar();
+    } else if (scrollDelta < -8) {
+      // scrolling up
+      showTopbar();
+    }
+    lastScrollY = currentScrollY;
+    scrollTimeout = null;
+  });
+}
+
+function initTopbarBehavior() {
+  topbar = document.querySelector(".topbar");
+  if (!topbar) return;
+  updateTopbarHeight();
+  window.addEventListener("resize", () => { /* ... */ });
+  window.addEventListener("scroll", handleScroll, { passive: true });
+  lastScrollY = window.scrollY;
+}
+
+function initSearch(): void {
+  if (!searchForm || !searchInput) return;
+
+  searchInput.value = initialQuery;
+
+  searchForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const value = searchInput.value.trim();
+    if (value.length > 120) {
+      // setError можно добавить при необходимости
+      return;
+    }
+
+    const nextUrl = new URL(window.location.href);
+    nextUrl.pathname = "/query";
+    if (value) nextUrl.searchParams.set("query", value);
+    else nextUrl.searchParams.delete("query");
+
+    window.location.href = nextUrl.toString();
+  });
+}
+
+// ==================== ЗАГРУЗКА ДЕТАЛЬНОЙ СТРАНИЦЫ + РЕКОМЕНДАЦИИ ====================
+async function loadDetailAndRelated(): Promise<void> {
+  const sku = getSkuFromUrl();
+  if (!sku) {
+    window.location.href = "/";
+    return;
+  }
+
+  const detailContainer = document.getElementById("manga") as HTMLDivElement | null;
+  if (!detailContainer) return;
+
+  try {
+    const [mangaData, botUrl] = await Promise.all([fetchManga(sku), fetchBot()]);
+
+    if (mangaData.author) {
+      document.title = `${mangaData.author.name} | ${mangaData.title}`;  
+    } else if (mangaData.language) {
+      document.title = `${mangaData.language.name} | ${mangaData.title}`;  
+    } else {
+      document.title = mangaData.title;
+    }
+
+    // 1. Рендер полной информации о манге
+    renderManga(mangaData, botUrl);
+
+    // 2. Выбор случайного релевантного тега + строгая фильтрация
+    randomTag = randomSelect(mangaData);
+  
+    // 3. Обновление заголовка рекомендаций
+    if (textShowEl) textShowEl.textContent = randomTag.displayText;
+
+    // 4. Подготовка галереи рекомендаций
+    currentPage = 1;
+    hasMore = true;
+    totalItems = 0;
+    if (galleryEl) {
+      galleryEl.innerHTML = `<div class="gallery-state">Загрузка рекомендаций...</div>`;
+    }
+
+    initInfiniteScroll();
+
+    // 5. Загрузка строго отфильтрованных результатов (бэкенд фильтрует по выбранному тегу)
+    await loadMore(randomTag.endpoint, randomTag.query);
+  } catch (err) {
+    console.error(err);
+    if (detailContainer) {
+      detailContainer.innerHTML = `
+        <div class="gallery-state">
+          Не удалось загрузить мангу.<br>
+          <a href="/" style="color:var(--accent);text-decoration:underline;">Вернуться на главную</a>
+        </div>`;
+    }
+  }
+}
+
+// ==================== ГЛАВНАЯ СТРАНИЦА ====================
+async function loadMainGallery(): Promise<void> {
+  if (!galleryEl) return;
+  initInfiniteScroll();
+  await loadMore(randomTag.endpoint, randomTag.query); // использует дефолтные activeEndpoint / initialQuery
+}
+
+// ==================== MAIN ====================
+async function main(): Promise<void> {
+  initTopbarBehavior();
+  initSearch();
+
+  if (isDetailPage()) {
+    await loadDetailAndRelated();
+  } else {
+    await loadMainGallery();
+  }
+}
+
+void main();

@@ -386,6 +386,11 @@ input {
   font-size: 0.86rem;
 }
 
+.text-wrap {
+  white-space: pre-wrap;
+  text-align: center;
+}
+
 @media (min-width: 480px) {
   .manga-gallery {
     grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));

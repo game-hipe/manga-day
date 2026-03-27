@@ -8,7 +8,7 @@ const URLJoin = (...args: string[]): string =>
     .replace(/\?/g, "&")
     .replace("&", "?");
 
-const API = "http://localhost:8080/api/v1";
+const API = "http://192.168.0.50:8080/api/v1";
 
 const API_ENDPOINTS = {
   author: URLJoin(API, "/pages/author"),

@@ -1,217 +1,324 @@
-const parts = document.location.href.split("/");
-const sku = parts[parts.length - 1] as string;
-if (sku === undefined) {
-    alert("Не удалось загрузить мангу...")
-    document.location.href = "/"
+// =============================================
+// manga.ts — улучшенная версия для страницы manga.html
+// =============================================
+
+// ==================== ТИПЫ ====================
+
+var activeEndpoint: EndpointKey = "pages"
+var initialQuery: string = '';
+
+interface ObjectWithId {
+  id: number;
+  name: string;
 }
 
 interface MangaWithGallery extends Manga {
-    gallery: string[]
+  gallery: string[];
 }
 
-function createTag(type: string, text: string, id: number): HTMLAnchorElement {
-    var tag = document.createElement("a")
-    var href = `/${type}?query=${id}`
+interface Tag {
+    type: 'genre' | 'author' | 'language';
+    object: ObjectWithId;
+}
 
-    tag.href = href,
-    tag.innerText = text,
-    tag.className = "tag__manga"
+// ==================== УТИЛИТЫ ====================
+function getSkuFromUrl(): string | null {
+  const pathname = window.location.pathname.replace(/^\/+|\/+$/g, '');
+  const parts = pathname.split('/');
+  return parts[parts.length - 1] || null;
+}
 
-    return tag
+// ==================== СОЗДАНИЕ ЭЛЕМЕНТОВ ====================
+function createLinkTag(
+  type: 'genre' | 'author' | 'language',
+  text: string,
+  id: number
+): HTMLAnchorElement {
+  const tag = document.createElement('a');
+  tag.href = `/${type}?query=${id}`;
+  tag.textContent = text;
+  tag.className = 'tag__manga';
+  return tag;
 }
 
 function buildClickableTags(manga: Manga): HTMLDivElement {
-    const tagsWrap = document.createElement("div");
-    tagsWrap.id = "tags"
-    tagsWrap.className = "tags"
+  const tagsWrap = document.createElement('div');
+  tagsWrap.id = 'tags';
+  tagsWrap.className = 'tags';
 
-    if (manga.genres.length != 0) {
-        var tagsBlock = document.createElement("div");
-        tagsBlock.id = "genres"
+  // Жанры
+  if (manga.genres?.length) {
+    const genresBlock = document.createElement('div');
+    const genresText = document.createElement('h2');
+    genresText.textContent = 'Жанры:';
+    genresBlock.appendChild(genresText);
 
-        manga.genres.forEach((genre) => {
-            tagsBlock.appendChild(
-                createTag("genre", genre.name, genre.id)
-            )
-        });
-        tagsWrap.append(tagsBlock)
-    }
+    genresBlock.id = 'genres';
+    manga.genres.forEach((genre) => {
+      genresBlock.appendChild(createLinkTag('genre', genre.name, genre.id));
+    });
+    tagsWrap.appendChild(genresBlock);
+  }
 
-    if (manga.author) {
-        var authorBlock = document.createElement("div")
-        authorBlock.id = "author",
+  // Автор
+  if (manga.author) {
+    const authorBlock = document.createElement('div');
+    const AuthorText = document.createElement('h2');
+    AuthorText.textContent = 'Автор:';
+    authorBlock.appendChild(AuthorText);
 
-        authorBlock.appendChild(
-            createTag("author", manga.author.name, manga.author.id)
-        )
+    authorBlock.id = 'author';
+    authorBlock.appendChild(
+      createLinkTag('author', manga.author.name, manga.author.id)
+    );
+    tagsWrap.appendChild(authorBlock);
+  }
 
-        tagsWrap.append(authorBlock)
-    }
+  // Язык
+  if (manga.language) {
+    const languageBlock = document.createElement('div');
+    const langauageText = document.createElement('h2');
+    langauageText.textContent = 'Автор:';
+    languageBlock.appendChild(langauageText);
 
-    if (manga.language) {
-        var languageBlock = document.createElement("div")
-        languageBlock.id = "language"
+    languageBlock.id = 'language';
+    languageBlock.appendChild(
+      createLinkTag('language', manga.language.name, manga.language.id)
+    );
+    tagsWrap.appendChild(languageBlock);
+  }
 
-        languageBlock.appendChild(
-            createTag("language", manga.language.name, manga.language.id)
-        )
-
-        tagsWrap.append(languageBlock)
-    }
-
-    return tagsWrap;
+  return tagsWrap;
 }
 
 function buildInfo(manga: MangaWithGallery): HTMLDivElement {
-    const infoBlock = document.createElement("div")
-    infoBlock.id = "info"
+  const infoBlock = document.createElement('div');
+  infoBlock.id = 'info';
 
-    const title = document.createElement("h1")
-    title.innerText = manga.title
+  const title = document.createElement('h1');
+  title.textContent = manga.title;
 
-    const poster = document.createElement("img")
-    poster.src = manga.poster,
+  const poster = document.createElement('img');
+  poster.src = manga.poster;
+  poster.alt = `Обложка манги «${manga.title}»`;
+  poster.loading = 'lazy';
+  poster.decoding = 'async';
 
-    infoBlock.append(title, poster)
+  // Fallback как в index.ts
+  poster.onerror = () => {
+    poster.src =
+      'data:image/svg+xml;charset=UTF-8,' +
+      encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900">
+          <rect width="600" height="900" fill="#111827"/>
+          <rect x="90" y="120" width="420" height="660" rx="24" fill="#1f2937"/>
+          <path d="M180 560l70-85 60 60 70-90 90 115" fill="none" stroke="#64748b" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="250" cy="320" r="40" fill="#64748b"/>
+          <text x="300" y="820" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="30">No poster</text>
+        </svg>
+      `);
+  };
 
-    return infoBlock
+  infoBlock.append(title, poster);
+  return infoBlock;
 }
 
-function buildMangaButtons(manga: MangaWithGallery, botUrl: string | null): HTMLDivElement {
-    const buttons = document.createElement("div")
-    buttons.id = "button";
-    buttons.className = "buttons";
+function buildMangaButtons(
+  manga: MangaWithGallery,
+  botUrl: string | null
+): HTMLDivElement {
+  const buttons = document.createElement('div');
+  buttons.id = 'button';
+  buttons.className = 'buttons';
 
-    if (manga.gallery.length < 100 && botUrl) {
-        var pdfButton = document.createElement("a")
-        var botURL = new URL(botUrl)
+  // PDF-кнопка
+  if (manga.gallery.length < 100 && botUrl) {
+    const pdfButton = document.createElement('a');
+    const botURL = new URL(botUrl);
+    botURL.searchParams.append('start', manga.sku); // ← исправлен баг (был глобальный sku)
 
-        botURL.searchParams.append("start", sku)
-        pdfButton.innerText = "Скачать PDF"
-        pdfButton.className = "button__pdf"
-        pdfButton.id = "pdf"
+    pdfButton.textContent = 'Скачать PDF';
+    pdfButton.className = 'button__pdf';
+    pdfButton.id = 'pdf';
+    pdfButton.href = botURL.toString();
+    buttons.appendChild(pdfButton);
+  }
 
-        pdfButton.href = botURL.toString()
-        buttons.append(pdfButton)
-    }
+  // Кнопка оригинала
+  if (manga.url) {
+    const originalButton = document.createElement('a');
+    originalButton.textContent = 'Оригинал';
+    originalButton.className = 'button__manga';
+    originalButton.id = 'original';
+    originalButton.href = manga.url;
+    originalButton.target = '_blank';
+    originalButton.rel = 'noopener noreferrer';
+    buttons.appendChild(originalButton);
+  }
 
-    if (manga.url) {
-        const originalButton = document.createElement("a")
-        originalButton.innerText = "Оригинал"
-        originalButton.className = "button__manga"
-        originalButton.id = "original"
-        originalButton.href = manga.url
-
-        buttons.append(originalButton)
-    }
-
-    return buttons
+  return buttons;
 }
 
-function buildInfoBlockFull(manga: MangaWithGallery, bot: string | null): HTMLDivElement {
-    const mangaDiv = document.createElement("div")
-    mangaDiv.id = "manga-info"
-    mangaDiv.className = "manga-info"
+function buildInfoBlockFull(
+  manga: MangaWithGallery,
+  bot: string | null
+): HTMLDivElement {
+  const wrapper = document.createElement('div');
+  wrapper.id = 'manga-info';
+  wrapper.className = 'manga-info';
 
-    const infoBlock = buildInfo(manga)
-    const tagsWrap = buildClickableTags(manga)
-    const buttons = buildMangaButtons(manga, bot)
-    mangaDiv.append(
-        infoBlock,
-        tagsWrap,
-        buttons
-    )
+  wrapper.append(
+    buildInfo(manga),
+    buildClickableTags(manga),
+    buildMangaButtons(manga, bot)
+  );
 
-    return mangaDiv
+  return wrapper;
 }
 
 function buildImage(url: string): HTMLImageElement {
-    const image = document.createElement("img")
-    image.className = "gallery__image"
-    image.src = url
-    image.loading = "lazy"
-
-    return image
+  const img = document.createElement('img');
+  img.className = 'gallery__image';
+  img.src = url;
+  img.loading = 'lazy';
+  img.alt = 'Страница манги';
+  return img;
 }
 
 function buildGallery(manga: MangaWithGallery): HTMLDivElement {
-    const gallery = document.createElement("div")
-    gallery.id = "gallery"
-    gallery.className = "gallery"
+  const gallery = document.createElement('div');
+  gallery.id = 'gallery';
+  gallery.className = 'gallery';
 
-    manga.gallery.forEach((url) => {
-        gallery.append(
-            buildImage(url)
-        )
-    })
+  manga.gallery.forEach((url) => {
+    gallery.appendChild(buildImage(url));
+  });
 
-    return gallery
+  return gallery;
 }
 
-function buildFullManga(manga: MangaWithGallery, bot: string | null): void {
-    const mangaDiv = document.getElementById("manga")
-    if (!mangaDiv) {
-        alert("Не удалось загрузить мангу...")
-        document.location.href = "/"
-        return
-    } else {
-        mangaDiv.innerText = ``
-    }
+function renderManga(manga: MangaWithGallery, bot: string | null): void {
+  const container = document.getElementById('manga') as HTMLDivElement | null;
+  if (!container) return;
 
-    const infoBlock = buildInfoBlockFull(manga, bot)
-    const gallery = buildGallery(manga)
-
-    mangaDiv.append(
-        infoBlock,
-        gallery
-    )
+  container.innerHTML = '';
+  container.append(
+    buildInfoBlockFull(manga, bot),
+    buildGallery(manga)
+  );
 }
 
-async function fetchManga() {
-    if (!sku) {
-        alert("Не удалось загрузить мангу...")
-        document.location.href = "/"
-        return
-    }
+// ==================== API ====================
+async function fetchManga(sku: string): Promise<MangaWithGallery> {
+  const response = await fetch(buildMangaURL(sku), {
+    headers: { Accept: 'application/json' },
+  });
 
-    const response = await fetch(buildMangaURL(sku), {
-        headers: {
-        Accept: "application/json",
-        },
-    });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
-    }
-
-    return (await response.json()) as MangaWithGallery;
-
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
 }
 
 async function fetchBot(): Promise<string | null> {
-    const response = await fetch(API_ENDPOINTS['bot'], {
-        headers: {
-            Accept: "application/json",
-        },
+  try {
+    const response = await fetch(API_ENDPOINTS.bot, {
+      headers: { Accept: 'application/json' },
     });
-
-    if (!response.ok) {
-        return null;
-    }
-
-    return (await response.json()) as string;
+    if (!response.ok) return null;
+    const data = await response.json();
+    return typeof data === 'string' ? data : null;
+  } catch {
+    return null;
+  }
 }
 
-async function loadManga() {
-    var manga = await fetchManga()
-    var bot = await fetchBot()
-
-    if (!manga) {
-        alert("Не удалось загрузить мангу...")
-        document.location.href = "/"
-        return
+function getType(type: "author" | "genre" | "language"): string {
+    if (type === "author") {
+        return "автора"
+    } else if (type === "genre") {
+        return "жанра"
+    } else {
+        return "языка"
     }
-    buildFullManga(manga, bot)
 }
 
-loadManga()
+function randomSelect(manga: MangaWithGallery): string {
+    const Tags = [] as Tag[];
+    if (manga.author) {
+        Tags.push(
+            {
+                type: "author",
+                object: manga.author
+            }
+        )
+    }
+    if (manga.genres) {
+        manga.genres.forEach((genre) => {
+            Tags.push(
+                {
+                    type: "genre",
+                    object: genre
+                }
+            )
+        });
+    }
+    if (manga.language) {
+        Tags.push(
+            {
+                type: 'language',
+                object: manga.language
+            }
+        )
+    }
+    if (Tags) {
+        const index = Math.floor(Math.random() * Tags.length);
+        const tag = Tags[index]
+
+        activeEndpoint = tag.type
+        initialQuery = tag.object.id.toString()
+
+        return `Результаты по поиску ${getType(tag.type)}: ${tag.object.name}`
+    }
+
+    return `Новинки`
+}
+
+
+// ==================== MAIN ====================
+async function loadManga(): Promise<void> {
+  const sku = getSkuFromUrl();
+  if (!sku) {
+    window.location.href = '/';
+    return;
+  }
+
+  const container = document.getElementById('manga') as HTMLDivElement | null;
+  if (!container) return;
+
+  try {
+    const [mangaData, botUrl] = await Promise.all([
+      fetchManga(sku),
+      fetchBot(),
+    ]);
+
+    renderManga(mangaData, botUrl);
+    var text = randomSelect(mangaData)
+    var textShow = document.getElementById("textShow")
+    if (textShow) {
+        textShow.innerText = text
+    }
+
+    document.title = `MangaDay | ${mangaData.title}`;
+
+
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `
+      <div class="gallery-state">
+        Не удалось загрузить мангу.<br>
+        <a href="/" style="color:var(--accent);text-decoration:underline;">Вернуться на главную</a>
+      </div>`;
+  }
+}
+
+// Запуск
+loadManga();

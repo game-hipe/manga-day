@@ -1,138 +1,117 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manga-Day интересная манга на сегодня</title>
-    <link rel="stylesheet" href="/static/css/base.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 — Страница не найдена | Manga-Day</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <script src="/static/js/base.js"></script>
+  <style>
+    
+
+    .error-wrapper {
+      max-width: 720px;
+      margin: 80px auto 40px;
+      border: 1px solid var(--border-strong);
+      background: linear-gradient(180deg, rgba(24, 29, 40, 0.98), rgba(18, 22, 30, 0.98));
+      box-shadow: var(--shadow);
+      border-radius: var(--radius-lg);
+      padding: 48px 32px;
+      text-align: center;
+      justify-content: center; /* Центрировать по горизонтали */
+    }
+    .error-image {
+      max-width: 340px;
+      width: 100%;
+      height: auto;
+      margin: 0 auto 32px;
+      display: block;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow);
+    }
+    .error-code {
+      font-size: clamp(3.5rem, 10vw, 7rem);
+      line-height: 1;
+      margin: 0 0 8px;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      background: linear-gradient(90deg, #ffffff 0%, var(--accent) 55%, var(--accent-2) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .error-title {
+      font-size: 1.75rem;
+      line-height: 1.2;
+      margin: 0 0 12px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .error-desc {
+      color: var(--muted);
+      font-size: 1.1rem;
+      line-height: 1.45;
+      max-width: 460px;
+      margin: 0 auto 36px;
+    }
+    .error-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 52px;
+      min-width: 240px;
+      padding: 0 28px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), #ff6fa4);
+      color: white;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      text-decoration: none;
+      box-shadow: 0 10px 22px rgba(255, 77, 141, 0.22);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+      font-size: 1.05rem;
+    }
+    .error-btn:hover {
+      filter: brightness(1.03);
+      box-shadow: 0 12px 26px rgba(255, 77, 141, 0.28);
+    }
+    .error-btn:active {
+      transform: translateY(1px) scale(0.98);
+    }
+    @media (max-width: 480px) {
+      .error-wrapper {
+        margin: 40px 12px;
+        padding: 36px 24px;
+      }
+      .error-image {
+        max-width: 260px;
+      }
+      .error-code {
+        font-size: clamp(3rem, 12vw, 5.5rem);
+      }
+    }
+
+    .page {
+      display: flex;
+      justify-content: center; /* Центрирование по горизонтали */
+      align-items: center; /* Центрирование по вертикали */
+      min-height: calc(100vh - 100px); /* Вычитаем примерную высоту футера */
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <nav role="navigation">
-            <a class="logo" href="/">
-                <img src="/static/images/logo.png" alt="Manga-Day">
-            </a>
-            <div class="search-container">
-                <form class="search-form" id="search-form">
-                    <input type="search" name="q" id="find-table" placeholder="Поиск манги..." autocomplete="off">
-                    <button type="submit" class="adventure-find">Поиск</button>
-                    <div class="error-container">
-                        <div class="error-message" id="search-error"></div>
-                    </div>
-                </form>
-            </div>
-        </nav>
-    </header>
-    <main>
-        <link rel="stylesheet" href="/static/css/404.css">
-        <div class="error-message-not-found">
-            <img src="/static/images/404.png" alt="Милая аниме девушку на сером фоне, с футболкой с надпись '404 Not Found', в руках у неё свисток, и которая рукой показывает знак 'Stop'">
-            <h1>Похоже, вы потерялись в тёмных глубинах сайта!</h1>
-            <h2>404</h2>
-            <button onclick="window.location.assign('/');">Вернуться на главную</button>
-        </div> 
-    </main>
+  <main class="page">
+    <div class="error-wrapper">
+      <img src="/static/images/404.png" alt="404 — Страница не найдена" class="error-image" />
+      <h1 class="error-code">404</h1>
+      <h2 class="error-title">Страница не найдена</h2>
+      <p class="error-desc">К сожалению, страница, которую вы ищете, не существует или была перемещена.</p>
+      <a href="/" class="error-btn">Вернуться на главную</a>
+    </div>
+  </main>
 
-    <footer>
-        <div class="footer-container">
-            <p>© 2026 Manga-Day</p>
-        </div>
-    </footer>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchForm = document.getElementById('search-form');
-            const searchInput = document.getElementById('find-table');
-            const errorElement = document.getElementById('search-error');
-            
-            // Флаг для отслеживания, показывалась ли уже ошибка
-            let errorShown = false;
-            
-            // Функция показа ошибки
-            function showError(message) {
-                if (errorShown) return; // Не показываем повторно
-                
-                errorElement.textContent = message;
-                errorElement.style.display = 'block';
-                searchInput.classList.add('error');
-                errorShown = true;
-                
-                // Фокусируемся на поле ввода
-                searchInput.focus();
-                
-                // Автоматически скрываем ошибку через 3 секунды
-                setTimeout(() => {
-                    errorElement.style.display = 'none';
-                    searchInput.classList.remove('error');
-                    errorShown = false;
-                }, 3000);
-            }
-            
-            // Функция скрытия ошибки
-            function hideError() {
-                errorElement.style.display = 'none';
-                searchInput.classList.remove('error');
-                errorShown = false;
-            }
-            
-            if (searchForm) {
-                searchForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    const query = searchInput.value.trim();
-                    
-                    if (query) {
-                        if (encodeURIComponent(query).length < 3) {
-                            showError('Поиск должен содержать минимум 3 символа');
-                
-                        } else {
-                            hideError();
-                            
-                            // Кодируем текст для URL и делаем редирект
-                            const encodedQuery = encodeURIComponent(query);
-                            window.location.href = `/manga/find/${encodedQuery}`;
-                        }
-
-                    } else {
-                        showError('Поле пустое! Введите поисковый запрос');
-                    }
-                });
-            };
-            
-            // Скрываем ошибку при начале ввода
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    if (this.value.trim() && errorShown) {
-                        hideError();
-                    }
-                });
-                
-                // Также можно добавить проверку при потере фокуса
-                searchInput.addEventListener('blur', function() {
-                    if (!this.value.trim() && !errorShown) {
-                        showError('Поле не должно быть пустым');
-                    }
-                });
-                
-                // Обработка нажатия Enter
-                searchInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        searchForm.dispatchEvent(new Event('submit'));
-                    }
-                });
-            }
-            
-            // Если на странице уже есть параметр поиска в URL, подставляем его в поле
-            const pathParts = window.location.pathname.split('/');
-            if (pathParts.length >= 3 && pathParts[1] === 'manga' && pathParts[2] === 'find') {
-                const searchQuery = decodeURIComponent(pathParts.slice(3).join('/') || '');
-                if (searchInput && searchQuery) {
-                    searchInput.value = searchQuery;
-                }
-            }
-        });
-    </script>
-
+  <footer class="footer">
+    © 2026 Manga-Day
+  </footer>
 </body>
 </html>

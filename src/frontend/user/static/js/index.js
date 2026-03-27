@@ -141,9 +141,9 @@ const loader = document.getElementById("loader");
 const searchForm = document.getElementById("search-form");
 const searchInput = document.getElementById("search-input");
 const searchError = document.getElementById("search-error");
-const activeEndpoint = getActiveEndpoint();
 const currentUrl = new URL(window.location.href);
-const initialQuery = (_a = currentUrl.searchParams.get("query")) !== null && _a !== void 0 ? _a : "";
+var activeEndpoint = getActiveEndpoint();
+var initialQuery = (_a = currentUrl.searchParams.get("query")) !== null && _a !== void 0 ? _a : "";
 let currentPage = 1;
 let isLoading = false;
 let hasMore = true;
@@ -248,7 +248,7 @@ function removeLoader() {
         loader.remove();
     }
 }
-async function loadMore() {
+async function loadMore(endpoint = null, query = null) {
     if (isLoading || !hasMore || !gallery)
         return;
     isLoading = true;
@@ -257,7 +257,7 @@ async function loadMore() {
         loader.style.display = "grid";
     }
     try {
-        const result = await buildResponse(activeEndpoint, currentPage, initialQuery);
+        const result = await buildResponse(endpoint || activeEndpoint, currentPage, query || initialQuery);
         if (!result.success) {
             hasMore = false;
             if (currentPage === 1) {
