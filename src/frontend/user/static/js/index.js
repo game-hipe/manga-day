@@ -144,11 +144,20 @@ const searchError = document.getElementById("search-error");
 const currentUrl = new URL(window.location.href);
 var activeEndpoint = getActiveEndpoint();
 var initialQuery = (_a = currentUrl.searchParams.get("query")) !== null && _a !== void 0 ? _a : "";
-let currentPage = 1;
+let currentPage = (() => {
+    var _a;
+    const p = parseInt((_a = currentUrl.searchParams.get("page")) !== null && _a !== void 0 ? _a : "", 10);
+    return isNaN(p) || p < 1 ? 1 : p;
+})();
 let isLoading = false;
 let hasMore = true;
 let totalItems = 0;
 let observer = null;
+let itemsLoaded = 0; // кумулятивное количество загруженных элементов (учитывает пропущенные страницы)
+let isFirstLoad = true; // флаг первой загрузки (заменяет currentPage === 1)
+if (currentPage > 1) {
+    itemsLoaded = (currentPage - 1) * ITEMS_PER_PAGE;
+}
 // --- Topbar hide/show on scroll ---
 let topbar = null;
 let topbarHeight = 0;
@@ -260,7 +269,7 @@ async function loadMore(endpoint = null, query = null) {
         const result = await buildResponse(endpoint || activeEndpoint, currentPage, query || initialQuery);
         if (!result.success) {
             hasMore = false;
-            if (currentPage === 1) {
+            if (isFirstLoad) { // ← обобщили
                 removeLoader();
                 setStateMessage("Ничего не найдено.");
             }
@@ -269,18 +278,22 @@ async function loadMore(endpoint = null, query = null) {
         if (totalItems === 0) {
             totalItems = result.total;
         }
-        if (currentPage === 1) {
+        // === ИСПРАВЛЕНИЕ: очищаем плейсхолдер ВСЕГДА при первой загрузке ===
+        if (isFirstLoad) {
             gallery.innerHTML = "";
+            isFirstLoad = false;
         }
-        if (!result.response.length && currentPage === 1) {
+        // === ИСПРАВЛЕНИЕ: проверка «ничего не найдено» теперь по isFirstLoad ===
+        if (!result.response.length && isFirstLoad) {
             removeLoader();
             setStateMessage("Ничего не найдено.");
             hasMore = false;
             return;
         }
         renderMangas(result.response);
-        const loadedCount = gallery.querySelectorAll(".manga").length;
-        if (loadedCount >= totalItems || result.response.length < ITEMS_PER_PAGE) {
+        // === ИСПРАВЛЕНИЕ: кумулятивный счётчик (учитывает пропущенные страницы) ===
+        itemsLoaded += result.response.length;
+        if (itemsLoaded >= totalItems || result.response.length < ITEMS_PER_PAGE) {
             hasMore = false;
             if (loader) {
                 loader.textContent = "Это всё";
@@ -288,11 +301,14 @@ async function loadMore(endpoint = null, query = null) {
         }
         else {
             currentPage += 1;
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', currentPage.toString());
+            window.history.pushState({}, '', url);
         }
     }
     catch (error) {
         console.error("Ошибка при загрузке:", error);
-        if (currentPage === 1) {
+        if (isFirstLoad) { // ← обобщили
             setStateMessage("Не удалось загрузить мангу. Попробуйте ещё раз.");
         }
         hasMore = false;

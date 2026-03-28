@@ -20,6 +20,7 @@ class UserHandler:
         templates: Jinja2Templates,
         find: FindService,
         static: Path | str | None = None,
+        port: str = "8080",
     ):
         """Эндпоинты для FrontEnd
 
@@ -32,6 +33,7 @@ class UserHandler:
         self.find_engine = find
         self.templates = templates
         self.static = Path(static) or USER_FILES / "static"
+        self.port = port
         self._setup_routes()
         self._setup_find()
 
@@ -111,7 +113,7 @@ class UserHandler:
             return FileResponse(static_file)
         raise HTTPException(status_code=404)
 
-    def _show_page(self, request: Request) -> HTMLResponse:
+    async def _show_page(self, request: Request) -> HTMLResponse:
         """Показать страницу
 
         Args:
@@ -123,15 +125,22 @@ class UserHandler:
 
         return self.templates.TemplateResponse(
             "index.html",
-            context={"request": request},
+            context={
+                "request": request,
+                "API_PORT": self.port,
+            },
         )
 
-    def _show_manga(
+    async def _show_manga(
         self,
         request: Request,
     ):
         return self.templates.TemplateResponse(
-            "manga.html", context={"request": request}
+            "manga.html",
+            context = {
+                "request": request,
+                "API_PORT": self.port
+            }
         )
 
     @property
