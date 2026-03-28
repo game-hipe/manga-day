@@ -1,5 +1,8 @@
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException, Depends, Query
 
+from ...core import __version__
 from ...core.service import FindService
 from ...core.entities.schemas import (
     ApiOutputManga,
@@ -52,6 +55,14 @@ class Endpoints:
             response_model=str,
             summary="Получить URL бота",
             tags=["tools"],
+        )
+
+        self._router.add_api_route(
+            "/health",
+            self.health,
+            methods=["GET"],
+            tags=["tools"],
+            summary="Проверка работоспособности",
         )
 
     def _setup_routes(self):
@@ -330,7 +341,17 @@ class Endpoints:
         return await self.service.tag_getter.get_authors(**common)
 
     async def get_bot_url(self) -> str:
+        """Получить URL бота."""
         return self.bot
+
+    async def health(self):
+        """Проверка работоспособности."""
+        return {
+            "status": "ok",
+            "version": __version__,
+            "service": "manga-day-api",
+            "timestamp": datetime.now().isoformat(),
+        }
 
     @property
     def router(self) -> APIRouter:

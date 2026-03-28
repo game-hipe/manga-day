@@ -28,6 +28,7 @@ class UserHandler:
             templates (Jinja2Templates): Шаблонизатор
             find (FindService): Сервис поиска
             static (Path | str | None, optional): Путь к статике. По умолчанию None.
+            port (str, optional): Порт для API. По умолчанию "8080".
         """
         self._router = APIRouter(tags=["user"])
         self.find_engine = find

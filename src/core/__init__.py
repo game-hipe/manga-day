@@ -4,3 +4,5 @@ from ._config import config
 from ._cron import SpiderScheduler
 
 __all__ = ["config", "SpiderScheduler"]
+
+__version__ = "1.4.4"
