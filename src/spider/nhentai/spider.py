@@ -1,5 +1,3 @@
-
-
 from ..base_spider.spider import BaseMangaSpider
 from .parser import NhentaiMangaParser, NhentaiPageParser
 
