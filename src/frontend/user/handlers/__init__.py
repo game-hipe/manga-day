@@ -6,8 +6,6 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 
-from ....core.service.manga import FindService
-
 
 USER_FILES = Path(os.path.abspath(__file__)).parent.parent
 
@@ -18,7 +16,6 @@ class UserHandler:
     def __init__(
         self,
         templates: Jinja2Templates,
-        find: FindService,
         static: Path | str | None = None,
         port: str = "8080",
     ):
@@ -26,12 +23,10 @@ class UserHandler:
 
         Args:
             templates (Jinja2Templates): Шаблонизатор
-            find (FindService): Сервис поиска
             static (Path | str | None, optional): Путь к статике. По умолчанию None.
             port (str, optional): Порт для API. По умолчанию "8080".
         """
         self._router = APIRouter(tags=["user"])
-        self.find_engine = find
         self.templates = templates
         self.static = Path(static) or USER_FILES / "static"
         self.port = port

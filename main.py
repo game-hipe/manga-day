@@ -45,9 +45,7 @@ async def main():
             async with asyncio.TaskGroup() as tg:
                 tg.create_task(start_admin(spider=spider))
                 tg.create_task(start_api(service=find))
-                tg.create_task(
-                    start_frontend(manager=manager, find=find, spider=spider)
-                )
+                tg.create_task(start_frontend(manager=manager, spider=spider))
                 tg.create_task(
                     start_user(
                         manager=manager, alert=alert, pdf_service=pdf, find_service=find
