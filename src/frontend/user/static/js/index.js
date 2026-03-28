@@ -278,6 +278,11 @@ async function loadMore(endpoint = null, query = null) {
     }
     try {
         const result = await buildResponse(endpoint || activeEndpoint, currentPage, query || initialQuery);
+        if (!isFirstLoad) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', currentPage.toString());
+            window.history.pushState({}, '', url);
+        }
         if (initialQuery && result.total == 0) {
             await tryLoadManga();
         }
@@ -315,9 +320,6 @@ async function loadMore(endpoint = null, query = null) {
         }
         else {
             currentPage += 1;
-            const url = new URL(window.location.href);
-            url.searchParams.set('page', currentPage.toString());
-            window.history.pushState({}, '', url);
         }
     }
     catch (error) {
