@@ -252,6 +252,17 @@ function renderMangas(items) {
     items.forEach((item) => fragment.appendChild(buildManga(item)));
     gallery.appendChild(fragment);
 }
+async function tryLoadManga() {
+    const baseUrl = API_ENDPOINTS["manga"];
+    const response = await fetch(`${baseUrl}${initialQuery}`, {
+        headers: {
+            Accept: "application/json",
+        },
+    });
+    if (response.ok) {
+        window.location.href = `/manga/${initialQuery}`;
+    }
+}
 function removeLoader() {
     if (loader) {
         loader.remove();
@@ -267,6 +278,9 @@ async function loadMore(endpoint = null, query = null) {
     }
     try {
         const result = await buildResponse(endpoint || activeEndpoint, currentPage, query || initialQuery);
+        if (initialQuery && result.total == 0) {
+            await tryLoadManga();
+        }
         if (!result.success) {
             hasMore = false;
             if (isFirstLoad) { // ← обобщили

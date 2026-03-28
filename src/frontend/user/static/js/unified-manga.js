@@ -8,7 +8,11 @@
 // ==================== КОНСТАНТЫ И ГЛОБАЛЬНОЕ СОСТОЯНИЕ ====================
 const ITEMS_PER_PAGE = 24;
 const TAG_LIMIT = 6;
-var randomTag = new Map();
+let randomTag = {
+    endpoint: "pages",
+    query: "",
+    displayText: "Новинки",
+};
 let activeEndpoint = "pages";
 let initialQuery = "";
 let currentPage = 1;
@@ -234,10 +238,11 @@ function buildInfoBlockFull(manga, bot) {
     wrapper.append(buildInfo(manga), buildClickableTags(manga), buildMangaButtons(manga, bot), buildGallery(manga));
     return wrapper;
 }
-function buildImage(url) {
+function buildImage(url, index) {
     const img = document.createElement("img");
     img.className = "gallery__image";
     img.src = url;
+    img.id = `image-${index}`;
     img.loading = "lazy";
     img.alt = "Страница манги";
     return img;
@@ -246,9 +251,10 @@ function buildGallery(manga) {
     const gallery = document.createElement("div");
     gallery.id = "gallery";
     gallery.className = "gallery";
-    manga.gallery.forEach((url) => {
-        gallery.appendChild(buildImage(url));
-    });
+    for (let index = 0; index < manga.gallery.length; index++) {
+        let url = manga.gallery[index];
+        gallery.appendChild(buildImage(url, index));
+    }
     return gallery;
 }
 function renderManga(manga, bot) {
@@ -282,8 +288,9 @@ async function fetchManga(sku) {
     const response = await fetch(buildMangaURL(sku), {
         headers: { Accept: "application/json" },
     });
-    if (!response.ok)
-        throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) {
+        window.location.href = "/404";
+    }
     return response.json();
 }
 async function fetchBot() {
@@ -321,7 +328,7 @@ function randomSelect(manga) {
         tags.push({ type: "author", object: manga.author });
     }
     if ((_a = manga.genres) === null || _a === void 0 ? void 0 : _a.length) {
-        manga.genres.forEach((genre) => {
+        manga.genres.forEach(genre => {
             tags.push({ type: "genre", object: genre });
         });
     }
@@ -329,13 +336,8 @@ function randomSelect(manga) {
         tags.push({ type: "language", object: manga.language });
     }
     if (tags.length === 0) {
-        return {
-            endpoint: "pages",
-            query: "",
-            displayText: "Новинки",
-        };
+        return { endpoint: "pages", query: "", displayText: "Новинки" };
     }
-    // Случайный выбор из релевантных тегов
     const randomIndex = Math.floor(Math.random() * tags.length);
     const selected = tags[randomIndex];
     return {

@@ -5,6 +5,8 @@
 // Работает на ОБОИХ страницах без конфликтов
 // =============================================
 
+
+
 interface ObjectWithId {
   id: number;
   name: string;
@@ -34,10 +36,21 @@ interface ResponsePayload {
   response: Manga[];
 }
 
+interface RandomTagInfo {
+  endpoint: EndpointKey;
+  query: string;
+  displayText: string;
+}
+
 // ==================== КОНСТАНТЫ И ГЛОБАЛЬНОЕ СОСТОЯНИЕ ====================
 const ITEMS_PER_PAGE = 24;
 const TAG_LIMIT = 6;
-var randomTag: Map<string, string> = new Map();
+
+let randomTag: RandomTagInfo = {
+  endpoint: "pages",
+  query: "",
+  displayText: "Новинки",
+};
 
 let activeEndpoint: EndpointKey = "pages";
 let initialQuery = "";
@@ -327,10 +340,11 @@ function buildInfoBlockFull(
   return wrapper;
 }
 
-function buildImage(url: string): HTMLImageElement {
+function buildImage(url: string, index: number): HTMLImageElement {
   const img = document.createElement("img");
   img.className = "gallery__image";
   img.src = url;
+  img.id = `image-${index}`;
   img.loading = "lazy";
   img.alt = "Страница манги";
   return img;
@@ -341,9 +355,11 @@ function buildGallery(manga: MangaWithGallery): HTMLDivElement {
   gallery.id = "gallery";
   gallery.className = "gallery";
 
-  manga.gallery.forEach((url) => {
-    gallery.appendChild(buildImage(url));
-  });
+  for (let index = 0; index < manga.gallery.length; index++) {
+    let url = manga.gallery[index];
+    gallery.appendChild(buildImage(url, index));
+  }
+
   return gallery;
 }
 
@@ -386,7 +402,9 @@ async function fetchManga(sku: string): Promise<MangaWithGallery> {
   const response = await fetch(buildMangaURL(sku), {
     headers: { Accept: "application/json" },
   });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (!response.ok) {
+    window.location.href = "/404"
+  }
   return response.json();
 }
 
@@ -416,18 +434,17 @@ function getType(type: "author" | "genre" | "language"): string {
   return "языка";
 }
 
-function randomSelect(manga: MangaWithGallery): {
-  endpoint: EndpointKey;
-  query: string;
-  displayText: string;
-} {
-  const tags: Array<{ type: EndpointKey; object: ObjectWithId }> = [];
+function randomSelect(manga: MangaWithGallery): RandomTagInfo {
+  const tags: Array<{ 
+    type: "author" | "genre" | "language"; 
+    object: ObjectWithId 
+  }> = [];
 
   if (manga.author) {
     tags.push({ type: "author", object: manga.author });
   }
   if (manga.genres?.length) {
-    manga.genres.forEach((genre) => {
+    manga.genres.forEach(genre => {
       tags.push({ type: "genre", object: genre });
     });
   }
@@ -436,14 +453,9 @@ function randomSelect(manga: MangaWithGallery): {
   }
 
   if (tags.length === 0) {
-    return {
-      endpoint: "pages",
-      query: "",
-      displayText: "Новинки",
-    };
+    return { endpoint: "pages", query: "", displayText: "Новинки" };
   }
 
-  // Случайный выбор из релевантных тегов
   const randomIndex = Math.floor(Math.random() * tags.length);
   const selected = tags[randomIndex];
 

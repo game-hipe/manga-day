@@ -34,7 +34,7 @@ class Endpoints:
         """
         self.service = service
         self.bot = bot
-        self._router = APIRouter(prefix="/api/v1", tags=["api"])
+        self._router = APIRouter(prefix="/api/v1")
 
         self._setup_routes()
         self._setup_tag_routes()

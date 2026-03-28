@@ -136,11 +136,7 @@ class UserHandler:
         request: Request,
     ):
         return self.templates.TemplateResponse(
-            "manga.html",
-            context = {
-                "request": request,
-                "API_PORT": self.port
-            }
+            "manga.html", context={"request": request, "API_PORT": self.port}
         )
 
     @property

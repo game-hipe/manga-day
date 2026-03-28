@@ -14,7 +14,9 @@
         "src/**/*"
     ],
     "exclude": [
-        "node_modules",
-        "dist"
+    "node_modules",
+    "dist",
+    "**/index.ts",
+    "**/manga.ts"
     ]
 }

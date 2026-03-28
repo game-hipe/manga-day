@@ -196,6 +196,7 @@
   display: block;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: #0f131a;
+  min-height: 150px; /* 🔧 Минимальная высота, чтобы контейнер не "схлопывался" */
 }
 
 .gallery__image:hover {
