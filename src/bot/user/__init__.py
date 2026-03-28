@@ -35,8 +35,8 @@ async def setup_user(
     logger.debug("Команды установлены")
     bot.include_router(cancel_router())
     bot.include_router(StartHandler(bot))
-    bot.include_router(FindCommandsHandler(bot))
     bot.include_router(GetMangaCommandHandler(bot))
+    bot.include_router(FindCommandsHandler(bot))
     bot.include_router(get_router())
 
     return bot

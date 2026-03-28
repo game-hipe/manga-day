@@ -4,6 +4,7 @@ from .hitomi import HitomiSpider
 from .hentaiera import HentaiEraSpider
 from .moeimg import MoeImgSpider
 from .porn_comic import PornComicSpider
+from .nhentai import NhentaiSpider
 
 __all__ = [
     "HmangaSpider",
@@ -12,4 +13,5 @@ __all__ = [
     "HentaiEraSpider",
     "MoeImgSpider",
     "PornComicSpider",
+    "NhentaiSpider",
 ]

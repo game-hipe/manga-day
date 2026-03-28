@@ -2,6 +2,7 @@ from loguru import logger
 
 from ...core.abstract.parser import BaseMangaParser, BasePageParser
 from ...core.entities.schemas import MangaSchema, BaseManga
+from ...core.exc import ParseSituationNotAllowed, ParserError
 
 
 class GlobalMangaParser(BaseMangaParser):
@@ -48,7 +49,7 @@ class GlobalMangaParser(BaseMangaParser):
             poster = self.urljoin(poster.get("data-src"))
             url = url.get("href")
         else:
-            raise ValueError(
+            raise ParserError(
                 "Не удалось извлечь данные из HTML. Пожалуйста, проверьте исходный код страницы."
             )
 
@@ -58,12 +59,12 @@ class GlobalMangaParser(BaseMangaParser):
                 title=title, poster=poster, url=url, **tags, gallery=gallery
             )
 
-        raise ValueError(
+        raise ParserError(
             "Не удалось извлечь данные из HTML. Пожалуйста, проверьте исходный код страницы."
         )
 
     def _parse_json(self, data):
-        raise AttributeError(
+        raise ParseSituationNotAllowed(
             "Этот парсер не поддерживает данные в формате JSON. Пожалуйста, используйте HTML-анализатор."
         )
 
@@ -97,6 +98,6 @@ class GlobalPageParser(BasePageParser):
         return items
 
     def _parse_json(self, data):
-        raise AttributeError(
+        raise ParseSituationNotAllowed(
             "Этот парсер не поддерживает данные в формате JSON. Пожалуйста, используйте HTML-анализатор."
         )

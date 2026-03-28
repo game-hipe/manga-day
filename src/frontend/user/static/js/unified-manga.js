@@ -202,7 +202,7 @@ function buildInfo(manga) {
         </svg>
       `);
     };
-    infoBlock.append(title, poster);
+    infoBlock.append(poster, title);
     return infoBlock;
 }
 function buildMangaButtons(manga, botUrl) {

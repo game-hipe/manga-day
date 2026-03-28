@@ -285,7 +285,7 @@ function buildInfo(manga: MangaWithGallery): HTMLDivElement {
       `);
   };
 
-  infoBlock.append(title, poster);
+  infoBlock.append(poster, title);
   return infoBlock;
 }
 
