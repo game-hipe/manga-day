@@ -7,6 +7,7 @@ import pytest
 from src.spider.hmanga.parser import MangaParser as HmangaParser
 from src.spider.multi_manga.parser import MangaParser as MultiMangaParser
 from src.spider.hitomi.parser import HitomiMangaParser
+from src.core.exc import ParserError, ParseSituationNotAllowed
 
 
 class BaseTestParser:
@@ -24,7 +25,7 @@ class BaseTestParser:
 
     def test_parse_empty_html(self, parser):
         """Тест парсинга пустого HTML"""
-        with pytest.raises(ValueError):
+        with pytest.raises(ParserError):
             parser.parse("")
 
     def test_parse_none_html(self, parser):
@@ -41,11 +42,11 @@ class BaseTestParser:
             # Если не упало, проверяем что результат хоть что-то содержит
             assert result is not None
         except Exception as e:
-            assert isinstance(e, (ValueError, AttributeError))
+            assert isinstance(e, (ParserError, ParseSituationNotAllowed))
 
     def test_parse_with_missing_canonical(self, parser, minimal_valid_html):
         """Тест парсинга HTML без canonical ссылки"""
-        with pytest.raises(ValueError, match="Не удалось извлечь данные из HTML."):
+        with pytest.raises(ParserError, match="Не удалось извлечь данные из HTML."):
             html = minimal_valid_html.replace('rel="canonical"', "")
             parser.parse(html)
 
@@ -230,12 +231,12 @@ class TestHmangaParser(BaseTestParser):
 
     def test_parse_no_poster(self, parser, html_without_poster):
         """Тест парсинга HTML без постера"""
-        with pytest.raises(ValueError, match="Не удалось извлечь данные из HTML."):
+        with pytest.raises(ParserError, match="Не удалось извлечь данные из HTML."):
             parser.parse(html_without_poster)
 
     def test_parse_no_title(self, parser, html_without_title):
         """Тест парсинга HTML без заголовка"""
-        with pytest.raises(ValueError, match="Не удалось извлечь данные из HTML."):
+        with pytest.raises(ParserError, match="Не удалось извлечь данные из HTML."):
             parser.parse(html_without_title)
 
     def test_parse_multiple_languages(self, parser, html_with_multiple_languages):
@@ -632,7 +633,7 @@ def test_parser_initialization_errors(parser_class, base_url):
         parser_class(None, situation="html")
 
     # Тест с некорректной ситуацией
-    with pytest.raises(ValueError):
+    with pytest.raises(AttributeError):
         parser_class(base_url, situation="invalid_situation")
 
     # Корректная инициализация

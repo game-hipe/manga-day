@@ -45,7 +45,7 @@ class BaseParser(Generic[_T], ABC):
             raise ValueError("base_url должен быть URL-ом")
 
         if self.situation not in SITUATION.__args__:
-            raise ValueError(f"Неподдерживаемый тип разметки: {situation}")
+            raise AttributeError(f"Неподдерживаемый тип разметки: {situation}")
 
         try:
             BeautifulSoup(EXAMPLE_HTML, self.features)

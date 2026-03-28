@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 import pytest
 from src.spider.hmanga.parser import MangaParser as HmangaParser
 from src.spider.multi_manga.parser import MangaParser as MultiMangaParser
+from src.core.exc import ParserError
 
 
 class TestHmangaParser:
@@ -42,7 +43,7 @@ class TestHmangaParser:
 
     @pytest.mark.asyncio
     async def test_parse_invalid_html(self, parser):
-        with pytest.raises(ValueError):
+        with pytest.raises(ParserError):
             parser.parse("<html><body>Invalid</body></html>")
 
     # -------------------------------------------
@@ -141,7 +142,7 @@ class TestMultiMangaParser:
 
     @pytest.mark.asyncio
     async def test_parse_invalid_html(self, parser):
-        with pytest.raises(ValueError):
+        with pytest.raises(ParserError):
             parser.parse("<html><body>Invalid</body></html>")
 
     # -------------------------------------------
