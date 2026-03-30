@@ -25,10 +25,7 @@ user_bot:
   proxy: "http://ip:port@login:password" # Прокси если такого не имеется просто удалить или закоментировать
 
 api:
-  frontend_port: 8000 # Порт фронтенда
   backend_port: 8080 # Порт бэкенда
-
-  frontend_host: "0.0.0.0" # Хост фронтенда
   backend_host: "0.0.0.0" # Хост бэкенда
 
 pdf:
