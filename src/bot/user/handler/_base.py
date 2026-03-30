@@ -256,7 +256,7 @@ class UserBaseHandler(BaseHandler[UserBot]):
                 return
 
             if pdf is None:
-                await message.answer(self.build_error_message("Не удалось скачать PDF"))
+                self.manga_server_error(message, "Не удалось скачать PDF")
                 return
 
             buffer = BufferedInputFile(file=pdf, filename=f"{manga.title}.pdf")
