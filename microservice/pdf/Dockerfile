@@ -11,7 +11,9 @@ COPY requirements.txt .
 # Установка зависимостей без кэширования для уменьшения размера образа
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main.py .
+COPY main.py health.py entrypoint.sh ./
+
+RUN chmod +x /app/entrypoint.sh
 
 # Запуск. Дополнительно можно ограничить воркеры uvicorn, т.к. упор на экономию RAM (1 worker = ~40MB RAM в простое)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3040", "--workers", "1"]
+ENTRYPOINT ["/app/entrypoint.sh"]

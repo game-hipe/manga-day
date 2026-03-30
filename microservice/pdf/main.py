@@ -138,3 +138,8 @@ async def generate_pdf(urls: List[str], background_tasks: BackgroundTasks):
         # При ошибке убираем за собой сразу
         cleanup_temp_dir(temp_dir)
         return Response(status_code=500)
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}

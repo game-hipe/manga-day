@@ -26,6 +26,13 @@ services:
       - "3040:3040"
     environment:
       - PROXY=http://localhost:8888 # Если такового не имеется удалить environment
+      - PORT=3040
+
+    healthcheck:
+      test: ["CMD-SHELL", "python", "health.py"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
 
   frontend:
     build: ./src/frontend
@@ -37,6 +44,12 @@ services:
       - FRONTEND_HOST=0.0.0.0
       - FRONTEND_PORT=8000
       - API_URL=http://127.0.0.1:8080
+
+    healthcheck:
+      test: ["CMD-SHELL", "python", "health.py"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
 
   app:
     build: .
@@ -51,6 +64,12 @@ services:
       - manga-day:/app/var
     ports:
       - "8080:8080"
+
+    healthcheck:
+      test: ["CMD-SHELL", "python", "health.py"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
 
 volumes:
   manga-day:
