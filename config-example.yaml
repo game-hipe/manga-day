@@ -13,7 +13,8 @@ update:
 admin:
   username: "admin" # Логин для доступа к админ панели
   password: "admin" # Пароль для доступа к админ панели
-  solt: "admin" # Соль для хеширования пароля
+  salt: "admin" # Соль для хеширования пароля
+  secret_key: "supersecretadminkey1234567890abcdefgxyz!@#$_SECRET_KEY_LONGER_THAN_32_CHARS"
 
 bot:
   admins: [12345] # Админы бота

@@ -1,9 +1,28 @@
 "use strict";
-const websocket = new WebSocket(`ws://${window.location.host}/admin/ws`);
+const URLJoin = (...args) => args
+    .join("/")
+    .replace(/[\/]+/g, "/")
+    .replace(/^(.+):\//, "$1://")
+    .replace(/^file:/, "file:/")
+    .replace(/\/(\?|&|#[^!])/g, "$1")
+    .replace(/\?/g, "&")
+    .replace("&", "?");
+const getCookie = (name) => {
+    var _a;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2)
+        return ((_a = parts.pop()) === null || _a === void 0 ? void 0 : _a.split(';').shift()) || null;
+    return null;
+};
+const API_ORIGIN = new URL(window.__API__);
+const websocket = new WebSocket(`ws://${API_ORIGIN.host}/v1/api/admin/ws`);
+const API = URLJoin(API_ORIGIN.toString(), "/v1/api");
 var spiderStatus;
 var alertLevel;
 let activeMessages = [];
 async function StartAllSpider() {
+    const token = getCookie('access_token');
     const SpiderBox = document.getElementById("Spiders");
     if (!SpiderBox) {
         console.warn("Элемент 'Spiders' не найден.");
@@ -22,22 +41,30 @@ async function StartAllSpider() {
         return;
     }
     try {
-        await fetch("/admin/command", {
+        console.log("Current cookies:", document.cookie);
+        const response = await fetch(URLJoin(API, "/admin/spider"), {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : '',
             },
+            credentials: "include",
             body: JSON.stringify({
                 signal: "start",
                 spider: "all"
             })
         });
+        if (response.status == 403) {
+            document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.location.href = "/admin";
+        }
     }
     catch (error) {
         console.error("Ошибка при отправке команды:", error);
     }
 }
 async function StopAllSpider() {
+    const token = getCookie('access_token');
     const SpiderBox = document.getElementById("Spiders");
     if (!SpiderBox) {
         console.warn("Элемент 'Spiders' не найден.");
@@ -56,51 +83,74 @@ async function StopAllSpider() {
         return;
     }
     try {
-        await fetch("/admin/command", {
+        console.log("Current cookies:", document.cookie);
+        const response = await fetch(URLJoin(API, "/admin/spider"), {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : '',
             },
+            // credentials: "include",
             body: JSON.stringify({
                 signal: "stop",
                 spider: "all"
             })
         });
+        if (response.status == 403) {
+            document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.location.href = "/admin";
+        }
     }
     catch (error) {
         console.error("Ошибка при отправке команды:", error);
     }
 }
 async function StartSpider(spiderName, page) {
+    const token = getCookie('access_token');
     try {
-        await fetch("/admin/command", {
+        console.log("Current cookies:", document.cookie);
+        const response = await fetch(URLJoin(API, "/admin/spider"), {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : '',
             },
+            // credentials: "include",
             body: JSON.stringify({
                 signal: "start",
                 spider: spiderName,
                 page: page
             })
         });
+        if (response.status == 403) {
+            document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.location.href = "/admin";
+        }
     }
     catch (error) {
         console.error("Ошибка при отправке команды:", error);
     }
 }
 async function StopSpider(spiderName) {
+    const token = getCookie('access_token');
     try {
-        await fetch("/admin/command", {
+        console.log("Current cookies:", document.cookie);
+        const response = await fetch(URLJoin(API, "/admin/spider"), {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : '', // ← Bearer обязательно
             },
+            // credentials: "include",
             body: JSON.stringify({
                 signal: "stop",
                 spider: spiderName
-            })
+            }),
         });
+        if (response.status == 403) {
+            document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.location.href = "/admin";
+        }
     }
     catch (error) {
         console.error("Ошибка при отправке команды:", error);
@@ -317,6 +367,7 @@ websocket.onmessage = function (event) {
         OnAlert(result.message, result.level);
     }
     else if (answer.signal === "status") {
+        console.log(answer.signal);
         let result = answer.result;
         for (const element of result) {
             UpdateSpider(element);

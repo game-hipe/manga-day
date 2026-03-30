@@ -21,3 +21,5 @@ env.example
 config-example.yaml
 dist
 tsconfig.json
+
+src/frontend

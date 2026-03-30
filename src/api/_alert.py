@@ -1,5 +1,5 @@
-from ...core.abstract.alert import BaseAlert, LEVEL
-from .handlers.schemas import MessageResponse, AlertMessage
+from ..core.abstract.alert import BaseAlert, LEVEL
+from .schemas.spider import MessageResponse, AlertMessage
 from fastapi.websockets import WebSocket, WebSocketState
 
 

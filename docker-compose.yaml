@@ -27,6 +27,17 @@ services:
     environment:
       - PROXY=http://localhost:8888 # Если такового не имеется удалить environment
 
+  frontend:
+    build: ./src/frontend
+    container_name: manga-frontend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - FRONTEND_HOST=0.0.0.0
+      - FRONTEND_PORT=8000
+      - API_URL=http://127.0.0.1:8080
+
   app:
     build: .
     container_name: manga-day-v1
@@ -39,7 +50,6 @@ services:
     volumes:
       - manga-day:/app/var
     ports:
-      - "8000:8000"
       - "8080:8080"
 
 volumes:

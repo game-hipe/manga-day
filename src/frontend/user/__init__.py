@@ -12,11 +12,11 @@ TEMPLATES = USER_FILES / "templates"
 STATIC = USER_FILES / "static"
 
 
-def setup_user(port: str = "8080") -> APIRouter:
+def setup_user(api_url: str) -> APIRouter:
     templates = Jinja2Templates(TEMPLATES)
     router = APIRouter()
 
-    user_router = UserHandler(templates=templates, static=STATIC, port=port)
+    user_router = UserHandler(templates=templates, static=STATIC, api_url=api_url)
 
     router.include_router(user_router.router)
 

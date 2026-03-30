@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <script>
+        window.__API__ = "{{ API }}"
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Панель управления Manga-Day — авторизация</title>
@@ -207,6 +210,17 @@
 
     <script>
         (function() {
+            const URLJoin = (...args) => args
+                .join("/")
+                .replace(/[\/]+/g, "/")
+                .replace(/^(.+):\//, "$1://")
+                .replace(/^file:/, "file:/")
+                .replace(/\/(\?|&|#[^!])/g, "$1")
+                .replace(/\?/g, "&")
+                .replace("&", "?");
+
+            const url = new URL(URLJoin(window.__API__, "/v1/api/admin/login"));
+
             const form = document.getElementById('loginForm');
             const errorDiv = document.getElementById('errorMessage');
             const usernameInput = document.getElementById('username');
@@ -233,7 +247,6 @@
                 const password = passwordInput.value;
 
                 // Формируем URL с query-параметрами (как в curl-примере)
-                const url = new URL('/admin/login', window.location.origin);
                 url.searchParams.append('username', username);
                 url.searchParams.append('password', password);
 
@@ -266,7 +279,7 @@
                     }
 
                     // Сохраняем токен в cookie (как в оригинале)
-                    document.cookie = `token=${token}; path=/;`;
+                    document.cookie = `access_token=${token}; path=/;`;
 
                     // Перенаправляем на защищённую страницу админ-панели
                     window.location.href = '/admin';

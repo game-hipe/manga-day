@@ -1,13 +1,13 @@
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
+from slowapi import Limiter
 
 from ...core import __version__
 from ...core.service import FindService
 from ...core.entities.schemas import (
     ApiOutputManga,
     OutputMangaSchema,
-    MangaSchema,
     MangaFindResultSchema,
     ObjectWithId,
 )
@@ -28,24 +28,32 @@ def pagination(
 class Endpoints:
     """Эндпоинты для API манги."""
 
-    def __init__(self, service: FindService, bot: str):
+    BASE_LIMIT = 60
+
+    MANGA_LIMIT = 60
+
+    PAGINATION_LIMIT = 120
+
+    def __init__(self, service: FindService, bot: str, limiter: Limiter):
         """Инициализация Endpoints
 
         Args:
             service (FindService): Сервис для работы с мангой.
             bot (str): URL бота Telegram.
+            limiter (Limiter): Лимит запросов
         """
         self.service = service
         self.bot = bot
         self._router = APIRouter(prefix="/api/v1")
+        self.limiter = limiter
 
         self._setup_routes()
         self._setup_tag_routes()
         self._setup_finder_routes()
 
-        self._setuo_tools()
+        self._setup_tools()
 
-    def _setuo_tools(self):
+    def _setup_tools(self):
         """Настройка инструментов."""
 
         self._router.add_api_route(
@@ -71,8 +79,7 @@ class Endpoints:
         """
         self._router.add_api_route(
             "/manga/sku/{sku}",
-            self.get_manga_by_sku,
-            methods=["GET"],
+            self._func_with_limit(self.get_manga_by_sku, f"{self.MANGA_LIMIT}/minute"),
             response_model=ApiOutputManga,
             summary="Получить мангу по SKU",
             tags=["manga"],
@@ -80,7 +87,7 @@ class Endpoints:
 
         self._router.add_api_route(
             "/manga/url/{url}",
-            self.get_manga_by_url,
+            self._func_with_limit(self.get_manga_by_url, f"{self.MANGA_LIMIT}/minute"),
             methods=["GET"],
             response_model=ApiOutputManga,
             summary="Получить мангу по URL",
@@ -89,26 +96,17 @@ class Endpoints:
 
         self._router.add_api_route(
             "/manga/{id}",
-            self.get_manga,
+            self._func_with_limit(self.get_manga, f"{self.MANGA_LIMIT}/minute"),
             methods=["GET"],
             response_model=ApiOutputManga,
             summary="Получить мангу по внутреннему ID в БД",
             tags=["manga"],
         )
 
-        self._router.add_api_route(
-            "/manga/add",
-            self.add_manga,
-            methods=["POST"],
-            response_model=ApiOutputManga,
-            summary="Добавить мангу",
-            tags=["manga"],
-        )
-
     def _setup_finder_routes(self):
         self._router.add_api_route(
             "/pages",
-            self.get_pages,
+            self._func_with_limit(self.get_pages, f"{self.PAGINATION_LIMIT}/minute"),
             methods=["GET"],
             response_model=MangaFindResultSchema,
             summary="Получить список манги по страницам",
@@ -117,7 +115,9 @@ class Endpoints:
 
         self._router.add_api_route(
             "/pages/genre",
-            self.get_pages_by_genre,
+            self._func_with_limit(
+                self.get_pages_by_genre, f"{self.PAGINATION_LIMIT}/minute"
+            ),
             methods=["GET"],
             response_model=MangaFindResultSchema,
             summary="Получить список манги по жанру",
@@ -126,7 +126,9 @@ class Endpoints:
 
         self._router.add_api_route(
             "/pages/author",
-            self.get_pages_by_author,
+            self._func_with_limit(
+                self.get_pages_by_author, f"{self.PAGINATION_LIMIT}/minute"
+            ),
             methods=["GET"],
             response_model=MangaFindResultSchema,
             summary="Получить список манги по автору",
@@ -135,7 +137,9 @@ class Endpoints:
 
         self._router.add_api_route(
             "/pages/language",
-            self.get_pages_by_language,
+            self._func_with_limit(
+                self.get_pages_by_language, f"{self.PAGINATION_LIMIT}/minute"
+            ),
             methods=["GET"],
             response_model=MangaFindResultSchema,
             summary="Получить список манги по языку",
@@ -144,7 +148,9 @@ class Endpoints:
 
         self._router.add_api_route(
             "/pages/query",
-            self.get_pages_by_query,
+            self._func_with_limit(
+                self.get_pages_by_query, f"{self.PAGINATION_LIMIT}/minute"
+            ),
             methods=["GET"],
             response_model=MangaFindResultSchema,
             summary="Получить список манги по запросу",
@@ -154,7 +160,7 @@ class Endpoints:
     def _setup_tag_routes(self):
         self._router.add_api_route(
             "/genres",
-            self.get_all_genres,
+            self._func_with_limit(self.get_all_genres),
             methods=["GET"],
             response_model=list[ObjectWithId],
             summary="Получить список жанров",
@@ -163,7 +169,7 @@ class Endpoints:
 
         self._router.add_api_route(
             "/language",
-            self.get_all_languages,
+            self._func_with_limit(self.get_all_languages),
             methods=["GET"],
             response_model=list[ObjectWithId],
             summary="Получить список языков",
@@ -172,7 +178,7 @@ class Endpoints:
 
         self._router.add_api_route(
             "/author",
-            self.get_authors,
+            self._func_with_limit(self.get_authors),
             methods=["GET"],
             response_model=list[ObjectWithId],
             summary="Получить список авторов",
@@ -180,7 +186,7 @@ class Endpoints:
         )
 
     async def get_pages(
-        self, common: dict = Depends(pagination)
+        self, request: Request, common: dict = Depends(pagination)
     ) -> MangaFindResultSchema:
         """Получить страницу.
 
@@ -194,7 +200,7 @@ class Endpoints:
         return await self.service.get_pages(**common)
 
     async def get_pages_by_genre(
-        self, query: int, common: dict = Depends(pagination)
+        self, request: Request, query: int, common: dict = Depends(pagination)
     ) -> MangaFindResultSchema:
         """Ищет мангу по запросу
 
@@ -209,7 +215,7 @@ class Endpoints:
         return await self.service.get_pages_by_genre(query, **common)
 
     async def get_pages_by_author(
-        self, query: int, common: dict = Depends(pagination)
+        self, request: Request, query: int, common: dict = Depends(pagination)
     ) -> MangaFindResultSchema:
         """Ищет мангу по запросу
 
@@ -224,7 +230,7 @@ class Endpoints:
         return await self.service.get_pages_by_author(query, **common)
 
     async def get_pages_by_language(
-        self, query: int, common: dict = Depends(pagination)
+        self, request: Request, query: int, common: dict = Depends(pagination)
     ) -> MangaFindResultSchema:
         """Ищет мангу по запросу
 
@@ -239,7 +245,7 @@ class Endpoints:
         return await self.service.get_pages_by_language(query, **common)
 
     async def get_pages_by_query(
-        self, query: str, common: dict = Depends(pagination)
+        self, request: Request, query: str, common: dict = Depends(pagination)
     ) -> MangaFindResultSchema:
         """Ищет мангу по запросу
 
@@ -253,12 +259,11 @@ class Endpoints:
         """
         return await self.service.get_pages_by_query(query, **common)
 
-    async def get_manga_by_sku(self, sku: str) -> ApiOutputManga:
+    async def get_manga_by_sku(self, request: Request, sku: str) -> ApiOutputManga:
         """Получить страницу.
 
         Args:
-            page (int): Номер страницы)
-            sku (str):
+            sku (str): SKU манги
 
         Returns:
             ApiOutputManga | None: Данные манги.
@@ -269,7 +274,7 @@ class Endpoints:
 
         return self._build_manga(manga)
 
-    async def get_manga_by_url(self, url: str) -> ApiOutputManga:
+    async def get_manga_by_url(self, request: Request, url: str) -> ApiOutputManga:
         """Получить страницу.
 
         Args:
@@ -284,7 +289,7 @@ class Endpoints:
 
         return self._build_manga(manga)
 
-    async def get_manga(self, id: int) -> ApiOutputManga:
+    async def get_manga(self, request: Request, id: int) -> ApiOutputManga:
         """Получить страницу.
 
         Args:
@@ -296,21 +301,10 @@ class Endpoints:
         manga = await self.service.manager.get_manga(id)
         if manga is None:
             raise HTTPException(status_code=404, detail="Манга не найдена")
-        print(manga)
+
         return self._build_manga(manga)
 
-    async def add_manga(self, manga: MangaSchema) -> ApiOutputManga:
-        """Добавляет мангу в БД
-
-        Args:
-            manga (MangaSchema): Схема манги
-
-        Returns:
-            OutputMangaSchema: Возвращает мангу с ID
-        """
-        return self._build_manga(await self.service.manager.add_manga(manga))
-
-    async def get_all_genres(self) -> list[ObjectWithId]:
+    async def get_all_genres(self, request: Request) -> list[ObjectWithId]:
         """Получить все жанры
 
         Returns:
@@ -318,7 +312,7 @@ class Endpoints:
         """
         return await self.service.tag_getter.get_genres()
 
-    async def get_all_languages(self) -> list[ObjectWithId]:
+    async def get_all_languages(self, request: Request) -> list[ObjectWithId]:
         """Получить все языки
 
         Returns:
@@ -327,7 +321,7 @@ class Endpoints:
         return await self.service.tag_getter.get_language()
 
     async def get_authors(
-        self, common: dict = Depends(pagination)
+        self, request: Request, common: dict = Depends(pagination)
     ) -> list[ObjectWithId]:
         """Получить авторов постранично
 
@@ -379,3 +373,6 @@ class Endpoints:
             id=manga.id,
             sku=manga.sku,
         )
+
+    def _func_with_limit(self, func: str, limit_value: str | None = None):
+        return self.limiter.limit(limit_value or f"{self.BASE_LIMIT}/minute")(func)

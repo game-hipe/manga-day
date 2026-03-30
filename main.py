@@ -7,9 +7,8 @@ from loguru import logger
 
 from src.core import config
 from src.core.entities.schemas import ProxySchema
-from src.core.manager import MangaManager, SpiderManager, AlertManager
+from src.core.manager import MangaManager, SpiderManager, AlertManager, AuthManager
 
-from src.frontend import start_frontend
 from src.api import start_api
 from src.bot import start_user
 from src.bot import start_admin
@@ -25,6 +24,11 @@ async def main():
         engine = create_async_engine(config.database.db)
 
         alert = AlertManager()
+        auth = AuthManager(
+            user_name=config.admin.username,
+            password=config.admin.password,
+            secret_key=config.admin.secret_key,
+        )
         manager = MangaManager(engine)
 
         proxy = [ProxySchema.create(x) for x in config.parsing.proxy]
@@ -44,8 +48,7 @@ async def main():
         try:
             async with asyncio.TaskGroup() as tg:
                 tg.create_task(start_admin(spider=spider))
-                tg.create_task(start_api(service=find))
-                tg.create_task(start_frontend(manager=manager, spider=spider))
+                tg.create_task(start_api(service=find, auth=auth, spider=spider))
                 tg.create_task(
                     start_user(
                         manager=manager, alert=alert, pdf_service=pdf, find_service=find

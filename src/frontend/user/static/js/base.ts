@@ -8,11 +8,9 @@ const URLJoin = (...args: string[]): string =>
     .replace(/\?/g, "&")
     .replace("&", "?");
 
-const API_ORIGIN = new URL(window.location.origin);
-const port = (window as any).__API_PORT__ || "8080";
-API_ORIGIN.port = port;
+const API_ORIGIN = (window as any).__API__ as string
 
-const API = URLJoin(API_ORIGIN.toString(), "/api/v1");
+const API = URLJoin(API_ORIGIN, "/api/v1");
 
 const API_ENDPOINTS = {
   author: URLJoin(API, "/pages/author"),

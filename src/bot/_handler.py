@@ -71,8 +71,8 @@ class Smiles(Enum):
 class BaseHandler(ABC, Generic[_T]):
     """Базовый хэндлер"""
 
-    PATH_TO_404 = Path("src/frontend/user/static/images/404.png")
-    PATH_TO_500 = Path("src/frontend/user/static/images/500.jpg")
+    PATH_TO_404 = Path(__file__).parent / "static" / "404.png"
+    PATH_TO_500 = Path(__file__).parent / "static" / "500.jpg"
 
     def __init__(self, bot: _T, extra_kwargs: dict[str, Any] = {}) -> None:
         """Хэндлер для aiogram бота

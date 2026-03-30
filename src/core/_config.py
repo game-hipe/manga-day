@@ -2,6 +2,7 @@
 
 import os
 import sys
+import warnings
 
 from hashlib import sha256
 
@@ -30,11 +31,36 @@ class SiteConfig(BaseModel):
 class AdminConfig(BaseModel):
     username: str = Field("admin")
     password: str = Field("admin")
-    solt: str = Field("admin")
+    salt: str = Field("admin")
+    secret_key: str = Field(
+        "supersecretadminkey1234567890abcdefgxyz!@#$_SECRET_KEY_LONGER_THAN_32_CHARS"
+    )
 
     def create_hash(self, password: str | None = None) -> str:
-        hash_input = (self.solt + (password or self.password)).encode()
+        hash_input = (self.salt + (password or self.password)).encode()
         return sha256(hash_input).hexdigest()
+
+    @model_validator(mode="after")
+    def check_secret_key(self):
+        if len(self.secret_key) < 32:
+            warnings.warn(
+                f"Длина секретного кода {len(self.secret_key)} "
+                "менее 32 символам! "
+                "Для более высокой безопасности рекомендуется более 32 символов".format(
+                    len(self.secret_key)
+                )
+            )
+
+        elif (
+            self.secret_key
+            == "supersecretadminkey1234567890abcdefgxyz!@#$_SECRET_KEY_LONGER_THAN_32_CHARS"
+        ):
+            warnings.warn(
+                "Секретный ключ не изменен! "
+                "Для более высокой безопасности рекомендуется изменить дефолтный"
+            )
+
+        return self
 
 
 class RequestConfig(BaseModel):

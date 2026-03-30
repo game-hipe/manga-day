@@ -16,20 +16,20 @@ class UserHandler:
     def __init__(
         self,
         templates: Jinja2Templates,
+        api_url: str,
         static: Path | str | None = None,
-        port: str = "8080",
     ):
         """Эндпоинты для FrontEnd
 
         Args:
             templates (Jinja2Templates): Шаблонизатор
             static (Path | str | None, optional): Путь к статике. По умолчанию None.
-            port (str, optional): Порт для API. По умолчанию "8080".
+            api_url (str, optional): URL для API. Пример: "https://api.example.com"
         """
         self._router = APIRouter(tags=["user"])
         self.templates = templates
         self.static = Path(static) or USER_FILES / "static"
-        self.port = port
+        self.api_url = api_url
         self._setup_routes()
         self._setup_find()
 
@@ -92,6 +92,11 @@ class UserHandler:
             methods=["GET"],
         )
 
+        self.router.add_api_route("/health", self.health, methods=["GET"])
+
+    async def health(self):
+        return {"ok": True}
+
     async def get_static(self, path: str) -> FileResponse:
         """Получить статичный файл
 
@@ -120,11 +125,9 @@ class UserHandler:
         """
 
         return self.templates.TemplateResponse(
-            "index.html",
-            context={
-                "request": request,
-                "API_PORT": self.port,
-            },
+            name="index.html",
+            request=request,
+            context={"API": self.api_url},
         )
 
     async def _show_manga(
@@ -132,7 +135,9 @@ class UserHandler:
         request: Request,
     ):
         return self.templates.TemplateResponse(
-            "manga.html", context={"request": request, "API_PORT": self.port}
+            name="manga.html",
+            request=request,
+            context={"API": self.api_url},
         )
 
     @property

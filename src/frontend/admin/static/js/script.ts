@@ -1,7 +1,29 @@
-const websocket = new WebSocket(`ws://${window.location.host}/admin/ws`);
+const URLJoin = (...args: string[]): string =>
+  args
+    .join("/")
+    .replace(/[\/]+/g, "/")
+    .replace(/^(.+):\//, "$1://")
+    .replace(/^file:/, "file:/")
+    .replace(/\/(\?|&|#[^!])/g, "$1")
+    .replace(/\?/g, "&")
+    .replace("&", "?");
+
+const getCookie = (name: string): string | null => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+    return null;
+};
+
+const API_ORIGIN = new URL((window as any).__API__ as string);
+
+const websocket = new WebSocket(`ws://${API_ORIGIN.host}/v1/api/admin/ws`);
+
+const API = URLJoin(API_ORIGIN.toString(), "/v1/api");
 
 var spiderStatus: "success" | "error" | "processing" | "not_running" | "running" | "cancelled"
 var alertLevel: "info" | "warning" | "error" | "critical"
+
 
 interface Message {
     id: string
@@ -32,6 +54,7 @@ interface AlertResponse extends BaseResponse<AlertMessage> {}
 interface SpiderResponse extends BaseResponse<SpiderMessage> {}
 
 async function StartAllSpider() {
+    const token = getCookie('access_token');
     const SpiderBox = document.getElementById("Spiders");
     if (!SpiderBox) {
         console.warn("Элемент 'Spiders' не найден.");
@@ -53,22 +76,30 @@ async function StartAllSpider() {
         return;
     }
     try {
-        await fetch("/admin/command", {
+        console.log("Current cookies:", document.cookie);
+        const response = await fetch(URLJoin(API, "/admin/spider"), {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : '',
             },
+            credentials: "include",
             body: JSON.stringify({
                 signal: "start",
                 spider: "all"
             })
         });
+        if (response.status == 403) {
+            document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.location.href = "/admin"
+        }
     } catch (error) {
         console.error("Ошибка при отправке команды:", error);
     }
 }
 
 async function StopAllSpider(): Promise<void> {
+    const token = getCookie('access_token');
     const SpiderBox = document.getElementById("Spiders");
     if (!SpiderBox) {
         console.warn("Элемент 'Spiders' не найден.");
@@ -91,51 +122,74 @@ async function StopAllSpider(): Promise<void> {
     }
 
     try {
-        await fetch("/admin/command", {
+        console.log("Current cookies:", document.cookie);
+        const response = await fetch(URLJoin(API, "/admin/spider"), {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : '',
             },
+            // credentials: "include",
             body: JSON.stringify({
                 signal: "stop",
                 spider: "all"
             })
         });
+        if (response.status == 403) {
+            document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.location.href = "/admin"
+        }
     } catch (error) {
         console.error("Ошибка при отправке команды:", error);
     }
 }
 
 async function StartSpider(spiderName: string, page: number | null): Promise<void> {
+    const token = getCookie('access_token');
     try {
-        await fetch("/admin/command", {
+        console.log("Current cookies:", document.cookie);
+        const response = await fetch(URLJoin(API, "/admin/spider"), {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : '',
             },
+            // credentials: "include",
             body: JSON.stringify({
                 signal: "start",
                 spider: spiderName,
                 page: page
             })
         });
+        if (response.status == 403) {
+            document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.location.href = "/admin"
+        }
     } catch (error) {
         console.error("Ошибка при отправке команды:", error);
     }
 }
 
 async function StopSpider(spiderName: string): Promise<void> {
+    const token = getCookie('access_token');
     try {
-        await fetch("/admin/command", {
+        console.log("Current cookies:", document.cookie);
+        const response = await fetch(URLJoin(API, "/admin/spider"), {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : '',  // ← Bearer обязательно
             },
+            // credentials: "include",
             body: JSON.stringify({
                 signal: "stop",
                 spider: spiderName
-            })
+            }),
         });
+        if (response.status == 403) {
+            document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.location.href = "/admin"
+        }
     } catch (error) {
         console.error("Ошибка при отправке команды:", error);
     }
@@ -385,6 +439,8 @@ websocket.onmessage = function (event: MessageEvent): void {
         let result = answer.result as AlertMessage;
         OnAlert(result.message, result.level);
     } else if (answer.signal === "status") {
+        console.log(answer.signal);
+        
         let result = answer.result as Array<SpiderMessage>;
         for (const element of result) {
             UpdateSpider(element);
@@ -392,6 +448,6 @@ websocket.onmessage = function (event: MessageEvent): void {
     }
 };
 
-websocket.onclose = () => {
+websocket.onclose = (web) => {
     OnAlert("Соединение с сервером разорвано!", "critical");
 };
