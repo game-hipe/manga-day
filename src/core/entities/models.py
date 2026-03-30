@@ -80,8 +80,8 @@ class GenreManga(Base):
     __tablename__ = "genre_manga"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    genre_id: Mapped[int] = mapped_column(ForeignKey("genres.id"))
-    manga_id: Mapped[int] = mapped_column(ForeignKey("mangas.id"))
+    genre_id: Mapped[int] = mapped_column(ForeignKey("genres.id", ondelete="CASCADE"))
+    manga_id: Mapped[int] = mapped_column(ForeignKey("mangas.id", ondelete="CASCADE"))
 
     genre: Mapped["Genre"] = relationship("Genre", back_populates="mangas_connection")
     manga: Mapped["Manga"] = relationship("Manga", back_populates="genres_connection")
@@ -100,7 +100,7 @@ class Gallery(Base):
     __tablename__ = "gallery"
     id: Mapped[int] = mapped_column(primary_key=True)
     urls: Mapped[list[str]] = mapped_column(JSON())
-    manga_id: Mapped[int] = mapped_column(ForeignKey("mangas.id"))
+    manga_id: Mapped[int] = mapped_column(ForeignKey("mangas.id", ondelete="CASCADE"))
 
     manga: Mapped["Manga"] = relationship("Manga", back_populates="gallery")
 
@@ -116,7 +116,9 @@ class GeneratedPdf(Base):
 
     __tablename__ = "generated_pdf"
     id: Mapped[int] = mapped_column(primary_key=True)
-    id_manga: Mapped[int] = mapped_column(ForeignKey("mangas.id"), unique=True)
+    id_manga: Mapped[int] = mapped_column(
+        ForeignKey("mangas.id", ondelete="CASCADE"), unique=True
+    )
     id_file: Mapped[str] = mapped_column(String(256))
     __table_args__ = (Index("idx_generated_pdf_id_file", "id_file"),)
 
@@ -155,17 +157,19 @@ class Manga(Base):
     sku: Mapped[str] = mapped_column(String(32), unique=True, index=True)
 
     genres_connection: Mapped[list["GenreManga"]] = relationship(
-        "GenreManga", back_populates="manga"
+        "GenreManga", back_populates="manga", cascade="delete", passive_deletes=True
     )
 
     author: Mapped["Author"] = relationship("Author", back_populates="mangas")
 
     language: Mapped["Language"] = relationship("Language", back_populates="mangas")
 
-    gallery: Mapped["Gallery"] = relationship("Gallery", back_populates="manga")
+    gallery: Mapped["Gallery"] = relationship(
+        "Gallery", back_populates="manga", cascade="delete"
+    )
 
     generated_pdf: Mapped["GeneratedPdf"] = relationship(
-        "GeneratedPdf", back_populates="manga"
+        "GeneratedPdf", back_populates="manga", cascade="delete"
     )
 
     @property

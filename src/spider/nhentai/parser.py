@@ -1,3 +1,4 @@
+import json
 from urllib.parse import urljoin
 
 from ...core.abstract.parser import BaseMangaParser
@@ -16,7 +17,14 @@ class NhentaiMangaParser(BaseMangaParser):
 
         if all([title, poster, url]):
             title = title.get_text(strip=True)
-            poster = poster.get("src")
+            try:
+                if fallbacks := json.loads(poster.get("data-fallbacks", "[]")):
+                    poster = fallbacks[0]
+                else:
+                    poster = poster.get("src")
+            except (json.JSONDecodeError, AttributeError):
+                poster = poster.get("src")
+
             url = self.urljoin(
                 "/g/" + "".join(x for x in url.get_text(strip=True) if x.isdigit())
             )
