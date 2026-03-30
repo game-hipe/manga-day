@@ -1,3 +1,5 @@
+export {};
+
 const URLJoin = (...args: string[]): string =>
   args
     .join("/")

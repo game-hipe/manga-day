@@ -448,6 +448,6 @@ websocket.onmessage = function (event: MessageEvent): void {
     }
 };
 
-websocket.onclose = (web) => {
+websocket.onclose = () => {
     OnAlert("Соединение с сервером разорвано!", "critical");
 };
