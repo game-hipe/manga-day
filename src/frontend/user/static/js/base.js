@@ -12,7 +12,7 @@ const API_PATH = "/api/v1";
 const API = API_ORIGIN.use_type === "api_url"
     ? URLJoin(API_ORIGIN.value, API_PATH)
     : (() => {
-        const url = new URL(document.location.href);
+        const url = new URL(document.location.origin);
         url.port = API_ORIGIN.value;
         return URLJoin(url.toString(), API_PATH);
     })();

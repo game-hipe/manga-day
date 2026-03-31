@@ -23,7 +23,7 @@ def build_base_response(app: FastAPI, templates: Jinja2Templates) -> None:
     @app.exception_handler(404)
     async def not_found(request, exc):
         return templates.TemplateResponse(
-            name="500.html", request=request, status_code=404
+            name="404.html", request=request, status_code=404
         )
 
     @app.exception_handler(500)
