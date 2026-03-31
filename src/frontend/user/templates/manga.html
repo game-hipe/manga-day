@@ -6,7 +6,7 @@
   <link rel="icon" href="/static/images/icon.ico" type="image/x-icon">
   <title>Загрузка манги</title>
   <script>
-      window.__API__ = "{{ API }}"
+      window.__API__ = {{ API|safe }};
   </script>
   <link rel="stylesheet" href="/static/css/style.css" />
   <link rel="stylesheet" href="/static/css/manga.css">

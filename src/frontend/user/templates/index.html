@@ -6,7 +6,7 @@
   <title>Manga-Day — удобный каталог манги</title>
   <link rel="icon" href="/static/images/icon.ico" type="image/x-icon">
   <script>
-      window.__API__ = "{{ API }}"
+      window.__API__ = {{ API|safe }};
   </script>
   <link rel="stylesheet" href="/static/css/style.css" />
   <script src="/static/js/base.js"></script>

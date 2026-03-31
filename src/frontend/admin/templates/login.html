@@ -2,13 +2,14 @@
 <html lang="ru">
 <head>
     <script>
-        window.__API__ = "{{ API }}"
+        window.__API__ = {{ API|safe }};
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Панель управления Manga-Day — авторизация</title>
     <link rel="icon" href="/static/images/icon.ico" type="image/x-icon">
     <!-- Основные стили админки (тёмная тема) -->
+    <script src="/static/js/base.js"></script>
     <link rel="stylesheet" href="/admin/static/css/style.css">
     <!-- Улучшенные стили только для страницы входа -->
     <style>
@@ -210,16 +211,7 @@
 
     <script>
         (function() {
-            const URLJoin = (...args) => args
-                .join("/")
-                .replace(/[\/]+/g, "/")
-                .replace(/^(.+):\//, "$1://")
-                .replace(/^file:/, "file:/")
-                .replace(/\/(\?|&|#[^!])/g, "$1")
-                .replace(/\?/g, "&")
-                .replace("&", "?");
-
-            const url = new URL(URLJoin(window.__API__, "/v1/api/admin/login"));
+            const url = new URL(URLJoin(new URL(API).origin, "/v1/api", "/admin/login"));
 
             const form = document.getElementById('loginForm');
             const errorDiv = document.getElementById('errorMessage');

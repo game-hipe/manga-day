@@ -1,3 +1,10 @@
+type useType = "api_url" | "port";
+
+interface apiSettings {
+    use_type: useType,
+    value: string
+}
+
 const URLJoin = (...args: string[]): string =>
   args
     .join("/")
@@ -8,20 +15,25 @@ const URLJoin = (...args: string[]): string =>
     .replace(/\?/g, "&")
     .replace("&", "?");
 
-const API_ORIGIN = (window as any).__API__ as string
-
-const API = URLJoin(API_ORIGIN, "/api/v1");
+const API_ORIGIN = (window as any).__API__ as apiSettings;
+const API_PATH = "/api/v1";
+const API = API_ORIGIN.use_type === "api_url"
+  ? URLJoin(API_ORIGIN.value, API_PATH)
+  : (() => {
+      const url = new URL(document.location.href);
+      url.port = API_ORIGIN.value;
+      return URLJoin(url.toString(), API_PATH);
+    })();
 
 const API_ENDPOINTS = {
-  author: URLJoin(API, "/pages/author"),
-  language: URLJoin(API, "/pages/language"),
-  genre: URLJoin(API, "/pages/genre"),
-  query: URLJoin(API, "/pages/query"),
-  pages: URLJoin(API, "/pages"),
-  manga: URLJoin(API, "/manga/sku/"),
-  bot: URLJoin(API, "/bot"),
+    author: URLJoin(API, "/pages/author"),
+    language: URLJoin(API, "/pages/language"),
+    genre: URLJoin(API, "/pages/genre"),
+    query: URLJoin(API, "/pages/query"),
+    pages: URLJoin(API, "/pages"),
+    manga: URLJoin(API, "/manga/sku/"),
+    bot: URLJoin(API, "/bot"),
 } as const;
-
 type EndpointKey = keyof typeof API_ENDPOINTS;
 
 function buildMangaURL(sku: string): string {

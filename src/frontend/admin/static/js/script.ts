@@ -1,13 +1,3 @@
-const URLJoin = (...args: string[]): string =>
-  args
-    .join("/")
-    .replace(/[\/]+/g, "/")
-    .replace(/^(.+):\//, "$1://")
-    .replace(/^file:/, "file:/")
-    .replace(/\/(\?|&|#[^!])/g, "$1")
-    .replace(/\?/g, "&")
-    .replace("&", "?");
-
 const getCookie = (name: string): string | null => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -15,11 +5,8 @@ const getCookie = (name: string): string | null => {
     return null;
 };
 
-const API_ORIGIN = new URL((window as any).__API__ as string);
+const websocket = new WebSocket(`ws://${new URL(API).host}/v1/api/admin/ws`);
 
-const websocket = new WebSocket(`ws://${API_ORIGIN.host}/v1/api/admin/ws`);
-
-const API = URLJoin(API_ORIGIN.toString(), "/v1/api");
 
 var spiderStatus: "success" | "error" | "processing" | "not_running" | "running" | "cancelled"
 var alertLevel: "info" | "warning" | "error" | "critical"
@@ -76,8 +63,7 @@ async function StartAllSpider() {
         return;
     }
     try {
-        console.log("Current cookies:", document.cookie);
-        const response = await fetch(URLJoin(API, "/admin/spider"), {
+        const response = await fetch(URLJoin(`${new URL(API).origin}/v1/api`, "/admin/spider"), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -122,8 +108,7 @@ async function StopAllSpider(): Promise<void> {
     }
 
     try {
-        console.log("Current cookies:", document.cookie);
-        const response = await fetch(URLJoin(API, "/admin/spider"), {
+        const response = await fetch(URLJoin(`${new URL(API).origin}/v1/api`, "/admin/spider"), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -147,8 +132,7 @@ async function StopAllSpider(): Promise<void> {
 async function StartSpider(spiderName: string, page: number | null): Promise<void> {
     const token = getCookie('access_token');
     try {
-        console.log("Current cookies:", document.cookie);
-        const response = await fetch(URLJoin(API, "/admin/spider"), {
+        const response = await fetch(URLJoin(`${new URL(API).origin}/v1/api`, "/admin/spider"), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -173,8 +157,7 @@ async function StartSpider(spiderName: string, page: number | null): Promise<voi
 async function StopSpider(spiderName: string): Promise<void> {
     const token = getCookie('access_token');
     try {
-        console.log("Current cookies:", document.cookie);
-        const response = await fetch(URLJoin(API, "/admin/spider"), {
+        const response = await fetch(URLJoin(`${new URL(API).origin}/v1/api`, "/admin/spider"), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -439,8 +422,6 @@ websocket.onmessage = function (event: MessageEvent): void {
         let result = answer.result as AlertMessage;
         OnAlert(result.message, result.level);
     } else if (answer.signal === "status") {
-        console.log(answer.signal);
-        
         let result = answer.result as Array<SpiderMessage>;
         for (const element of result) {
             UpdateSpider(element);

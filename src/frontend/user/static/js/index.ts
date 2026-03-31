@@ -1,26 +1,26 @@
 interface ObjectWithId {
-  id: number;
-  name: string;
+    id: number;
+    name: string;
 }
 
 interface Manga {
-  id: number;
-  title: string;
-  poster: string;
-  url: string;
-  language: ObjectWithId | null;
-  author: ObjectWithId | null;
-  genres: ObjectWithId[];
-  sku: string;
+    id: number;
+    title: string;
+    poster: string;
+    url: string;
+    language: ObjectWithId | null;
+    author: ObjectWithId | null;
+    genres: ObjectWithId[];
+    sku: string;
 }
 
 interface ResponsePayload {
-  query: string;
-  success: boolean;
-  total: number;
-  page: number;
-  page_now: number;
-  response: Manga[];
+    query: string;
+    success: boolean;
+    total: number;
+    page: number;
+    page_now: number;
+    response: Manga[];
 }
 
 const ITEMS_PER_PAGE = 24;
