@@ -109,10 +109,16 @@ class SpiderEndpoints:
         """
         await websocket.accept()
         alert = AdminAlert(websocket)
+        if self.spider.alert is None:
+            logger.error(
+                "Не удалось подключиться к сокету, так как в менеджер пауков не был передан менеджер логирование"
+            )
+            await websocket.close()
+            return None
+
         self.spider.alert.add_alert(alert)
 
         async def send_status():
-            print
             try:
                 self._latest = self._spider_status
                 await websocket.send_json(
