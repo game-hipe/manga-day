@@ -35,7 +35,7 @@ async def main():
     user_api = API(API_URL)
     admin_api = AdminAPI(user_api._session, API_URL, ADMIN_USERNAME, ADMIN_PASSWORD)
     alert = AlertManager(admin_api, f"ws://{urlparse(API_URL).netloc}/v1/api/admin/ws")
-    pdf = PDFmanager(PDF_URL)
+    pdf = PDFmanager(user_api._session, PDF_URL)
 
     async with user_api as api:
         async with asyncio.TaskGroup() as tg:

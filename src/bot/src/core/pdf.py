@@ -1,5 +1,6 @@
 from urllib.parse import urljoin
 
+import aiohttp
 from cachetools import TTLCache
 from aiogram.types import InputFile
 from aiogram.types.input_file import DEFAULT_CHUNK_SIZE
@@ -21,8 +22,7 @@ class PDF(InputFile):
         self._manga = manga
 
     async def read(self, bot):
-        session = await bot.session.create_session()
-        async with session.request(
+        async with self.pdf.session.request(
             method=self.pdf.METHOD,
             url=self.pdf.pdf_url,
             headers=self.pdf.headers,
@@ -43,11 +43,13 @@ class PDFmanager:
 
     def __init__(
         self,
+        session: aiohttp.ClientSession,
         base_url: str,
         headers: dict | None = None,
         max_size: int = MAX_SIZE,
         ttl: float = TTL,
     ):
+        self._session = session
         self.base_url = base_url
         self.headers = headers or {
             "accept": "application/json",
@@ -73,3 +75,7 @@ class PDFmanager:
     @property
     def pdf_url(self) -> str:
         return urljoin(self.base_url, self.ENDPOINT)
+
+    @property
+    def session(self) -> aiohttp.ClientSession:
+        return self._session
