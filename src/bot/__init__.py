@@ -1,4 +1,4 @@
-from .admin import start_admin, setup_admin, AdminBotConfig
+from .admin import setup_admin, start_admin, AdminBotConfig
 from .user import setup_user, start_user, UserBotConfig
 
 __all__ = [
