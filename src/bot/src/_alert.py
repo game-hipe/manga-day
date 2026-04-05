@@ -78,7 +78,7 @@ def alert_wraps(on_start: str, on_stop: str):
             finally:
                 logger.warning(on_stop)
                 if self.alert:
-                    await self.alert.alert(on_stop, "warning", False)
+                    await self.alert.alert(on_stop, "warning")
 
         return inner
 
