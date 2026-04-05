@@ -72,7 +72,7 @@ def alert_wraps(on_start: str, on_stop: str):
         async def inner(self: HasAlertManager, *args, **kwargs):
             logger.info(on_start)
             if self.alert:
-                await self.alert.alert(on_start, "info", False)
+                await self.alert.alert(on_start, "info")
             try:
                 return await func(self, *args, **kwargs)
             finally:
