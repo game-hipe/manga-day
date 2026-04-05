@@ -86,7 +86,7 @@ class Endpoints:
         )
 
         self._router.add_api_route(
-            "/manga/url/{url}",
+            "/manga/url",
             self._func_with_limit(self.get_manga_by_url, f"{self.MANGA_LIMIT}/minute"),
             methods=["GET"],
             response_model=ApiOutputManga,
