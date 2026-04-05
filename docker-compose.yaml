@@ -25,7 +25,7 @@ services:
     ports:
       - "3040:3040"
     environment:
-      - PROXY=http://localhost:8888 # Если такового не имеется удалить environment
+      # - PROXY=http://localhost:8888 # Если такового не имеется удалить environment
       - PORT=3040
 
     healthcheck:
@@ -65,6 +65,7 @@ services:
       - API_URL=http://localhost:8080
       - PDF_URL=http://localhost:3040
       - SITE_URL=http://192.168.0.50:8000
+      # - PROXY=http://localhost:8888
 
   app:
     build: .
