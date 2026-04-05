@@ -13,7 +13,8 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from loguru import logger
 
-from ....core.entities.schemas import BaseManga, MangaFindResultSchema
+from ...core.api import Response
+from ...core.schemas import BaseManga, FindResult
 from .._text import FIND_MANGA, ALL_FINDED_MANGA
 
 from ._base import UserBaseHandler
@@ -107,9 +108,15 @@ class FindCommandsHandler(UserBaseHandler):
             message (Message): Сообщение Telegram
             state (FSMContext): Контекст FSM
         """
-        mangas: MangaFindResultSchema = await getattr(
-            self.bot.find_service, f"get_pages_by_{data['name']}"
+        find_response: Response[FindResult] = await getattr(
+            self.bot.api, f"by_{data['name']}"
         )(data["query"], page=data.get("page", 1), per_page=self.BASE_FIND_COUNT)
+
+        if not (find_response.ok and find_response.data):
+            await self.manga_server_error(message, find_response.message)
+            return
+
+        mangas = find_response.data
 
         media = self._build_find_media(mangas.response)
         keyboard = self._build_find_keyboard(data, mangas.response, mangas.page)
@@ -146,14 +153,7 @@ class FindCommandsHandler(UserBaseHandler):
         Returns:
             str: Текст
         """
-
-        try:
-            query = await self.bot.find_service.tag_getter.get(
-                data["query"], data["name"]
-            )
-
-        except KeyError:
-            query = data["query"]
+        query = data["query"]
 
         return ALL_FINDED_MANGA.format(
             count=count,

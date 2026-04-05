@@ -4,8 +4,6 @@ import os
 import sys
 import warnings
 
-from hashlib import sha256
-
 from loguru import logger
 from pydantic import BaseModel, Field, model_validator
 from yaml import full_load
@@ -31,14 +29,9 @@ class SiteConfig(BaseModel):
 class AdminConfig(BaseModel):
     username: str = Field("admin")
     password: str = Field("admin")
-    salt: str = Field("admin")
     secret_key: str = Field(
         "supersecretadminkey1234567890abcdefgxyz!@#$_SECRET_KEY_LONGER_THAN_32_CHARS"
     )
-
-    def create_hash(self, password: str | None = None) -> str:
-        hash_input = (self.salt + (password or self.password)).encode()
-        return sha256(hash_input).hexdigest()
 
     @model_validator(mode="after")
     def check_secret_key(self):
@@ -120,38 +113,12 @@ class UpdateConfig(BaseModel):
 
 
 class BotConfig(BaseModel):
-    api_key: str | None = Field(os.getenv("USER_TOKEN"))
-    proxy: str | None = Field(default=None)
     url: str
-
-    @model_validator(mode="after")
-    def check_api_key(self):
-        if self.api_key is None:
-            raise ValueError(
-                "Не указана переменная окружения ADMIN_TOKEN, либо указанна неверно!"
-            )
-
-        return self
-
-
-class AdminBotConfig(BaseModel):
-    api_key: str | None = Field(os.getenv("ADMIN_TOKEN"))
-    proxy: str | None = Field(default=None)
-    admins: list[int]
-
-    @model_validator(mode="after")
-    def check_api_key(self):
-        if self.api_key is None:
-            raise ValueError(
-                "Не указана переменная окружения ADMIN_TOKEN, либо указанна неверно!"
-            )
-        return self
 
 
 class Config(BaseModel):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     update: UpdateConfig = Field(default_factory=UpdateConfig)
-    bot: AdminBotConfig
     user_bot: BotConfig
     database: DataBaseConfig = Field(default_factory=DataBaseConfig)
     api: ApiConfig = Field(default_factory=ApiConfig)

@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Callable, TypeAlias, Awaitable
 
 from aiogram import F
@@ -10,7 +11,6 @@ from aiogram.types import (
 from aiogram.filters import Command
 
 from ._base import AdminBaseHandler
-from ....core.manager.spider._status import SpiderStatusEnum
 from .._text import GREETING, HELP
 
 CommandCallback: TypeAlias = CallbackQuery | Message
@@ -82,7 +82,7 @@ class CommandsHandler(AdminBaseHandler):
             Исключения могут быть выброшены методом start_parsing() SpiderManager.
         """
         await message.answer("Попытка начать парсинг")
-        await self.spider.start_full_parsing()
+        asyncio.create_task(self.api.spider("start", "all"))
 
     async def stop_parsing(self, message: Message):
         """Останавливает процесс парсинга по команде /stop_parsing.
@@ -97,7 +97,7 @@ class CommandsHandler(AdminBaseHandler):
             Исключения могут быть выброшены методом stop_parsing() SpiderManager.
         """
         await message.answer("Попытка остановить парсинг")
-        await self.spider.stop_all_spider()
+        asyncio.create_task(self.api.spider("stop", "all"))
 
     async def stop_spider(self, message: Message):
         """Останавливает спайдера по команде /stop_spider [spider_name].
@@ -136,8 +136,8 @@ class CommandsHandler(AdminBaseHandler):
         Raises:
             AttributeError: Если spider_manager не имеет атрибута status.
         """
-        keyboard = self._create_spider_keyboard()
-        text = "\n".join(str(x) for x in self.spider.status)
+        keyboard = await self._create_spider_keyboard()
+        text = "\n".join(str(x) for x in await self.api.status())
 
         await message.answer(
             text=text, reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -177,12 +177,16 @@ class CommandsHandler(AdminBaseHandler):
         message = self._get_message(query)
         try:
             if spider_name == "all":
-                await self.spider.start_full_parsing()
+                await self.api.spider("start", "all")
                 return
-            if self.spider.get_spider_status(spider_name) == SpiderStatusEnum.RUNNING:
+            if all(
+                x.status == "running"
+                for x in await self.api.status()
+                if x.name == spider_name
+            ):
                 await message.answer(f"Спайдер {spider_name} уже запущен")
                 return
-            await self.spider.starter.start_spider(spider_name)
+            await self.api.spider("start", spider_name)
         except KeyError:
             await message.answer("Спайдер не найден.")
 
@@ -196,27 +200,29 @@ class CommandsHandler(AdminBaseHandler):
         message = self._get_message(query)
         try:
             if spider_name == "all":
-                await self.spider.stop_all_spider()
+                await self.api.spider("stop", "all")
                 return
-            if (
-                self.spider.get_spider_status(spider_name)
-                == SpiderStatusEnum.NOT_RUNNING
+            if all(
+                x.status == "not_running"
+                for x in await self.api.status()
+                if x.name == spider_name
             ):
                 await message.answer(f"Спайдер {spider_name} уже остановлен")
                 return
-            await self.spider.starter.stop_spider(spider_name)
+            await self.api.spider("stop", spider_name)
         except KeyError:
             await message.answer("Спайдер не найден.")
 
-    def _create_spider_keyboard(self) -> list[list[InlineKeyboardButton]]:
+    async def _create_spider_keyboard(self) -> list[list[InlineKeyboardButton]]:
         keyboard: list[list[InlineKeyboardButton]] = []
-        for status in self.spider.status:
-            if status.status == SpiderStatusEnum.NOT_RUNNING:
+        for status in await self.api.status():
+            if status.status == "not_running":
                 keyboard.append(
                     [
                         InlineKeyboardButton(
                             text=f"Запуск {status.name}",
                             callback_data=f"start:{status.name}",
+                            style="success",
                         )
                     ]
                 )
@@ -226,6 +232,7 @@ class CommandsHandler(AdminBaseHandler):
                         InlineKeyboardButton(
                             text=f"Остановка {status.name}",
                             callback_data=f"stop:{status.name}",
+                            style="danger",
                         )
                     ]
                 )
@@ -233,7 +240,9 @@ class CommandsHandler(AdminBaseHandler):
         keyboard.append(
             [
                 InlineKeyboardButton(
-                    text="Начать полный парсинг", callback_data="start:all"
+                    text="Начать полный парсинг",
+                    callback_data="start:all",
+                    style="primary",
                 )
             ]
         )
@@ -241,7 +250,9 @@ class CommandsHandler(AdminBaseHandler):
         keyboard.append(
             [
                 InlineKeyboardButton(
-                    text="Остановить полный парсинг", callback_data="stop:all"
+                    text="Остановить полный парсинг",
+                    callback_data="stop:all",
+                    style="danger",
                 )
             ]
         )

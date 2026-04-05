@@ -10,12 +10,9 @@ from src.core.entities.schemas import ProxySchema
 from src.core.manager import MangaManager, SpiderManager, AlertManager, AuthManager
 
 from src.api import start_api
-from src.bot import start_user
-from src.bot import start_admin
 
 from src.core import SpiderScheduler
 
-from src.core.service import PDFService
 from src.core.service import FindService
 
 
@@ -43,17 +40,10 @@ async def main():
         scheduler = SpiderScheduler(spider)
 
         find = FindService(manager)
-        pdf = PDFService(session, config.pdf.domen)
 
         try:
             async with asyncio.TaskGroup() as tg:
-                tg.create_task(start_admin(spider=spider))
                 tg.create_task(start_api(service=find, auth=auth, spider=spider))
-                tg.create_task(
-                    start_user(
-                        manager=manager, alert=alert, pdf_service=pdf, find_service=find
-                    )
-                )
                 tg.create_task(scheduler.start())
 
         except* Exception as e:

@@ -13,6 +13,9 @@ class AdminMiddleware(BaseMiddleware):
         super().__init__()
         self.admin_ids = admin_ids
 
+        if not self.admin_ids:
+            raise ValueError("Список admin_ids не должен быть пустым")
+
     async def __call__(
         self,
         handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],

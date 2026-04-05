@@ -16,13 +16,8 @@ admin:
   salt: "admin" # Соль для хеширования пароля
   secret_key: "supersecretadminkey1234567890abcdefgxyz!@#$_SECRET_KEY_LONGER_THAN_32_CHARS"
 
-bot:
-  admins: [12345] # Админы бота
-  proxy: "http://ip:port@login:password" # Прокси если такого не имеется просто удалить или закоментировать
-
 user_bot:
   url: "https://t.me/example_bot"
-  proxy: "http://ip:port@login:password" # Прокси если такого не имеется просто удалить или закоментировать
 
 api:
   backend_port: 8080 # Порт бэкенда

@@ -7,9 +7,8 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramNotFound
 from loguru import logger
 
-from ..core.manager import AlertManager
-from ..core.abstract.alert import BaseAlert, LEVEL
-from ..core import config
+from .core.alert import AlertManager
+from .core.abstract.alert import BaseAlert, LEVEL
 
 
 class HasAlertManager(Protocol):
@@ -20,8 +19,12 @@ class HasAlertManager(Protocol):
 class BotAlert(BaseAlert):
     """Логика уведомлений бота"""
 
-    def __init__(self, bot: Bot):
+    def __init__(self, bot: Bot, admin_ids: list[int]):
         self.bot = bot
+        self._admin_ids = admin_ids
+
+        if not self._admin_ids:
+            raise ValueError("Не указаны администраторы бота")
 
     async def alert(self, message: str, level: LEVEL) -> Literal[True]:
         """Отправляет сообщение в чаты администраторов бота
@@ -45,11 +48,15 @@ class BotAlert(BaseAlert):
                 logger.warning(f"Чат {chat_id} не найден")
 
         await asyncio.gather(
-            *[asyncio.create_task(send(chat_id)) for chat_id in config.bot.admins],
+            *[asyncio.create_task(send(chat_id)) for chat_id in self.admin_ids],
             return_exceptions=True,
         )
 
         return True
+
+    @property
+    def admin_ids(self):
+        return self._admin_ids.copy()
 
 
 def alert_wraps(on_start: str, on_stop: str):
@@ -65,13 +72,13 @@ def alert_wraps(on_start: str, on_stop: str):
         async def inner(self: HasAlertManager, *args, **kwargs):
             logger.info(on_start)
             if self.alert:
-                await self.alert.alert(on_start, "info")
+                await self.alert.alert(on_start, "info", False)
             try:
                 return await func(self, *args, **kwargs)
             finally:
                 logger.warning(on_stop)
                 if self.alert:
-                    await self.alert.alert(on_stop, "warning")
+                    await self.alert.alert(on_stop, "warning", False)
 
         return inner
 

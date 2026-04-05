@@ -2,9 +2,6 @@ from aiogram import Router
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from aiogram.types import Message
-from aiohttp import BasicAuth
-
-from ..core.entities.schemas import AiohttpProxy
 
 
 def cancel_router() -> Router:
@@ -30,13 +27,3 @@ def get_router() -> Router:
         )
 
     return router
-
-
-class AiogramProxy(AiohttpProxy):
-    def auth(self) -> str | tuple[str, BasicAuth]:
-        proxy = super().auth()
-        return (
-            self.proxy
-            if not proxy["proxy_auth"]
-            else (proxy["proxy"], proxy["proxy_auth"])
-        )

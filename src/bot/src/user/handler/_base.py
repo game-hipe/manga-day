@@ -6,27 +6,24 @@ from itertools import batched
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
-    BufferedInputFile,
     Message,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
 from loguru import logger
 
-from ....core import config
-from ....core.entities.schemas import OutputMangaSchema
+from ...core.schemas import Manga
 from ..._handler import BaseHandler, send_on_error
 from .._bot import UserBot
 from .._text import SHOW_MANGA
-from ....core.exc import CantDownloadImage
 
 
 class UserBaseHandler(BaseHandler[UserBot]):
-    def _build_manga_text(self, manga: OutputMangaSchema) -> set:
+    def _build_manga_text(self, manga: Manga) -> set:
         """Создаёт текст для манги из переменной `SHOW_MANGA`
 
         Args:
-            manga (OutputMangaSchema): Манга из БД
+            manga (Manga): Манга из БД
 
         Returns:
             str: Итоговый текст для манги
@@ -43,11 +40,11 @@ class UserBaseHandler(BaseHandler[UserBot]):
             sku=manga.sku,
         )
 
-    def _build_manga_keyboard(self, manga: OutputMangaSchema) -> InlineKeyboardMarkup:
+    def _build_manga_keyboard(self, manga: Manga) -> InlineKeyboardMarkup:
         """Создвёт клавиатуру
 
         Args:
-            manga (OutputMangaSchema): Манга из БД
+            manga (Manga): Манга из БД
 
         Returns:
             InlineKeyboardMarkup: Клавиатура
@@ -60,11 +57,15 @@ class UserBaseHandler(BaseHandler[UserBot]):
         button_original = InlineKeyboardButton(
             text="Оригинал тут!", url=str(manga.url), style="primary"
         )
-        button_on_site = InlineKeyboardButton(
-            text="Посмотреть на сайте",
-            url=urljoin(config.site.domen, f"/manga/{manga.sku}"),
-            style="primary",
-        )
+        if self.site:
+            button_on_site = InlineKeyboardButton(
+                text="Посмотреть на сайте",
+                url=urljoin(self.site, f"/manga/{manga.sku}"),
+                style="primary",
+            )
+
+        else:
+            button_on_site = None
 
         if self.pdf_condition(manga):
             button_pdf = InlineKeyboardButton(
@@ -110,9 +111,11 @@ class UserBaseHandler(BaseHandler[UserBot]):
 
         final_markup = [
             [button_original],
-            [button_on_site],
             [button_pdf],
         ]
+
+        if button_on_site:
+            final_markup.insert(1, [button_on_site])
 
         if author:
             final_markup.append(
@@ -146,16 +149,16 @@ class UserBaseHandler(BaseHandler[UserBot]):
 
         return InlineKeyboardMarkup(inline_keyboard=final_markup)
 
-    def pdf_condition(self, manga: OutputMangaSchema) -> bool:
+    def pdf_condition(self, manga: Manga) -> bool:
         """Возвращает bool если условие выполнено
 
         Args:
-            manga (OutputMangaSchema): Манга
+            manga (Manga): Манга
 
         Returns:
             bool: Условие выполнено
         """
-        if len(manga.gallery) > self.bot.pdf_service.BASE_MAX_IMAGES:
+        if len(manga.gallery) > self.bot.pdf.BASE_MAX_IMAGES:
             return False
 
         return True
@@ -164,14 +167,14 @@ class UserBaseHandler(BaseHandler[UserBot]):
     async def show_manga(
         self,
         message: Message,
-        manga: OutputMangaSchema,
+        manga: Manga,
         state: FSMContext | None = None,
     ) -> None:
         """Присылает подробности об манге
 
         Args:
             message (Message): Сообщение от пользователя
-            manga (OutputMangaSchema): Манга из БД
+            manga (Manga): Манга из БД
             state (FSMContext | None): Состояние FSM
         """
         text = self._build_manga_text(manga)
@@ -218,13 +221,13 @@ class UserBaseHandler(BaseHandler[UserBot]):
 
     @send_on_error("Неизвестная ошибка при попытке скачать мангу")
     async def send_pdf(
-        self, message: Message, manga: OutputMangaSchema, delete_message: bool = True
+        self, message: Message, manga: Manga, delete_message: bool = True
     ) -> None:
         """Отправляет PDF, так-же записывает его в БД
 
         Args:
             message (Message): Сообщение от пользователя
-            manga (OutputMangaSchema): Манга из БД
+            manga (Manga): Манга из БД
         """
         if not self.pdf_condition(manga):
             await message.answer(self.build_error_message("Манга слишком большая"))
@@ -234,9 +237,11 @@ class UserBaseHandler(BaseHandler[UserBot]):
         sent_message: Message | None = None
         task: asyncio.Task | None = None
 
-        if manga.pdf_id:
+        send_pdf = self.bot.pdf.get_pdf(manga)
+
+        if isinstance(send_pdf, str):
             await message.answer_document(
-                document=manga.pdf_id, caption=text, parse_mode="HTML"
+                document=send_pdf, caption=text, parse_mode="HTML"
             )
             return
 
@@ -246,28 +251,14 @@ class UserBaseHandler(BaseHandler[UserBot]):
                 self.build_success_message("Пожалуйста подождите...")
             )
 
-            try:
-                pdf = await self.bot.pdf_service.download(manga)
-
-            except CantDownloadImage:
-                await self.manga_server_error(
-                    message, "Не удалось скачать одно из ключевых изображенией"
-                )
-                return
-
-            if pdf is None:
-                self.manga_server_error(message, "Не удалось скачать PDF")
-                return
-
-            buffer = BufferedInputFile(file=pdf, filename=f"{manga.title}.pdf")
             sent_message = await message.answer_document(
-                document=buffer, caption=text, parse_mode="HTML"
+                document=send_pdf, caption=text, parse_mode="HTML"
             )
             task.cancel()
 
         finally:
             if sent_message is not None and sent_message.document:
-                await self.bot.manager.add_pdf(sent_message.document.file_id, manga.id)
+                self.bot.pdf.set_pdf(manga, sent_message.document.file_id)
 
             if delete_message:
                 try:
@@ -279,22 +270,26 @@ class UserBaseHandler(BaseHandler[UserBot]):
                 if not task.done():
                     task.cancel()
 
-    async def get_manga(self, query: str) -> OutputMangaSchema | None:
+    async def get_manga(self, query: str) -> Manga | None:
         """Возращает мангу из БД
 
         Args:
             query (str): Артикул или HTTP ссылка
 
         Returns:
-            OutputMangaSchema | None: Манга из БД если найдено иначе None
+            Manga | None: Манга из БД если найдено иначе None
         """
-        if query.startswith("http"):
-            if not query.startswith(config.site.domen):
-                return await self.bot.manager.get_manga_by_url(query)
+        if not query.startswith("http"):
+            response = await self.bot.api.get_by_sku(query)
 
-            return await self.bot.manager.get_manga_by_sku(query.split("/")[-1])
+        elif self.site and query.startswith(self.site):
+            response = await self.bot.api.get_by_sku(query.split("/")[-1])
 
-        return await self.bot.manager.get_manga_by_sku(query)
+        else:
+            response = await self.bot.api.get_by_url(query)
+
+        if response.ok and response.data:
+            return response.data
 
     async def show_upload_status(self, message: Message):
         """Показывает статус загрузки PDF
@@ -310,3 +305,7 @@ class UserBaseHandler(BaseHandler[UserBot]):
                 await asyncio.sleep(5)
         except (asyncio.CancelledError, KeyboardInterrupt):
             pass
+
+    @property
+    def site(self) -> str | None:
+        return self.bot.config.get("site")

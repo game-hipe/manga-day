@@ -2,7 +2,9 @@ from typing import Unpack
 
 from loguru import logger
 
-from ...core import service, manager
+from ..core.api import API
+from ..core.pdf import PDFmanager
+from ..core.alert import AlertManager
 from ._bot import UserBotConfig, UserBot
 from .handler import StartHandler, FindCommandsHandler, GetMangaCommandHandler
 from .._tools import get_router, cancel_router
@@ -11,24 +13,22 @@ __all__ = ["setup_user", "start_user", "UserBotConfig", "UserBot"]
 
 
 async def setup_user(
-    manager: manager.MangaManager,
-    pdf_service: service.PDFService,
-    find_service: service.FindService,
-    alert: manager.AlertManager,
+    api: API,
+    pdf: PDFmanager,
+    alert: AlertManager,
     **config: Unpack[UserBotConfig],
 ) -> UserBot:
     """Инициализация клиентской части бота
 
     Args:
-        manager (MangaManager): Менеджер манги.
-        pdf_service (PDFService): Сервис для генерации PDF
-        find_service (FindService): Сервис для поиска манги
+        api (API): API для работы с БД
+        pdf (PDFmanager): Менеджер для генерации PDF
         alert (AlertManager): Система уведомлений.
 
     Returns:
         UserBot: Класс для управление ботом.
     """
-    bot = UserBot(manager, pdf_service, find_service, alert, **config)
+    bot = UserBot(api, pdf, alert, **config)
 
     logger.debug("Бот инцилизирован")
     await bot.set_command()
@@ -43,23 +43,24 @@ async def setup_user(
 
 
 async def start_user(
-    manager: manager.MangaManager,
-    pdf_service: service.PDFService,
-    find_service: service.FindService,
-    alert: manager.AlertManager,
+    api: API,
+    pdf: PDFmanager,
+    alert: AlertManager,
     **config: Unpack[UserBotConfig],
 ):
-    """Инициализация клиентской части бота, и дальнейший её запуск
+    """Инициализация клиентской части бота
 
     Args:
-        manager (MangaManager): Менеджер манги.
-        pdf_service (PDFService): Сервис для генерации PDF
-        find_service (FindService): Сервис для поиска манги
+        api (API): API для работы с БД
+        pdf (PDFmanager): Менеджер для генерации PDF
         alert (AlertManager): Система уведомлений.
+
+    Returns:
+        UserBot: Класс для управление ботом.
     """
     bot = None
     try:
-        bot = await setup_user(manager, pdf_service, find_service, alert, **config)
+        bot = await setup_user(api, pdf, alert, **config)
         await bot.run()
     finally:
         if bot is not None:

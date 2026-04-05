@@ -11,19 +11,20 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.types import BotCommand
 from loguru import logger
 
-from ._tools import AiogramProxy
 from ._handler import BaseHandler
-from ..core.manager import AlertManager
+from .core.alert import AlertManager
 
 
 class BaseBotConfig(TypedDict):
     """Конфигурация для инициализации бота.
 
     Args:
-        token (str | None, optional): Токен Telegram-бота. По умолчанию берётся из конфига.
+        token (str): Токен Telegram-бота.
+        proxy (str | None, optional): Прокси для бота.
     """
 
-    token: str | None
+    token: str
+    proxy: str | None
 
 
 _T = TypeVar("_T", bound=BaseBotConfig)
@@ -71,18 +72,20 @@ class BasicBot(ABC, Generic[_T]):
         self.dispatcher.include_router(router)
 
     @property
-    @abstractmethod
     def token(self) -> str:
         """Токен бота."""
+        if "token" in self.config:
+            return self.config["token"]
+        raise KeyError("В версии 2.0.0 Token обязан передоваться через config")
 
     @property
     def commands(self) -> list[BotCommand] | None:
         logger.warning("Команды не настроены")
 
     @property
-    def proxy(self) -> AiogramProxy | None:
+    def proxy(self) -> str | None:
         """Прокси для бота."""
-        logger.warning("Прокси не настроен")
+        return self.config.get("proxy")
 
     @property
     def alert(self) -> AlertManager | None:
@@ -117,7 +120,7 @@ class BasicBot(ABC, Generic[_T]):
             Bot: Экземпляр бота.
         """
         logger.debug("Инициализация бота бота.")
-        session = AiohttpSession(proxy=self.proxy.auth() if self.proxy else None)
+        session = AiohttpSession(proxy=self.proxy)
 
         return Bot(
             token=token or self.token,

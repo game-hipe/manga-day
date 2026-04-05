@@ -4,7 +4,8 @@ from loguru import logger
 
 from .handler import CommandsHandler
 from .._tools import cancel_router, get_router
-from ...core.manager import SpiderManager
+from ..core.api import AdminAPI
+from ..core.alert import AlertManager
 from ._bot import AdminBotConfig, AdminBot
 
 __all__ = [
@@ -15,17 +16,17 @@ __all__ = [
 
 
 async def setup_admin(
-    spider: SpiderManager, **config: Unpack[AdminBotConfig]
+    api: AdminAPI, alert: AlertManager, **config: Unpack[AdminBotConfig]
 ) -> AdminBot:
     """Инициализация админки возвращает экземпляр класса AdminBot
 
     Args:
-        spider (SpiderManager): Менеджер пауков.
+        api (AdminAPI): API для работы с БД
 
     Returns:
         AdminBot: Админка бота.
     """
-    bot = AdminBot(spider, **config)
+    bot = AdminBot(api, alert, **config)
     bot.include_router(cancel_router())
     bot.include_router(CommandsHandler(bot))
     bot.include_router(get_router())
@@ -34,15 +35,17 @@ async def setup_admin(
     return bot
 
 
-async def start_admin(spider: SpiderManager, **config: Unpack[AdminBotConfig]) -> None:
+async def start_admin(
+    api: AdminAPI, alert: AlertManager, **config: Unpack[AdminBotConfig]
+) -> None:
     """Инициализация админки, и дальнейший запуск.
 
     Args:
-        spider (SpiderManager): Менеджер пауков.
+        api (AdminAPI): API для работы с БД
     """
     bot = None
     try:
-        bot = await setup_admin(spider, **config)
+        bot = await setup_admin(api, alert, **config)
         await bot.run()
     finally:
         if bot is not None:
@@ -51,4 +54,4 @@ async def start_admin(spider: SpiderManager, **config: Unpack[AdminBotConfig]) -
             logger.debug("Сессия закрыта")
 
         else:
-            logger.warning("Инициализация не удалась (bot='UserBot')")
+            logger.warning("Инициализация не удалась (bot='AdminBot')")

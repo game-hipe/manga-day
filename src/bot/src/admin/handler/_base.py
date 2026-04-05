@@ -1,4 +1,4 @@
-from ....core.manager import SpiderManager
+from ...core.api import AdminAPI
 from ..._handler import BaseHandler
 from .._bot import AdminBot
 
@@ -9,6 +9,6 @@ class AdminBaseHandler(BaseHandler[AdminBot]):
     """
 
     @property
-    def spider(self) -> SpiderManager:
+    def api(self) -> AdminAPI:
         """Менеджер пауков"""
-        return self.bot.spider
+        return self.bot.api

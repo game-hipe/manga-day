@@ -3,37 +3,28 @@ from typing import Unpack
 from aiogram.types import BotCommand
 
 from .._bot import BasicBot, BaseBotConfig
-from .._tools import AiogramProxy
 from .._alert import alert_wraps
-from ...core.service import PDFService, FindService
-from ...core.manager import MangaManager, AlertManager
-from ...core import config
+from ..core.pdf import PDFmanager
+from ..core.api import API
+from ..core.alert import AlertManager
 
 
 class UserBotConfig(BaseBotConfig):
-    """Конфигурация для инициализации бота.
-
-    Args:
-        save_path (str | None, optional): Путь для хранение PDF - файлов
-        token (str | None, optional): Токен Telegram-бота. По умолчанию берётся из конфига.
-    """
-
-    token: str | None
+    site: str | None = None
+    """Сайт на котором можно смотреть мангу"""
 
 
 class UserBot(BasicBot[UserBotConfig]):
     def __init__(
         self,
-        manager: MangaManager,
-        pdf_service: PDFService,
-        find_service: FindService,
+        api: API,
+        pdf: PDFmanager,
         alert: AlertManager,
         **config: Unpack[UserBotConfig],
     ) -> None:
-        self.manager = manager
-        self.pdf_service = pdf_service
+        self.api = api
+        self.pdf = pdf
         self._alert = alert
-        self.find_service = find_service
         super().__init__(**config)
 
     @alert_wraps(
@@ -42,18 +33,6 @@ class UserBot(BasicBot[UserBotConfig]):
     )
     async def run(self):
         await self.dispatcher.start_polling(self.bot)
-
-    @property
-    def token(self):
-        return config.user_bot.api_key
-
-    @property
-    def proxy(self):
-        return (
-            AiogramProxy.create(config.user_bot.proxy)
-            if config.user_bot.proxy
-            else None
-        )
 
     @property
     def alert(self):

@@ -4,26 +4,27 @@ from aiogram.types import BotCommand
 
 from .middleware.admins import AdminMiddleware
 from .._bot import BasicBot, BaseBotConfig
-from .._tools import AiogramProxy
 from .._alert import BotAlert, alert_wraps
-from ...core.manager import SpiderManager
-from ...core import config
+from ..core.api import AdminAPI
+from ..core.alert import AlertManager
 
 
 class AdminBotConfig(BaseBotConfig):
-    admin_ids: list[int] | None = None
+    admin_ids: list[int]
 
 
 class AdminBot(BasicBot[AdminBotConfig]):
     def __init__(
         self,
-        spider: SpiderManager,
+        api: AdminAPI,
+        alert: AlertManager,
         **config: Unpack[AdminBotConfig],
     ) -> None:
-        self.spider = spider
+        self.api = api
+        self._alert = alert
         super().__init__(**config)
         if self.alert:
-            self.alert.add_alert(BotAlert(self.bot))
+            self.alert.add_alert(BotAlert(self.bot, self.config.get("admin_ids")))
 
     @alert_wraps(
         "Административная часть бота успешно запущена!",
@@ -33,23 +34,13 @@ class AdminBot(BasicBot[AdminBotConfig]):
         bot = self.bot
         dispatcher = self.dispatcher
 
-        dispatcher.message.middleware(
-            AdminMiddleware(self.config.get("admin_ids") or config.bot.admins)
-        )
+        dispatcher.message.middleware(AdminMiddleware(self.config.get("admin_ids")))
 
         await dispatcher.start_polling(bot)
 
     @property
-    def token(self):
-        return config.bot.api_key
-
-    @property
-    def proxy(self):
-        return AiogramProxy.create(config.bot.proxy) if config.bot.proxy else None
-
-    @property
     def alert(self):
-        return self.spider.alert
+        return self._alert
 
     @property
     def commands(self):
