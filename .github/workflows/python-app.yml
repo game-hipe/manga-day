@@ -46,7 +46,7 @@ jobs:
     - name: Configuration Settings
       run: |
         cp config-example.yaml config.yaml
-        cp env.example .env
+        cp api.env.example api.env
     
     - name: Install dependencies
       run: |
