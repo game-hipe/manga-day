@@ -13,15 +13,7 @@ from ..entities.schemas import (
     BaseManga,
     ObjectWithId,
 )
-from ..entities.models import (
-    Manga,
-    Gallery,
-    Language,
-    Author,
-    GenreManga,
-    Genre,
-    GeneratedPdf,
-)
+from ..entities.models import Manga, Gallery, Language, Author, GenreManga, Genre
 
 
 class MangaManager:
@@ -141,7 +133,6 @@ class MangaManager:
                     joinedload(Manga.language),
                     selectinload(Manga.genres_connection).joinedload(GenreManga.genre),
                     joinedload(Manga.gallery),
-                    joinedload(Manga.generated_pdf),
                 )
                 .execution_options(populate_existing=True)
             )
@@ -149,11 +140,7 @@ class MangaManager:
                 logger.warning(f"Манга не найдена (id={id})")
                 return None
 
-            return self._build_manga(
-                manga,
-                id=manga.id,
-                pdf_id=manga.generated_pdf.id_file if manga.generated_pdf else None,
-            )
+            return self._build_manga(manga, id=manga.id)
 
     async def get_manga_by_url(self, url: str) -> OutputMangaSchema | None:
         """
@@ -176,7 +163,6 @@ class MangaManager:
                     joinedload(Manga.language),
                     selectinload(Manga.genres_connection).joinedload(GenreManga.genre),
                     joinedload(Manga.gallery),
-                    joinedload(Manga.generated_pdf),
                 )
                 .execution_options(populate_existing=True)
             )
@@ -184,11 +170,7 @@ class MangaManager:
                 logger.warning(f"Манга не найдена (url={url})")
                 return None
 
-            return self._build_manga(
-                manga,
-                id=manga.id,
-                pdf_id=manga.generated_pdf.id_file if manga.generated_pdf else None,
-            )
+            return self._build_manga(manga, id=manga.id)
 
     async def get_manga_by_sku(self, sku: str) -> OutputMangaSchema | None:
         """
@@ -211,7 +193,6 @@ class MangaManager:
                     joinedload(Manga.language),
                     selectinload(Manga.genres_connection).joinedload(GenreManga.genre),
                     joinedload(Manga.gallery),
-                    joinedload(Manga.generated_pdf),
                 )
                 .execution_options(populate_existing=True)
             )
@@ -219,33 +200,7 @@ class MangaManager:
                 logger.warning(f"Манга не найдена (sku={sku})")
                 return None
 
-            return self._build_manga(
-                manga,
-                id=manga.id,
-                pdf_id=manga.generated_pdf.id_file if manga.generated_pdf else None,
-            )
-
-    async def add_pdf(self, file_id: int, manga_id: int) -> None:
-        """Добавляет связь PDF для манги
-
-        Args:
-            file_id (int): file_id для ТГ бота (На данный момент доступно только сохранение в ТГ боте)
-            manga_id (int): ID манги к которому сохранена запись
-        """
-        async with self.Session() as session:
-            async with session.begin():
-                if await session.scalar(
-                    select(GeneratedPdf).where(GeneratedPdf.id_manga == manga_id)
-                ):
-                    logger.warning("PDF - для этой манги уже добавлен!")
-                    return
-
-                obj = GeneratedPdf(id_file=file_id, id_manga=manga_id)
-                session.add(obj)
-
-            logger.info(
-                f"Запись PDF добавлена (file_id={file_id}, manga_id={manga_id})"
-            )
+            return self._build_manga(manga, id=manga.id)
 
     async def in_database(self, manga: BaseManga) -> bool:
         """Проверяет наличие манги в базе данных

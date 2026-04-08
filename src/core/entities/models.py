@@ -105,26 +105,6 @@ class Gallery(Base):
     manga: Mapped["Manga"] = relationship("Manga", back_populates="gallery")
 
 
-class GeneratedPdf(Base):
-    """
-    Модель сгенерированного pdf
-
-    Args:
-        id_manga (int): ID - на мангу
-        id_file (int): ID файла в тг
-    """
-
-    __tablename__ = "generated_pdf"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    id_manga: Mapped[int] = mapped_column(
-        ForeignKey("mangas.id", ondelete="CASCADE"), unique=True
-    )
-    id_file: Mapped[str] = mapped_column(String(256))
-    __table_args__ = (Index("idx_generated_pdf_id_file", "id_file"),)
-
-    manga: Mapped["Manga"] = relationship("Manga", back_populates="generated_pdf")
-
-
 class Manga(Base):
     """
     Модель манги
@@ -166,10 +146,6 @@ class Manga(Base):
 
     gallery: Mapped["Gallery"] = relationship(
         "Gallery", back_populates="manga", cascade="delete"
-    )
-
-    generated_pdf: Mapped["GeneratedPdf"] = relationship(
-        "GeneratedPdf", back_populates="manga", cascade="delete"
     )
 
     @property

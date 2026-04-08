@@ -12,7 +12,7 @@ from alembic import context
 from src.core.entities.models import Base
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv("api.env")
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
