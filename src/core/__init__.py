@@ -5,4 +5,4 @@ from ._cron import SpiderScheduler
 
 __all__ = ["config", "SpiderScheduler"]
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
