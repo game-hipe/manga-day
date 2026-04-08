@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 __all__ = ["config"]
 
-load_dotenv()
+load_dotenv("api.env")
 
 CONFIG_FILE = os.getenv("CONFIG_FILE", "config.yaml")
 

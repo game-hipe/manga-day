@@ -11,11 +11,13 @@
 git clone https://github.com/game-hipe/manga-day.git
 cd manga-day
 
-cp env.example .env
+cp api.env.example api.env
+cp bot.env.example bot.env
 cp config-example.yaml config.yaml
 
 nano config.yaml # Если имеются прокси вставтье данные, при отсутствии таковых, удалите поле proxy. 
-nano .env 
+nano api.env
+nano bot.env
 
 docker-compose build --no-cache
 docker-compose up -d
@@ -28,10 +30,14 @@ docker-compose up -d
 ```bash
 git clone https://github.com/game-hipe/manga-day.git
 cd manga-day
+
+cp api.env.example api.env
+cp bot.env.example bot.env
 cp config-example.yaml config.yaml
 
-nano config.yaml # Если имеются прокси вставтье данные, при отсутствии таковых, удалите поле proxy.
-nano .env
+nano config.yaml # Если имеются прокси вставтье данные, при отсутствии таковых, удалите поле proxy. 
+nano api.env
+nano bot.env
 
 pip install -r requirements.txt
 

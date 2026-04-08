@@ -76,3 +76,21 @@ class AuthStatus(BaseModel):
     iat: datetime.datetime
     exp: datetime.datetime
     token: str
+
+
+class GetAlertMessage(AlertMessage):
+    """
+    Схема сигнала что-бы получить Alert
+    """
+
+    name: str | None = Field(None)
+    """От кого было получено сообщение"""
+
+
+class AlertSendResponse(BaseResponse[GetAlertMessage]):
+    """
+    Схема ответа для отправки Alert
+    """
+
+    message: str | None = Field(None)
+    signal: str = Field("alert-response")

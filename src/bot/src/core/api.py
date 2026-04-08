@@ -229,7 +229,13 @@ class MangaAPI(_API[Manga]):
 class AdminAPI(_BaseAPI):
     API_URL = "/v1/api/admin/"
 
-    def __init__(self, session, base_url, username: str, password: str):
+    def __init__(
+        self,
+        session: aiohttp.ClientSession,
+        base_url: str,
+        username: str,
+        password: str,
+    ):
         super().__init__(session, base_url)
         self._token: str | None = None
         self._username: str = username

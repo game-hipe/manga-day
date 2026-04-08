@@ -63,7 +63,7 @@ class AlertResponse(BaseModel):
     status: bool
     signal: Literal["alert-response"]
     result: Alert
-    message: str
+    message: str | None = Field(None)
 
 
 class SpiderStatus(BaseModel):

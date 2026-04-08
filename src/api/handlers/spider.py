@@ -8,7 +8,13 @@ from loguru import logger
 
 from ...core.manager import SpiderManager, AuthManager
 from ...core.manager.spider import SpiderStatus
-from ..schemas.spider import ParsingSignal, AuthStatus, SpiderResponse
+from ..schemas.spider import (
+    ParsingSignal,
+    AuthStatus,
+    SpiderResponse,
+    GetAlertMessage,
+    AlertSendResponse,
+)
 from .._tools import auth_checker
 from .._alert import AdminAlert
 
@@ -39,13 +45,24 @@ class SpiderEndpoints:
             "/login", login, response_model=AuthStatus, methods=["POST"]
         )
 
-        self._api_router.add_api_route("/spider", self.spider_start, methods=["POST"])
+        self._api_router.add_api_route(
+            "/spider",
+            self.spider_start,
+            methods=["POST"],
+        )
 
         self._api_router.add_api_route(
             "/spider/status",
             self.spider_status,
             response_model=list[SpiderStatus],
             methods=["GET"],
+        )
+
+        self._api_router.add_api_route(
+            "/alert",
+            self.spider_alert,
+            methods=["POST"],
+            response_model=AlertSendResponse,
         )
 
         self.router.add_api_websocket_route("/ws", self.spider_websocket)
@@ -163,6 +180,29 @@ class SpiderEndpoints:
             list[SpiderStatus]: Статус всех пауков.
         """
         return self.spider.status
+
+    async def spider_alert(self, alert: GetAlertMessage) -> AlertSendResponse:
+        if self.spider.alert is None:
+            logger.error(
+                "Не удалось отправить сообщение, так как в менеджер пауков не был передан менеджер логирование"
+            )
+            return AlertSendResponse(
+                status=False,
+                result=alert,
+                message="Не удалось отправить сообщение, так как в менеджер пауков не был передан менеджер логирование",
+            )
+
+        try:
+            asyncio.create_task(self.spider.alert.alert(alert.message, alert.level))
+            return AlertSendResponse(
+                status=True,
+                result=alert,
+                message="Сообщение отправлено",
+            )
+        finally:
+            logger.debug(
+                f"Сообщение отправлено (message={alert.message}, level={alert.level}, name={alert.name})",
+            )
 
     @property
     def spider(self) -> SpiderManager:

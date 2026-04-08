@@ -93,9 +93,6 @@ class SpiderStarter:
         spider = self._get_spider(spider)
 
         if self.spiders[spider]:
-            logger.info(
-                f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском."
-            )
             await self._alert(
                 f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском.",
                 "warning",
@@ -121,9 +118,6 @@ class SpiderStarter:
             )
 
         except (KeyboardInterrupt, asyncio.CancelledError):
-            logger.warning(
-                f"Паук {self._get_spider_name(spider)}, был остановлен пользователем."
-            )
             await self._alert(
                 f"Паук {self._get_spider_name(spider)}, был остановлен пользователем.",
                 "warning",
@@ -139,9 +133,6 @@ class SpiderStarter:
                 if not task.done():
                     task.cancel()
 
-            logger.success(
-                f"Паук {self._get_spider_name(spider)}, закончил свою работу."
-            )
             self.spiders[spider] = None
             await self._alert(
                 f"Паук {self._get_spider_name(spider)}, закончил свою работу.",
@@ -157,9 +148,6 @@ class SpiderStarter:
         spider = self._get_spider(spider)
 
         if not self.spiders[spider]:
-            logger.info(
-                f"Паук {self._get_spider_name(spider)} не запущен. Необходимо запустить его перед остановкой."
-            )
             await self._alert(
                 f"Паук {self._get_spider_name(spider)} не запущен. Необходимо запустить его перед остановкой.",
                 "warning",
@@ -171,24 +159,17 @@ class SpiderStarter:
                 if not task.done():
                     task.cancel()
 
-                    logger.info(
-                        f"Паук {self._get_spider_name(spider)}, был остановлен."
-                    )
                     await self._alert(
                         f"Паук {self._get_spider_name(spider)}, был остановлен.",
                         "warning",
                     )
                 else:
-                    logger.info(
-                        f"Паук {self._get_spider_name(spider)}, уже остановлен."
-                    )
                     await self._alert(
                         f"Паук {self._get_spider_name(spider)}, уже остановлен.",
                         "warning",
                     )
 
             else:
-                logger.warning(f"Паук {self._get_spider_name(spider)} не запущен.")
                 await self._alert(
                     f"Паук {self._get_spider_name(spider)} не запущен.", "warning"
                 )
@@ -241,6 +222,7 @@ class SpiderStarter:
             message (str): Сообщение
             level (LEVEL): Уровень сообщение
         """
+        logger.log(level.upper(), message)
         if self.alert:
             await self.alert.alert(message=message, level=level)
         else:
