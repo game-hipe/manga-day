@@ -369,7 +369,6 @@ class Endpoints:
             author=manga.author,
             language=manga.language,
             gallery=manga.gallery,
-            pdf_id=manga.pdf_id,
             id=manga.id,
             sku=manga.sku,
         )
