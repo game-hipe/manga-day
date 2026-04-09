@@ -17,15 +17,6 @@ load_dotenv("api.env")
 CONFIG_FILE = os.getenv("CONFIG_FILE", "config.yaml")
 
 
-class SiteConfig(BaseModel):
-    domen: str
-    """Домен для Манги
-
-    Example:
-        "https://example.com"
-    """
-
-
 class AdminConfig(BaseModel):
     username: str = Field("admin")
     password: str = Field("admin")
@@ -121,7 +112,6 @@ class Config(BaseModel):
     parsing: ParserConfig = Field(default_factory=ParserConfig)
     request: RequestConfig = Field(default_factory=RequestConfig)
     admin: AdminConfig = Field(default_factory=AdminConfig)
-    site: SiteConfig
 
 
 def load_config():

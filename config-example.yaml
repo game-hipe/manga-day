@@ -1,7 +1,7 @@
 logging: # Логирование
   level: "INFO" # Логирование в консоль
   file_level: "INFO" # Логирование в файл
-  file: "var/log.logs" # Файл логирования
+  file: "var/log.log" # Файл логирования
 
   format: "<green>{time:YYYY-MM-DD HH:mm}</green> | <level>{level}</level> | <level>{message}</level>" # Формат логирования
   rotation: "10 MB" # Ротация логов
@@ -38,6 +38,3 @@ request:
   ttl: 300 # Время жизни кэшированных ответов в секундах (5 минут)
   max_chance: 3 # Максимальное количество попыток перед отказом
   ban_proxy: true # Включить автоматическую блокировку проблемных прокси
-
-site:
-  domen: "http://127.0.0.1:8000" # Домен сайта на котором будет работать бот
