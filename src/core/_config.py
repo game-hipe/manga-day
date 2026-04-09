@@ -74,10 +74,6 @@ class ParserConfig(BaseModel):
     proxy: list[str] = Field(default_factory=list)
 
 
-class PDFConfig(BaseModel):
-    domen: str = Field("http://localhost:3040")
-
-
 class ApiConfig(BaseModel):
     backend_port: int = Field(8080)
     backend_host: str = Field("0.0.0.0")
@@ -122,7 +118,6 @@ class Config(BaseModel):
     user_bot: BotConfig
     database: DataBaseConfig = Field(default_factory=DataBaseConfig)
     api: ApiConfig = Field(default_factory=ApiConfig)
-    pdf: PDFConfig = Field(default_factory=PDFConfig)
     parsing: ParserConfig = Field(default_factory=ParserConfig)
     request: RequestConfig = Field(default_factory=RequestConfig)
     admin: AdminConfig = Field(default_factory=AdminConfig)
