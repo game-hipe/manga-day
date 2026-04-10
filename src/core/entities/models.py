@@ -25,6 +25,12 @@ class Genre(Base):
         "GenreManga", back_populates="genre"
     )
 
+    def as_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+        }
+
 
 class Author(Base):
     """
@@ -44,6 +50,12 @@ class Author(Base):
 
     mangas: Mapped[list["Manga"]] = relationship("Manga", back_populates="author")
 
+    def as_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+        }
+
 
 class Language(Base):
     """
@@ -62,6 +74,12 @@ class Language(Base):
     name: Mapped[str] = mapped_column(String(255))
 
     mangas: Mapped[list["Manga"]] = relationship("Manga", back_populates="language")
+
+    def as_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+        }
 
 
 class GenreManga(Base):
@@ -158,9 +176,9 @@ class Manga(Base):
             "title": self.title,
             "url": self.url,
             "poster": self.poster,
-            "genres": self.genres,
-            "author": self.author.name,
-            "language": self.language.name,
+            "genres": [x.as_dict() for x in self.genres],
+            "author": self.author.as_dict() if self.author else None,
+            "language": self.language.as_dict() if self.language else None,
             "gallery": self.gallery.urls,
         }
 

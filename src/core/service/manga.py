@@ -1,15 +1,21 @@
 import asyncio
 import math
 
-from typing import Protocol, Literal
+from typing import Protocol, Literal, overload
 
 from sqlalchemy import Select, select, func, desc
 from sqlalchemy.orm import joinedload, selectinload
 from loguru import logger
 
-from ..entities.schemas import ApiOutputBaseManga, ObjectWithId, MangaFindResultSchema
+from ..entities.schemas import (
+    ApiOutputBaseManga,
+    ObjectWithId,
+    MangaFindResultSchema,
+    OutputMangaSchema,
+)
 from ..entities.models import Genre, GenreManga, Language, Author, Manga
 from ..manager.manga import MangaManager
+from .._tools import logging
 
 
 class HasManga(Protocol):
@@ -19,6 +25,47 @@ class HasManga(Protocol):
 
 
 _TAGS = type[Genre] | type[Language] | type[Author]
+
+
+class BaseService:
+    def __init__(self, manager: MangaManager):
+        self._manager = manager
+
+    @staticmethod
+    def _build_manga(manga: Manga) -> ApiOutputBaseManga:
+        """Создаёт схему BaseManga из Manga
+
+        Args:
+            manga (Manga): Манга из БД
+
+        Returns:
+            ApiOutputBaseManga: Базовая манга для API
+        """
+        return ApiOutputBaseManga(
+            title=manga.title,
+            poster=manga.poster,
+            url=manga.url,
+            sku=manga.sku,
+            id=manga.id,
+            language=ObjectWithId(name=manga.language.name, id=manga.language.id)
+            if manga.language
+            else None,
+            author=ObjectWithId(name=manga.author.name, id=manga.author.id)
+            if manga.author
+            else None,
+            genres=[
+                ObjectWithId(name=genre.name, id=genre.id) for genre in manga.genres
+            ],
+        )
+
+    @property
+    def manager(self) -> MangaManager:
+        """Менеджер манги"""
+        return self._manager
+
+    @property
+    def Session(self):
+        return self.manager.Session
 
 
 class TagGetter:
@@ -122,13 +169,14 @@ class TagGetter:
         return self._service
 
 
-class FindService:
+class FindService(BaseService):
     BASE_PER_PAGE: int = 30
 
-    def __init__(self, manager: MangaManager):
-        self.manager = manager
+    def __init__(self, manager):
+        super().__init__(manager)
         self._tag_getter = TagGetter(self)
 
+    @logging
     async def get_pages(
         self, page: int = 1, per_page: int | None = None
     ) -> MangaFindResultSchema:
@@ -177,6 +225,7 @@ class FindService:
             page_now=page,
         )
 
+    @logging
     async def get_pages_by_genre(
         self, genre_id: int, page: int = 1, per_page: int | None = None
     ) -> MangaFindResultSchema:
@@ -226,6 +275,7 @@ class FindService:
             page_now=page,
         )
 
+    @logging
     async def get_pages_by_author(
         self, author_id: int, page: int = 1, per_page: int | None = None
     ) -> MangaFindResultSchema:
@@ -273,6 +323,7 @@ class FindService:
             page_now=page,
         )
 
+    @logging
     async def get_pages_by_language(
         self, language_id: int, page: int = 1, per_page: int | None = None
     ) -> MangaFindResultSchema:
@@ -320,6 +371,7 @@ class FindService:
             page_now=page,
         )
 
+    @logging
     async def get_pages_by_query(
         self, query: str, page: int = 1, per_page: int | None = None
     ) -> MangaFindResultSchema:
@@ -423,32 +475,6 @@ class FindService:
             )
             return count or 0
 
-    def _build_manga(self, manga: Manga) -> ApiOutputBaseManga:
-        """Создаёт схему BaseManga из Manga
-
-        Args:
-            manga (Manga): Манга из БД
-
-        Returns:
-            ApiOutputBaseManga: Базовая манга для API
-        """
-        return ApiOutputBaseManga(
-            title=manga.title,
-            poster=manga.poster,
-            url=manga.url,
-            sku=manga.sku,
-            id=manga.id,
-            language=ObjectWithId(name=manga.language.name, id=manga.language.id)
-            if manga.language
-            else None,
-            author=ObjectWithId(name=manga.author.name, id=manga.author.id)
-            if manga.author
-            else None,
-            genres=[
-                ObjectWithId(name=genre.name, id=genre.id) for genre in manga.genres
-            ],
-        )
-
     def _number_biggest_zero(self, number: int) -> None:
         """Проверяет является ли число больше нуля
 
@@ -474,3 +500,66 @@ class FindService:
     @property
     def Session(self):
         return self.manager.Session
+
+
+class HappyMangaService(BaseService):
+    """
+    Все возможные пользовательские функции, которые не вписываются в обычной среде
+    """
+
+    @overload
+    async def get_random(self, mode: Literal["sku"]) -> str: ...
+
+    @overload
+    async def get_random(self, mode: Literal["base"]) -> ApiOutputBaseManga: ...
+
+    @overload
+    async def get_random(self, mode: Literal["full"]) -> OutputMangaSchema: ...
+
+    @logging
+    async def get_random(
+        self, mode: Literal["sku", "base", "full"]
+    ) -> str | ApiOutputBaseManga | OutputMangaSchema:
+        """Получить рандомную мангу
+
+        Если указан режим `sku`, то вернется только sku манги
+
+        Если указан режим `base`, то вернется только базовая информация о манге
+
+        Если указан режим `full`, то вернется полная информация о манге
+
+        Args:
+            mode (Literal[&quot;sku&quot;, &quot;base&quot;, &quot;full&quot;]): Моды, в которых будет возвращаться результат
+
+        Raises:
+            KeyError: Если указан неверный режим
+
+        Returns:
+            str | ApiOutputBaseManga | OutputMangaSchema: Результат
+        """
+        if mode not in ["sku", "base", "full"]:
+            raise KeyError(f"Неверный параметр: {mode}")
+
+        async with self.Session() as session:
+            query = select(Manga).order_by(func.random()).limit(1)
+            if mode in ["base", "full"]:
+                query = query.options(
+                    joinedload(Manga.author),
+                    joinedload(Manga.language),
+                    selectinload(Manga.genres_connection).joinedload(GenreManga.genre),
+                ).execution_options(populate_existing=True)
+
+            if mode == "full":
+                query = query.options(
+                    joinedload(Manga.gallery),
+                )
+
+            manga = await session.scalar(query)
+
+            if mode == "sku":
+                return manga.sku
+
+            elif mode == "base":
+                return self._build_manga(manga)
+
+            return OutputMangaSchema(**manga.as_dict())

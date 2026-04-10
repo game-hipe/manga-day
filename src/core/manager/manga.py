@@ -14,6 +14,7 @@ from ..entities.schemas import (
     ObjectWithId,
 )
 from ..entities.models import Manga, Gallery, Language, Author, GenreManga, Genre
+from .._tools import logging
 
 
 class MangaManager:
@@ -40,6 +41,7 @@ class MangaManager:
         self._engine = engine
         self.Session: async_sessionmaker[AsyncSession] = async_sessionmaker(engine)
 
+    @logging
     async def add_manga(self, manga: MangaSchema) -> OutputMangaSchema:
         """
         Добавляет новую мангу в базу данных.
@@ -112,6 +114,7 @@ class MangaManager:
                     id=result.id,
                 )
 
+    @logging
     async def get_manga(self, id: int) -> OutputMangaSchema | None:
         """
         Получает мангу по её идентификатору.
@@ -137,11 +140,12 @@ class MangaManager:
                 .execution_options(populate_existing=True)
             )
             if manga is None:
-                logger.warning(f"Манга не найдена (id={id})")
+                logger.debug(f"Манга не найдена (id={id})")
                 return None
 
             return self._build_manga(manga, id=manga.id)
 
+    @logging
     async def get_manga_by_url(self, url: str) -> OutputMangaSchema | None:
         """
         Получает мангу по её URL.
@@ -167,11 +171,12 @@ class MangaManager:
                 .execution_options(populate_existing=True)
             )
             if manga is None:
-                logger.warning(f"Манга не найдена (url={url})")
+                logger.debug(f"Манга не найдена (url={url})")
                 return None
 
             return self._build_manga(manga, id=manga.id)
 
+    @logging
     async def get_manga_by_sku(self, sku: str) -> OutputMangaSchema | None:
         """
         Получает мангу по её SKU.
@@ -197,11 +202,12 @@ class MangaManager:
                 .execution_options(populate_existing=True)
             )
             if manga is None:
-                logger.warning(f"Манга не найдена (sku={sku})")
+                logger.debug(f"Манга не найдена (sku={sku})")
                 return None
 
             return self._build_manga(manga, id=manga.id)
 
+    @logging
     async def in_database(self, manga: BaseManga) -> bool:
         """Проверяет наличие манги в базе данных
 
@@ -226,6 +232,7 @@ class MangaManager:
                     db_manga.poster = str(manga.poster)
                     await session.commit()
 
+    @logging
     async def get_total(self) -> int:
         """Получить общее количество манги в базе данных"""
         async with self.Session() as session:
