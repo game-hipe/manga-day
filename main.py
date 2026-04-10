@@ -13,7 +13,7 @@ from src.api import start_api
 
 from src.core import SpiderScheduler
 
-from src.core.service import FindService
+from src.core.service import FindService, HappyMangaService
 
 
 async def main():
@@ -40,10 +40,13 @@ async def main():
         scheduler = SpiderScheduler(spider)
 
         find = FindService(manager)
+        happy = HappyMangaService(manager)
 
         try:
             async with asyncio.TaskGroup() as tg:
-                tg.create_task(start_api(service=find, auth=auth, spider=spider))
+                tg.create_task(
+                    start_api(service=find, auth=auth, spider=spider, happy=happy)
+                )
                 tg.create_task(scheduler.start())
 
         except* Exception as e:

@@ -1,10 +1,11 @@
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from slowapi import Limiter
 
 from ...core import __version__
-from ...core.service import FindService
+from ...core.service import FindService, HappyMangaService
 from ...core.entities.schemas import (
     ApiOutputManga,
     OutputMangaSchema,
@@ -34,15 +35,19 @@ class Endpoints:
 
     PAGINATION_LIMIT = 120
 
-    def __init__(self, service: FindService, bot: str, limiter: Limiter):
+    def __init__(
+        self, service: FindService, bot: str, limiter: Limiter, happy: HappyMangaService
+    ):
         """Инициализация Endpoints
 
         Args:
             service (FindService): Сервис для работы с мангой.
             bot (str): URL бота Telegram.
             limiter (Limiter): Лимит запросов
+            happy (HappyMangaService): Сервис для независимых функций для развлечения пользователя
         """
         self.service = service
+        self.happy = happy
         self.bot = bot
         self._router = APIRouter(prefix="/api/v1")
         self.limiter = limiter
@@ -100,6 +105,15 @@ class Endpoints:
             methods=["GET"],
             response_model=ApiOutputManga,
             summary="Получить мангу по внутреннему ID в БД",
+            tags=["manga"],
+        )
+
+        self._router.add_api_route(
+            "/random/{mode}",
+            self._func_with_limit(self.get_random_manga, f"{self.MANGA_LIMIT}/minute"),
+            methods=["GET"],
+            response_model=str | ApiOutputManga | OutputMangaSchema,
+            summary="Получить рандомную мангу",
             tags=["manga"],
         )
 
@@ -319,6 +333,19 @@ class Endpoints:
             list[ObjectWithId]: Обьекты с ID и названием
         """
         return await self.service.tag_getter.get_language()
+
+    async def get_random_manga(
+        self, request: Request, mode: Literal["sku", "base", "full"]
+    ) -> str | ApiOutputManga | OutputMangaSchema:
+        """Получить рандомную мангу
+
+        Args:
+            mode (Literal[&quot;sku&quot;, &quot;base&quot;, &quot;full&quot;]): Тип ответа
+
+        Returns:
+            str | ApiOutputManga | OutputMangaSchema: Ответ
+        """
+        return await self.happy.get_random(mode=mode)
 
     async def get_authors(
         self, request: Request, common: dict = Depends(pagination)
