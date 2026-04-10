@@ -36,13 +36,13 @@ class Endpoints:
     PAGINATION_LIMIT = 120
 
     def __init__(
-        self, service: FindService, bot: str, limiter: Limiter, happy: HappyMangaService
+        self, service: FindService, limiter: Limiter, happy: HappyMangaService, bot: str | None = None
     ):
         """Инициализация Endpoints
 
         Args:
             service (FindService): Сервис для работы с мангой.
-            bot (str): URL бота Telegram.
+            bot (str | None): URL бота Telegram.
             limiter (Limiter): Лимит запросов
             happy (HappyMangaService): Сервис для независимых функций для развлечения пользователя
         """
@@ -363,6 +363,11 @@ class Endpoints:
 
     async def get_bot_url(self) -> str:
         """Получить URL бота."""
+        if self.bot is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Бот не настроен. Обратитесь к администратору"
+            )
         return self.bot
 
     async def health(self):

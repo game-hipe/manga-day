@@ -35,7 +35,7 @@ def setup_api(
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-    endpoint = Endpoints(service, config.user_bot.url, limiter, happy)
+    endpoint = Endpoints(service, limiter, happy, config.user_bot.url)
     spider_endpoint = SpiderEndpoints(spider, auth, limiter)
 
     app.include_router(endpoint.router)

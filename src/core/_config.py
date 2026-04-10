@@ -100,13 +100,13 @@ class UpdateConfig(BaseModel):
 
 
 class BotConfig(BaseModel):
-    url: str
+    url: str | None = Field(None)
 
 
 class Config(BaseModel):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     update: UpdateConfig = Field(default_factory=UpdateConfig)
-    user_bot: BotConfig
+    user_bot: BotConfig = Field(default_factory=BotConfig)
     database: DataBaseConfig = Field(default_factory=DataBaseConfig)
     api: ApiConfig = Field(default_factory=ApiConfig)
     parsing: ParserConfig = Field(default_factory=ParserConfig)
