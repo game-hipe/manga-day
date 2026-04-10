@@ -24,6 +24,7 @@ const API_ENDPOINTS = {
     pages: URLJoin(API, "/pages"),
     manga: URLJoin(API, "/manga/sku/"),
     bot: URLJoin(API, "/bot"),
+    random: URLJoin(API, "/random/sku"),
 };
 function buildMangaURL(sku) {
     return URLJoin(API_ENDPOINTS['manga'], sku);

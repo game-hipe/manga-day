@@ -33,6 +33,7 @@ const API_ENDPOINTS = {
     pages: URLJoin(API, "/pages"),
     manga: URLJoin(API, "/manga/sku/"),
     bot: URLJoin(API, "/bot"),
+    random: URLJoin(API, "/random/sku"),
 } as const;
 type EndpointKey = keyof typeof API_ENDPOINTS;
 

@@ -27,6 +27,8 @@
   margin: 0 auto;
   padding: 20px 12px 40px;
   background: transparent;
+  transition: padding-top 0.2s ease;
+  padding-top: var(--topbar-height, 0px);
 }
 
 /* Основной блок информации */

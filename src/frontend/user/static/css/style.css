@@ -455,3 +455,58 @@ input {
     scroll-behavior: auto !important;
   }
 }
+
+/* Дополнительные стили для кнопки #random */
+/* Базовые стили: полная визуальная консистентность с кнопкой поиска (шрифты, отступы, скругления, тени, transition) */
+#random {
+  appearance: none;
+  border: 0;
+  min-height: 46px;
+  min-width: 160px; /* достаточно для текста «Удиви меня!» без переноса */
+  padding: 0 24px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent-2), #a78bfa); /* accent-2 для смыслового отличия от розовой кнопки поиска */
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(139, 92, 246, 0.22);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  display: block;
+  margin: 12px auto 0; /* центрирование под поисковой формой + естественный отступ */
+  white-space: nowrap;
+}
+
+/* Состояния взаимодействия: точно такие же плавные эффекты, как у .search-form button */
+#random:hover {
+  filter: brightness(1.02);
+  box-shadow: 0 12px 26px rgba(139, 92, 246, 0.28);
+}
+
+#random:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+/* Фокус для доступности (аналогично .manga:focus-visible) */
+#random:focus-visible {
+  outline: 2px solid rgba(139, 92, 246, 0.7);
+  outline-offset: 2px;
+}
+
+/* Адаптивность: на широких экранах кнопка чуть крупнее и комфортнее */
+@media (min-width: 768px) {
+  #random {
+    min-width: 180px;
+    padding: 0 28px;
+    min-height: 50px;
+  }
+}
+
+/* Дополнительная защита от сжатия на очень узких экранах */
+@media (max-width: 480px) {
+  #random {
+    min-width: 100%;
+    max-width: 100%;
+    padding: 0 18px;
+  }
+}
