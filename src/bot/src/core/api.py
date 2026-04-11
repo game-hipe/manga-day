@@ -206,6 +206,7 @@ class MangaAPI(_API[Manga]):
         SKU = "/manga/sku/{sku}"
         URL = "/manga/url"
         ID = "/manga/{id}"
+        RANDOM = "/random/base"
 
     async def sku(self, sku: str) -> Response[Manga]:
         """Получить информацию об манге по SKU"""
@@ -224,6 +225,10 @@ class MangaAPI(_API[Manga]):
         return await self._get(
             url=self.api_urljoin(self.Endpoint.URL.value), params={"url": url}
         )
+
+    async def random(self) -> Response[Manga]:
+        """Получить случайную мангу"""
+        return await self._get(url=self.api_urljoin(self.Endpoint.RANDOM.value))
 
 
 class AdminAPI(_BaseAPI):
@@ -473,3 +478,11 @@ class API:
             Response[Manga]: Ответ API
         """
         return await self._manga.url(url)
+
+    async def get_random(self) -> Response[Manga]:
+        """Получить рандомную мангу
+
+        Returns:
+            Response[Manga]: Ответ API
+        """
+        return await self._manga.random()

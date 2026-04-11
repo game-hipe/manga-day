@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 from loguru import logger
 import aiohttp
@@ -71,15 +72,43 @@ class AlertManager:
 
     async def start_listening(self) -> None:
         async with aiohttp.ClientSession() as session:
-            async with session.ws_connect(self.ws_url) as ws:
-                async for msg in ws:
-                    data = msg.json()
+            backoff = 1.0  # начальная задержка в секундах
+            max_backoff = 60.0
 
-                    if "signal" in data and data["signal"] == "alert":
-                        data = data["result"]
-                        asyncio.create_task(
-                            self.alert(data["message"], data["level"], my_alert=False)
-                        )
+            while True:
+                try:
+                    async with session.ws_connect(self.ws_url) as ws:
+                        backoff = 1.0
+                        async for msg in ws:
+                            try:
+                                data = msg.json()
+                            except Exception as e:
+                                logger.error(f"Ошибка парсинга JSON: {e}")
+                                continue
+
+                            if data.get("signal") == "alert":
+                                alert_data = data.get("result", {})
+                                asyncio.create_task(
+                                    self.alert(
+                                        alert_data.get("message", ""),
+                                        alert_data.get("level", "info"),
+                                        my_alert=False,
+                                    )
+                                )
+                except (
+                    aiohttp.ClientError,
+                    asyncio.TimeoutError,
+                    ConnectionError,
+                ) as e:
+                    logger.warning(
+                        f"Потеряно соединение: {e}. Переподключение через {backoff:.2f} сек."
+                    )
+                    await asyncio.sleep(backoff)
+                    backoff = min(backoff * 1.5 + random.uniform(0, 1), max_backoff)
+
+                except Exception as e:
+                    logger.exception(f"Неожиданная ошибка в цикле WebSocket: {e}")
+                    await asyncio.sleep(5)
 
     def add_alert(self, alert: BaseAlert) -> None:
         """Добавить новый обработчик сообщений

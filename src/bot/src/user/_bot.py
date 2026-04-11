@@ -47,4 +47,5 @@ class UserBot(BasicBot[UserBotConfig]):
             BotCommand(command="find", description="Поиск манги по названию"),
             BotCommand(command="get", description="Получить мангу по SKU"),
             BotCommand(command="cancel", description="Отмена действие"),
+            BotCommand(command="random", description="Получить рандомную мангу"),
         ]

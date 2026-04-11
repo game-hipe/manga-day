@@ -10,6 +10,13 @@ from src.core.api import API
 from src.core.pdf import PDFmanager
 from src.core.alert import AlertManager, AdminAPI
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
 
 ADMIN_BOT_TOKEN = os.getenv("ADMIN_BOT_TOKEN")
 USER_BOT_TOKEN = os.getenv("USER_BOT_TOKEN")

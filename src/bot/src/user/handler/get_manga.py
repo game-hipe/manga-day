@@ -17,6 +17,7 @@ class GetMangaCommandHandler(UserBaseHandler):
 
     def connect(self):
         self.message_register(self.get_manga_command, Command("get"))
+        self.message_register(self.get_random_manga, Command("random"))
         self.message_register(self.get_manga_user, MangaStates.browsing, F.text)
         self.callback_register(self.get_manga_call, F.data.startswith("show:"))
 
@@ -44,6 +45,22 @@ class GetMangaCommandHandler(UserBaseHandler):
             await self._show_manga(message, message.text, state)
         finally:
             await state.set_state(state=None)
+
+    async def get_random_manga(self, message: Message, state: FSMContext):
+        response = await self.bot.api.get_random()
+        if response.ok:
+            await self.show_manga(message=message, manga=response.data, state=state)
+            return
+
+        await self.manga_server_error(
+            message,
+            error=(
+                "По какой-то причине не удалось получить мангу\n"
+                f"Код ошибки: {response.status}\n"
+                f"Сообщение: {response.message}\n"
+                "Попробуйте позже!"
+            ),
+        )
 
     async def _show_manga(self, message: Message, query: str, state: FSMContext):
         if manga := await self.get_manga(query):
