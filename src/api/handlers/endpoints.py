@@ -36,7 +36,11 @@ class Endpoints:
     PAGINATION_LIMIT = 120
 
     def __init__(
-        self, service: FindService, limiter: Limiter, happy: HappyMangaService, bot: str | None = None
+        self,
+        service: FindService,
+        limiter: Limiter,
+        happy: HappyMangaService,
+        bot: str | None = None,
     ):
         """Инициализация Endpoints
 
@@ -365,8 +369,7 @@ class Endpoints:
         """Получить URL бота."""
         if self.bot is None:
             raise HTTPException(
-                status_code=404,
-                detail="Бот не настроен. Обратитесь к администратору"
+                status_code=404, detail="Бот не настроен. Обратитесь к администратору"
             )
         return self.bot
 
