@@ -209,6 +209,24 @@ function buildMangaButtons(manga, botUrl) {
     const buttons = document.createElement("div");
     buttons.id = "button";
     buttons.className = "buttons";
+    const skuButton = document.createElement("a");
+    skuButton.textContent = "Скопировать артикул";
+    skuButton.className = "button__sku";
+    skuButton.id = "sku";
+    skuButton.onclick = () => {
+        navigator.clipboard
+            .writeText(manga.sku)
+            .then(() => {
+            skuButton.textContent = "Скопировано!";
+            setTimeout(() => {
+                skuButton.textContent = "Скопировать артикул";
+            }, 2000);
+        })
+            .catch((err) => {
+            alert("Не удалось скопировать артикул: " + err);
+        });
+    };
+    buttons.appendChild(skuButton);
     if (manga.gallery.length < 100 && botUrl) {
         const pdfButton = document.createElement("a");
         const botURL = new URL(botUrl);
