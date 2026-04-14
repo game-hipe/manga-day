@@ -161,7 +161,7 @@ class MangaManager:
                 if find_manga is None:
                     logger.warning(f"Манга не существует (sku={sku})")
                     return None
-                
+
                 if title is not None:
                     find_manga.title = title
 
@@ -172,16 +172,16 @@ class MangaManager:
                     find_manga.poster = str(poster)
 
                 if language is not None and find_manga.language != language:
-                    find_manga.language_id = (await self._add_language(session, language)).id
+                    find_manga.language_id = (
+                        await self._add_language(session, language)
+                    ).id
 
                 if author is not None and find_manga.author != author:
                     find_manga.author_id = (await self._add_author(session, author)).id
 
                 if genres is not None:
                     await session.execute(
-                        delete(GenreManga).where(
-                        GenreManga.manga_id == find_manga.id
-                        )
+                        delete(GenreManga).where(GenreManga.manga_id == find_manga.id)
                     )
                     for genre in genres:
                         genre = await self._add_genre(session, genre)
@@ -191,9 +191,7 @@ class MangaManager:
 
                 if gallery is not None:
                     await session.execute(
-                        delete(Gallery).where(
-                            Gallery.manga_id == find_manga.id
-                        )
+                        delete(Gallery).where(Gallery.manga_id == find_manga.id)
                     )
                     gallery = Gallery(
                         urls=[str(x) for x in gallery], manga_id=find_manga.id
@@ -202,10 +200,6 @@ class MangaManager:
 
                 await session.flush()
                 return self._build_manga(find_manga, id=find_manga.id)
-                
-
-                    
-                    
 
     @logging
     async def get_manga(self, id: int) -> OutputMangaSchema | None:

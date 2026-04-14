@@ -136,6 +136,37 @@ class SpiderManager:
             if not all(x.status == SpiderStatusEnum.NOT_RUNNING for x in self.status):
                 await asyncio.shield(self.stop_all_spider())
 
+    async def update_full_parsing(self) -> None:
+        """
+        Начинает полное сканирование сайтов
+        обновляет информацию о манге.
+
+        В отличии от `start_full_parsing`, если манга уже находится в БД, паук его обновит, мы получаем самые актуальные данные.
+        Но из-за полного цикла парсинга манги, это может занять много времени.
+
+        Raises:
+            AttributeError: Если менеджер не был передан
+        """
+        tasks = []
+        if not self._manager:
+            raise AttributeError(
+                "Менеджер не был передан. Убедитесь, что менеджер передан перед запуском парсинга."
+            )
+
+        if all(x.status == SpiderStatusEnum.RUNNING for x in self.status):
+            await self.starter._alert(
+                "Все пауки уже запущены, перезапуск не требуется.", "info"
+            )
+            return
+
+        for spider in self.spiders:
+            tasks.append(asyncio.create_task(self._starter.update_spider(spider)))
+        try:
+            await asyncio.shield(asyncio.gather(*tasks, return_exceptions=True))
+        finally:
+            if not all(x.status == SpiderStatusEnum.NOT_RUNNING for x in self.status):
+                await asyncio.shield(self.stop_all_spider())
+
     async def stop_all_spider(self) -> None:
         """Останавливает все пауки."""
         tasks = []

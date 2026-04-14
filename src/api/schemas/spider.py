@@ -31,7 +31,7 @@ class ParsingSignal(BaseModel):
     Схема сигнала для парсинга
     """
 
-    signal: Literal["start", "stop"]
+    signal: Literal["start", "stop", "update"]
     spider: Literal["all"] | str
 
     page: int | None = Field(None)

@@ -47,8 +47,8 @@ class BaseSpiderTest:
 
 
 class TestSpiderMultiManga(BaseSpiderTest):
-    BASE_URL = "https://multi-manga.today"
-    TEST_URL = "https://multi-manga.today/16126-moja-povsednevnaja-zhizn-s-sestroj-grjaznulej-kotoroj-nuzhen-tolko-seks-esli-pobedish-sestrenku-to-ja-razreshu-tebe-konchit-bez-rezinki-boku-to.html"
+    BASE_URL = "https://multi-manga.com"
+    TEST_URL = "https://multi-manga.com/16126-moja-povsednevnaja-zhizn-s-sestroj-grjaznulej-kotoroj-nuzhen-tolko-seks-esli-pobedish-sestrenku-to-ja-razreshu-tebe-konchit-bez-rezinki-boku-to.html"
 
     TAGS = [
         "ahegao",
@@ -87,7 +87,7 @@ class TestSpiderMultiManga(BaseSpiderTest):
     )
     EXPECTED_LANGUAGE = "Русский"
     EXPECTED_POSTER = (
-        "https://multi-manga.today/uploads/posts/2026-01/medium/1767914666_01.webp"
+        "https://multi-manga.com/uploads/posts/2026-01/medium/1767914666_01.webp"
     )
     EXPECTED_GALLERY_COUNT = 36
     EXPECTED_AUTHOR = "Jovejun"

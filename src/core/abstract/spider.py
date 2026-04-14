@@ -166,7 +166,7 @@ class BaseSpider(ABC):
             raise AttributeError(
                 "Менеджер не был передан, функция 'update' не работает"
             )
-        
+
         async for manga_batch in self.pages(start_page=start_page):
             tasks: list[Awaitable[Optional[MangaSchema]]] = []
             for manga in manga_batch:

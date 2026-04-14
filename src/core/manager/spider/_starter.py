@@ -2,13 +2,11 @@
 
 import asyncio
 
-from typing import overload
 
 from bs4 import FeatureNotFound
 
 from loguru import logger
 
-from ._status import SpiderStatus, SpiderStatusEnum
 from ..alert import AlertManager, LEVEL
 from ...abstract.spider import BaseSpider
 
@@ -25,119 +23,6 @@ class SpiderStarter:
         self.spiders: dict[BaseSpider, None | asyncio.Task[None]] = {
             spider: None for spider in spiders
         }
-
-    @overload
-    async def start_spider(
-        self, spider: BaseSpider, start_page: int | None = None
-    ) -> None:
-        """Начать работу паука.
-
-        Args:
-            spider (BaseSpider): Сам паук.
-            start_page (int | None, optional): Параметр для выбора страницы для начало. Обычное состояние None
-        """
-
-    @overload
-    async def start_spider(
-        self, spider: type[BaseSpider], start_page: int | None = None
-    ) -> None:
-        """Начать работу паука.
-
-        Args:
-            spider (BaseSpider): Тип паука.
-            start_page (int | None, optional): Параметр для выбора страницы для начало. Обычное состояние None
-        """
-
-    @overload
-    async def start_spider(self, spider: str, start_page: int | None = None) -> None:
-        """Начать работу паука.
-
-        Args:
-            spider (BaseSpider): Название паука.
-            start_page (int | None, optional): Параметр для выбора страницы для начало. Обычное состояние None
-        """
-
-    @overload
-    async def stop_spider(self, spider: BaseSpider) -> None:
-        """Остановить работу паука
-
-        Args:
-            spider (BaseSpider): Сам паук.
-        """
-
-    @overload
-    async def stop_spider(self, spider: type[BaseSpider]) -> None:
-        """Остановить работу паука
-
-        Args:
-            spider (BaseSpider): Тип паука.
-        """
-
-    @overload
-    async def stop_spider(self, spider: str) -> None:
-        """Остановить работу паука
-
-        Args:
-            spider (BaseSpider): Название паука.
-        """
-
-    async def start_spider(
-        self, spider: str | BaseSpider | type[BaseSpider], start_page: int | None = None
-    ) -> SpiderStatus:
-        """Начать работу паука.
-
-        Args:
-            spider (str | BaseSpider): Паук, либо название паука.
-            start_page (int | None, optional): Параметр для выбора страницы для начало. Обычное состояние None
-        """
-        spider = self._get_spider(spider)
-
-        if self.spiders[spider]:
-            await self._alert(
-                f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском.",
-                "warning",
-            )
-            return SpiderStatus(
-                name=self._get_spider_name(spider),
-                status=SpiderStatusEnum.NOT_RUNNING.value,
-                message=f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском.",
-            )
-
-        try:
-            await self._alert(
-                f"Паук {self._get_spider_name(spider)}, начал свою работу.", "info"
-            )
-            self.spiders[spider] = asyncio.create_task(
-                spider.run(start_page=start_page)
-            )
-            await self.spiders[spider]
-        except FeatureNotFound:
-            await self._alert(
-                "Невозможно загрузить парсер так-как движок для парсинга не загружен",
-                "error",
-            )
-
-        except (KeyboardInterrupt, asyncio.CancelledError):
-            await self._alert(
-                f"Паук {self._get_spider_name(spider)}, был остановлен пользователем.",
-                "warning",
-            )
-            return SpiderStatus(
-                name=self._get_spider_name(spider),
-                status=SpiderStatusEnum.CANCELLED.value,
-                message=f"Паук {self._get_spider_name(spider)}, был остановлен пользователем.",
-            )
-
-        finally:
-            if task := self.spiders[spider]:
-                if not task.done():
-                    task.cancel()
-
-            self.spiders[spider] = None
-            await self._alert(
-                f"Паук {self._get_spider_name(spider)}, закончил свою работу.",
-                "info",
-            )
 
     async def stop_spider(self, spider: str | BaseSpider | type[BaseSpider]) -> None:
         """Остановить работу паука
@@ -175,6 +60,102 @@ class SpiderStarter:
                 )
         finally:
             self.spiders[spider] = None
+
+    async def start_spider(
+        self, spider: str | BaseSpider | type[BaseSpider], start_page: int | None = None
+    ) -> None:
+        """Начать работу паука.
+
+        Args:
+            spider (str | BaseSpider): Паук, либо название паука.
+            start_page (int | None, optional): Параметр для выбора страницы для начало. Обычное состояние None
+        """
+        await self._start_spider(
+            spider,
+            method="run",
+            start_page=start_page,
+        )
+
+    async def update_spider(
+        self, spider: str | BaseSpider | type[BaseSpider], start_page: int | None = None
+    ) -> None:
+        """Начинает полное сканировение
+
+        Начинает полное сканировение и обновляя данные паука.
+
+        Если паук запущен, то он остановится.
+
+        Args:
+            spider (str | BaseSpider | type[BaseSpider]): Паук, либо название паука.
+            stop_spider (bool, optional): Остановить паука если он запущен. Обычное состояние True
+        """
+        await self._start_spider(
+            spider,
+            method="update",
+            start_page=start_page,
+        )
+
+    async def _start_spider(
+        self,
+        spider: str | BaseSpider | type[BaseSpider],
+        method: str,
+        start_page: int | None = None,
+    ) -> None:
+        """Внутренняя функция для запуска пауков
+
+        Args:
+            spider (str | BaseSpider | type[BaseSpider]): Паук, либо название паука.
+            method (str): Метод запуска паука. Пример `run`, `update`
+            start_page (int | None, optional): Параметр для выбора страницы для начало. Обычное состояние None
+        """
+        spider = self._get_spider(spider)
+        if not hasattr(spider, method):
+            raise AttributeError(
+                f"У паука {self._get_spider_name(spider)} нет метода {method}"
+            )
+
+        if self.spiders[spider]:
+            if method == "run":
+                await self._alert(
+                    f"Паук {self._get_spider_name(spider)} уже запущен. Необходимо остановить его перед запуском.",
+                    "warning",
+                )
+                return
+
+            elif method == "update":
+                await self.stop_spider(spider)
+
+        try:
+            await self._alert(
+                f"Паук {self._get_spider_name(spider)}, начал свою работу.", "info"
+            )
+            self.spiders[spider] = asyncio.create_task(
+                getattr(spider, method)(start_page=start_page)
+            )
+            await self.spiders[spider]
+
+        except FeatureNotFound:
+            await self._alert(
+                "Невозможно загрузить парсер так-как движок для парсинга не загружен",
+                "error",
+            )
+
+        except (KeyboardInterrupt, asyncio.CancelledError):
+            await self._alert(
+                f"Паук {self._get_spider_name(spider)}, был остановлен пользователем.",
+                "warning",
+            )
+
+        finally:
+            if task := self.spiders[spider]:
+                if not task.done():
+                    task.cancel()
+
+            self.spiders[spider] = None
+            await self._alert(
+                f"Паук {self._get_spider_name(spider)}, закончил свою работу.",
+                "info",
+            )
 
     def _get_spider(self, spider: str | BaseSpider | type[BaseSpider]) -> BaseSpider:
         """Получает паука по название, либо самого паука.

@@ -105,6 +105,17 @@ class SpiderEndpoints:
                         )
                     )
 
+            elif signal.signal == "update":
+                if signal.spider == "all":
+                    asyncio.create_task(self.spider.update_full_parsing())
+
+                else:
+                    asyncio.create_task(
+                        self.spider.starter.update_spider(
+                            spider=signal.spider, start_page=signal.page
+                        )
+                    )
+
             else:
                 if signal.spider == "all":
                     await self.spider.stop_all_spider()
