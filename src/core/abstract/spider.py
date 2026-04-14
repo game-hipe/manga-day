@@ -152,6 +152,46 @@ class BaseSpider(ABC):
                         f"Ошибка во время добавления манги (manga={manga}, message={error})"
                     )
 
+    async def update(self, start_page: int | None = None) -> None:
+        """Запускает обновление манги.
+
+        Метод последовательно получает пакеты страниц, извлекает информацию о манге
+        и обновляет её в менеджере. Пропускает пустые результаты. Если найдена новая манга, то она добавляется в базу данных.
+
+        Args:
+            start_page (int | None): Стартовая страница для парсинга.
+        """
+
+        if self.manager is None:
+            raise AttributeError(
+                "Менеджер не был передан, функция 'update' не работает"
+            )
+        
+        async for manga_batch in self.pages(start_page=start_page):
+            tasks: list[Awaitable[Optional[MangaSchema]]] = []
+            for manga in manga_batch:
+                tasks.append(asyncio.create_task(self.get(str(manga.url))))
+
+            async for manga in asyncio.as_completed(tasks):
+                result = await manga
+                if result is None:
+                    continue
+
+                if not result.gallery:
+                    logger.warning(f"Манга {result.sku} не содержит галереи")
+                    continue
+
+                try:
+                    if not await self.manager.in_database(result):
+                        await self.manager.add_manga(result)
+
+                    else:
+                        await self.manager.update_manga(**result.as_dict())
+                except IntegrityError as error:
+                    logger.error(
+                        f"Ошибка во время добавления манги (manga={manga}, message={error})"
+                    )
+
     async def pages_full(
         self, start_page: int | None = None
     ) -> AsyncGenerator[MangaSchema, Any]:
