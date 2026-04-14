@@ -178,6 +178,31 @@ async function StopSpider(spiderName: string): Promise<void> {
     }
 }
 
+async function UpdateSpiderParsing(spiderName: string, page: number | null): Promise<void> {
+    const token = getCookie('access_token');
+    try {
+        const response = await fetch(URLJoin(`${new URL(API).origin}/v1/api`, "/admin/spider"), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": token ? `Bearer ${token}` : '',
+            },
+            // credentials: "include",
+            body: JSON.stringify({
+                signal: "update",
+                spider: spiderName,
+                page: page
+            })
+        });
+        if (response.status == 403) {
+            document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.location.href = "/admin"
+        }
+    } catch (error) {
+        console.error("Ошибка при отправке команды:", error);
+    }
+}
+
 function UpdateSpider(spider: SpiderMessage): void {
     let spiderFound = false;
 
@@ -236,10 +261,20 @@ function UpdateSpider(spider: SpiderMessage): void {
                 }
 
                 // Кнопка с data-атрибутом (без обработчика)
+
                 const newButton = document.createElement("button");
                 newButton.textContent = spiderStatus === "not_running" ? "Начать парсинг" : "Остановить парсинг";
                 newButton.dataset.spider = spiderName;
                 newDiv.appendChild(newButton);
+                
+
+                if (spiderStatus === "not_running") {
+                    const updateButton = document.createElement("button");
+                    updateButton.textContent = "Начать парсинг с нуля";
+                    updateButton.dataset.spider = spiderName;
+                    updateButton.dataset.type = "update";
+                    newDiv.appendChild(updateButton);
+                }
 
                 // Заменяем старую карточку новой
                 element.parentNode?.replaceChild(newDiv, element);
@@ -276,6 +311,14 @@ function UpdateSpider(spider: SpiderMessage): void {
         button.textContent = spiderStatus === "not_running" ? "Начать парсинг" : "Остановить парсинг";
         button.dataset.spider = spiderName;   // сохраняем имя паука
         divSpider.appendChild(button);
+
+        if (spiderStatus === "not_running") {
+            const updateButton = document.createElement("button");
+            updateButton.textContent = "Начать парсинг с нуля";
+            updateButton.dataset.spider = spiderName;
+            updateButton.dataset.type = "update";
+            divSpider.appendChild(updateButton);
+        }
 
         spiderBox.appendChild(divSpider);
     }
@@ -346,6 +389,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!spiderDiv) return; // кнопка не внутри карточки паука
 
             const spiderName = button.dataset.spider;
+
+            console.log(spiderName);
+            console.log(button);
+            
+            
+
+
             const spiderInput = spiderDiv.querySelector("input") as HTMLInputElement | null;
 
             var intPage: number | null = null
@@ -365,8 +415,12 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!spiderName) return; // нет data-атрибута
 
             // Определяем действие по тексту кнопки
-            if (button.textContent?.includes("Начать")) {
+            if (button.textContent == "Начать парсинг") {
                 StartSpider(spiderName, intPage);
+
+            } else if (button.textContent == "Начать парсинг с нуля") {
+                UpdateSpiderParsing(spiderName, intPage);
+
             } else {
                 StopSpider(spiderName);
             }
