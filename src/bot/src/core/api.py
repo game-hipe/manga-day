@@ -273,7 +273,7 @@ class AdminAPI(_BaseAPI):
 
     async def spider(
         self,
-        signal: Literal["start", "stop"],
+        signal: Literal["start", "stop", "update"],
         spider: str | Literal["all"],
         page: int | None = None,
     ) -> None:

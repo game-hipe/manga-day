@@ -1,10 +1,11 @@
 import asyncio
 import random
+from typing import Any
 
 from loguru import logger
 import aiohttp
 
-from .abstract.alert import BaseAlert, LEVEL
+from .abstract.alert import BaseAlert, BaseMessageHandler, LEVEL
 from .api import AdminAPI
 
 
@@ -22,6 +23,7 @@ class AlertManager:
         self.__api = api
         self._alerts: list[BaseAlert] = [ApiWrapper(self.__api)]
         self._alerts.extend(alert)
+        self._handlers: list[BaseMessageHandler] = []
 
         self.ws_url = ws_url
 
@@ -95,6 +97,25 @@ class AlertManager:
                                         my_alert=False,
                                     )
                                 )
+
+                            async def _handle(
+                                handler: BaseMessageHandler, data: Any
+                            ) -> None:
+                                result = await handler(data)
+                                if not result:
+                                    self._handlers.remove(handler)
+
+                            tasks: list[asyncio.Task[bool]] = []
+                            for handler in self._handlers:
+                                if data.get("signal") == handler.SIGNAL:
+                                    tasks.append(
+                                        asyncio.create_task(
+                                            _handle(handler, data.get("result", {}))
+                                        )
+                                    )
+
+                            await asyncio.gather(*tasks)
+
                 except (
                     aiohttp.ClientError,
                     asyncio.TimeoutError,
@@ -134,6 +155,13 @@ class AlertManager:
             logger.debug(
                 f"Обработчик уведомлений {alert.__class__.__name__} уже существует"
             )
+
+    def add_handler(self, handler: BaseMessageHandler) -> None:
+        if isinstance(handler, BaseMessageHandler):
+            self._handlers.append(handler)
+            return
+
+        raise TypeError("Обработчик сокета должен быть наследником BaseMessageHandler")
 
     def remove_alert(self, alert: BaseAlert) -> None:
         """Удаляет обработчик сообщений из списка

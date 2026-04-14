@@ -10,6 +10,8 @@ from aiogram.types import (
 )
 from aiogram.filters import Command
 
+from ...core.schemas import SpiderStatus
+from ..._alert import StatusMessageHandler
 from ._base import AdminBaseHandler
 from .._text import GREETING, HELP
 
@@ -30,6 +32,10 @@ class CommandsHandler(AdminBaseHandler):
         spider_manager (SpiderManager): Ссылка на менеджер парсинга.
     """
 
+    def __init__(self, bot, extra_kwargs=...):
+        super().__init__(bot, extra_kwargs)
+        self._last_handler: None | StatusMessageHandler = None
+
     def connect(self):
         """Регистрирует все обработчики команд в роутере.
 
@@ -48,10 +54,12 @@ class CommandsHandler(AdminBaseHandler):
         self.message_register(self.stop_parsing, Command("stop_parsing"))
         self.message_register(self.stop_spider, Command("stop_spider"))
         self.message_register(self.start_spider, Command("start_spider"))
+        self.message_register(self.update_spider, Command("update_status"))
         self.message_register(self.status, Command("status"))
 
         self.callback_register(self.start_spider_call, F.data.startswith("start:"))
         self.callback_register(self.stop_spider_call, F.data.startswith("stop:"))
+        self.callback_register(self.update_spider_call, F.data.startswith("update:"))
 
     async def start(self, message: Message):
         """Отправляет приветственное сообщение при получении команды /start.
@@ -127,6 +135,15 @@ class CommandsHandler(AdminBaseHandler):
                 "Неверный формат команды. Используйте: /start_spider [spider_name]"
             )
 
+    async def update_spider(self, message: Message):
+        try:
+            _, spider_name = message.text.split()
+            await self.api.spider("update", spider_name, message)
+        except ValueError:
+            await message.answer(
+                "Неверный формат команды. Используйте: /update_spider [spider_name]"
+            )
+
     async def status(self, message: Message):
         """Отправляет текущий статус парсера по команде /status.
 
@@ -136,12 +153,19 @@ class CommandsHandler(AdminBaseHandler):
         Raises:
             AttributeError: Если spider_manager не имеет атрибута status.
         """
-        keyboard = await self._create_spider_keyboard()
-        text = "\n".join(str(x) for x in await self.api.status())
+        if self._last_handler:
+            self._last_handler.deactivate()
 
-        await message.answer(
+        data = await self.api.status()
+        keyboard = self._create_spider_keyboard(data)
+        text = "\n".join(str(x) for x in data)
+
+        result = await message.answer(
             text=text, reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard)
         )
+
+        self._last_handler = StatusMessageHandler(result, self)
+        self.bot.alert.add_handler(self._last_handler)
 
     async def start_spider_call(self, call: CallbackQuery):
         """Получает команду на старт парсера
@@ -166,6 +190,18 @@ class CommandsHandler(AdminBaseHandler):
             self._stop_spider,
             "Неверный формат команды. Используйте: /stop_spider [spider_name]",
         )
+
+    async def update_spider_call(self, call: CallbackQuery):
+        """Получает команду на обновление парсера"""
+        try:
+            _, spider_name = call.data.split(":", 1)
+        except ValueError:
+            await call.message.answer(
+                "Неверный формат команды. Используйте: /update_spider [spider_name]"
+            )
+            return
+
+        await self.api.spider("update", spider_name)
 
     async def _start_spider(self, spider_name: str, query: CommandCallback):
         """Начинает работу паука
@@ -213,25 +249,45 @@ class CommandsHandler(AdminBaseHandler):
         except KeyError:
             await message.answer("Спайдер не найден.")
 
-    async def _create_spider_keyboard(self) -> list[list[InlineKeyboardButton]]:
+    def _create_spider_keyboard(
+        self, data: list[SpiderStatus]
+    ) -> list[list[InlineKeyboardButton]]:
+        """Создать клавиатуру со статусами
+
+        Returns:
+            list[list[InlineKeyboardButton]]: Клавиатура со статусами
+        """
+        EMOJI_START = "▶️"
+        EMOJI_UPDATE = "🔄"
+        EMOJI_STOP = "⏹️"
+        EMOJI_ALL = "🌐"
+        EMOJI_RUNNING = "🟢"
+
         keyboard: list[list[InlineKeyboardButton]] = []
-        for status in await self.api.status():
+
+        for status in data:
+            spider_name = status.name
             if status.status == "not_running":
                 keyboard.append(
                     [
                         InlineKeyboardButton(
-                            text=f"Запуск {status.name}",
-                            callback_data=f"start:{status.name}",
+                            text=f"{EMOJI_START} {spider_name}",
+                            callback_data=f"start:{spider_name}",
                             style="success",
-                        )
+                        ),
+                        InlineKeyboardButton(
+                            text=f"{EMOJI_UPDATE} Обновить {spider_name}",
+                            callback_data=f"update:{spider_name}",
+                            style="success",
+                        ),
                     ]
                 )
             else:
                 keyboard.append(
                     [
                         InlineKeyboardButton(
-                            text=f"Остановка {status.name}",
-                            callback_data=f"stop:{status.name}",
+                            text=f"{EMOJI_STOP} Остановить {spider_name} {EMOJI_RUNNING}",
+                            callback_data=f"stop:{spider_name}",
                             style="danger",
                         )
                     ]
@@ -240,7 +296,7 @@ class CommandsHandler(AdminBaseHandler):
         keyboard.append(
             [
                 InlineKeyboardButton(
-                    text="Начать полный парсинг",
+                    text=f"{EMOJI_ALL} Запустить все",
                     callback_data="start:all",
                     style="primary",
                 )
@@ -250,7 +306,7 @@ class CommandsHandler(AdminBaseHandler):
         keyboard.append(
             [
                 InlineKeyboardButton(
-                    text="Остановить полный парсинг",
+                    text=f"{EMOJI_STOP} Остановить все",
                     callback_data="stop:all",
                     style="danger",
                 )
