@@ -74,11 +74,11 @@ class BaseMangaSpider(BaseSpider):
         Возвращает текущий статус прогресса парсинга в процентах.
 
         Returns:
-            str: Процент выполнения в формате "XX%". Например: "67%"
+            str: Процент выполнения в формате "XX% - X/X". Например: "67% - 67/100"
         """
         total = self._total_pages or 1
         percent = (self._processed_pages / total) * 100
-        return f"{int(percent)}%"
+        return f"{int(percent)}% - {self._processed_pages}/{total}"  # Было решено что лучше добавлять страницы
 
     async def pages(
         self, start_page: int | None = None
