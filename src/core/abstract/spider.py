@@ -281,3 +281,13 @@ class BaseSpider(ABC):
             str: Объединенный URL.
         """
         return urljoin(self.BASE_URL, url)
+
+    @property
+    def status(self) -> str | None:
+        """
+        Статус текущего объекта Spider.
+
+        Можно указать, на какой он странице либо в каком состоянии он находится.
+        Возвращает None по умолчанию.
+        """
+        return None

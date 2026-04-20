@@ -208,7 +208,7 @@ class SpiderManager:
         return SpiderStatus(
             name=spider.__class__.__name__,
             status=self._convert_status(self.starter.spiders[spider]),
-            message=spider.status if hasattr(spider, "status") else None,
+            message=spider.status,
         )
 
     @staticmethod
