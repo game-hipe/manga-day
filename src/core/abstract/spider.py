@@ -36,7 +36,7 @@ class BaseSpider(ABC):
     def __init__(
         self,
         session: BaseRequestManager,
-        manager: MangaManager | None = None,
+        manager: Optional[MangaManager] = None,
         features: Optional[str] = None,
         batch: Optional[int] = None,
     ) -> None:
@@ -54,7 +54,7 @@ class BaseSpider(ABC):
     def __init__(
         self,
         session: aiohttp.ClientSession,
-        manager: MangaManager,
+        manager: Optional[MangaManager] = None,
         features: Optional[str] = None,
         batch: Optional[int] = None,
         **kwargs: Unpack[RequestItem],
